@@ -1,0 +1,240 @@
+apiVersion: peering.re8ch.com/v1alpha1
+kind: AuthenticatedLink
+metadata:
+  annotations:
+    byoc.re8ch.com/connection-owner: artchais
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+    byoc.re8ch.com/tenant-ref: artchais
+  name: re8ch-artc
+  namespace: artchais
+spec:
+  localGateway: quic://223.159.210.222:8443
+  peerRef: re8ch-artc
+  sessionIdentity: spiffe://re8ch.internal/cluster/re8ch
+  transport: quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: ManagedAccessGrant
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: artc-codex-admin
+  namespace: artchais
+spec:
+  advertisementRef: artc-default-kubernetes
+  approved: true
+  expiresAt: '2027-09-06T23:59:59Z'
+  peerRef: re8ch-artc
+  revoked: false
+  rules:
+  - apiGroups:
+    - '*'
+    resources:
+    - '*'
+    verbs:
+    - '*'
+  scope: Cluster
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: ManagedAccessGrant
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: artc-codex-operator
+  namespace: artchais
+spec:
+  advertisementRef: artc-default-kubernetes
+  approved: true
+  expiresAt: '2027-09-06T23:59:59Z'
+  namespaces:
+  - artchais
+  peerRef: re8ch-artc
+  revoked: false
+  rules:
+  - apiGroups:
+    - ''
+    resources:
+    - pods
+    - pods/log
+    - services
+    - endpoints
+    - events
+    - persistentvolumeclaims
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - apps
+    resources:
+    - deployments
+    - statefulsets
+    - daemonsets
+    - replicasets
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - batch
+    resources:
+    - jobs
+    - cronjobs
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - networking.k8s.io
+    resources:
+    - ingresses
+    - networkpolicies
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - gateway.networking.k8s.io
+    resources:
+    - httproutes
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  scope: Namespaced
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: ManagedAccessGrant
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: artc-codex-viewer
+  namespace: artchais
+spec:
+  advertisementRef: artc-default-kubernetes
+  approved: true
+  expiresAt: '2027-09-06T23:59:59Z'
+  peerRef: re8ch-artc
+  revoked: false
+  rules:
+  - apiGroups:
+    - ''
+    resources:
+    - namespaces
+    - nodes
+    - pods
+    - pods/log
+    - services
+    - endpoints
+    - events
+    - persistentvolumeclaims
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - deployments
+    - statefulsets
+    - daemonsets
+    - replicasets
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - batch
+    resources:
+    - jobs
+    - cronjobs
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - networking.k8s.io
+    resources:
+    - ingresses
+    - networkpolicies
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - gateway.networking.k8s.io
+    resources:
+    - httproutes
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - storage.k8s.io
+    resources:
+    - storageclasses
+    verbs:
+    - get
+    - list
+    - watch
+  scope: Cluster
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: Peer
+metadata:
+  annotations:
+    byoc.re8ch.com/cluster-uid: be6dadfe-cc9e-4756-97b7-a22443f46c00
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+    byoc.re8ch.com/tenant-ref: artchais
+  name: re8ch-artc
+  namespace: artchais
+spec:
+  invitationRef: re8ch-artc-artchais
+  localIdentityRef: re8ch
+  remoteIdentityRef: artc
+  suspended: false
+  transports:
+  - quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: PeerPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: artc-kubernetes-api
+  namespace: artchais
+spec:
+  directions:
+  - export
+  maxAdvertisements: 1
+  peerSelector:
+    matchNames:
+    - re8ch-artc
+  ports:
+  - 443
+  protocols:
+  - kubernetes-api
+  serviceClasses:
+  - kubernetes.control-plane

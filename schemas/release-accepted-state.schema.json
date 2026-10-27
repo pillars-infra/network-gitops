@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://re8ch.com/schemas/release-accepted-state.schema.json",
+  "title": "Persisted accepted release state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "releaseId", "lastOperationId", "requestDigest", "bundleReference", "payloadDigest", "appliedDigest", "inventoryDigest", "inventory", "objectRefs", "sequence", "updatedAt", "blocked"],
+  "properties": {
+    "schemaVersion": {"const": "delivery.re8ch.com/accepted-state/v1alpha1"},
+    "releaseId": {"type": "string", "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
+    "lastOperationId": {"type": "string", "format": "uuid"},
+    "requestDigest": {"$ref": "#/$defs/digest"},
+    "bundleReference": {"type": "string", "pattern": "^oci://"},
+    "payloadDigest": {"$ref": "#/$defs/digest"},
+    "appliedDigest": {"$ref": "#/$defs/digest"},
+    "healthyDigest": {"$ref": "#/$defs/digest"},
+    "inventoryDigest": {"$ref": "#/$defs/digest"},
+    "inventory": {"type": "array", "items": {"type": "string"}},
+    "objectRefs": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["apiVersion", "kind", "name"],
+        "properties": {
+          "apiVersion": {"type": "string", "minLength": 1},
+          "kind": {"type": "string", "minLength": 1},
+          "namespace": {"type": "string"},
+          "name": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bundleReference",
+          "payloadDigest",
+          "appliedDigest",
+          "inventoryDigest"
+        ],
+        "properties": {
+          "bundleReference": {"type": "string", "pattern": "^oci://"},
+          "payloadDigest": {"$ref": "#/$defs/digest"},
+          "appliedDigest": {"$ref": "#/$defs/digest"},
+          "inventoryDigest": {"$ref": "#/$defs/digest"}
+        }
+      }
+    },
+    "sequence": {"type": "integer", "minimum": 1},
+    "updatedAt": {"type": "string", "format": "date-time"},
+    "blocked": {"type": "boolean"},
+    "suspended": {"type": "boolean"},
+    "blockedReason": {"type": "string"}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}

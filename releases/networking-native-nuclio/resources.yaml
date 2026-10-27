@@ -1,0 +1,167 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ledger-accounting-public
+  namespace: nuclio
+spec:
+  hostnames:
+  - api.re8ch.com
+  - api-shanghai77.re8ch.com
+  - api-shanghai217.re8ch.com
+  - api-guangzhou24.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: http
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: api-https
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: api-sh77-https
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: api-sh217-https
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: api-gz24-https
+  rules:
+  - backendRefs:
+    - name: ledger-accounting-agent-edge
+      port: 80
+    matches:
+    - path:
+        type: PathPrefix
+        value: /ledger/accounting-agent
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ledger-accounting-r640-public
+  namespace: nuclio
+spec:
+  hostnames:
+  - neo4j.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: http
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: neo4j-https
+  rules:
+  - backendRefs:
+    - name: ledger-accounting-agent
+      port: 80
+    matches:
+    - path:
+        type: PathPrefix
+        value: /ledger/accounting-agent
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ledger-decision-public
+  namespace: nuclio
+spec:
+  hostnames:
+  - api.re8ch.com
+  - api-shanghai77.re8ch.com
+  - api-shanghai217.re8ch.com
+  - api-guangzhou24.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: http
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: api-https
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: api-sh77-https
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: api-sh217-https
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: api-gz24-https
+  rules:
+  - backendRefs:
+    - name: ledger-decision-analysis-edge
+      port: 80
+    matches:
+    - path:
+        type: PathPrefix
+        value: /ledger/decision-analysis
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ledger-decision-r640-public
+  namespace: nuclio
+spec:
+  hostnames:
+  - neo4j.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: http
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: neo4j-https
+  rules:
+  - backendRefs:
+    - name: ledger-decision-analysis
+      port: 80
+    matches:
+    - path:
+        type: PathPrefix
+        value: /ledger/decision-analysis
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-zone-ledger-decisions-ledger-decisions-static-advfab
+  namespace: nuclio
+spec:
+  hostnames:
+  - ledger-decisions.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: ledger-decisions-static
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-zone-ledger-static-http-advfab
+  namespace: nuclio
+spec:
+  hostnames:
+  - ledger-decisions.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: ledger-decisions-static
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /

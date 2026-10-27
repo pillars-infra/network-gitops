@@ -1,0 +1,359 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: powerdns-cloud-authorities
+  namespace: regional-routing
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: powerdns-cloud-authorities
+  template:
+    metadata:
+      annotations:
+        networking.re8ch.com/authority-source-revision: independent-cn-eu-v1
+      labels:
+        app.kubernetes.io/name: powerdns-cloud-authorities
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: networking.re8ch.com/powerdns-authority-capable
+                operator: In
+                values:
+                - 'true'
+      containers:
+      - args:
+        - "# Bind only the primary NIC; systemd-resolved owns loopback :53.\naddr=$(hostname\
+          \ -I | awk '{print $1}')\ntest -n \"$addr\"\nexec /usr/local/sbin/pdns_server\
+          \ --daemon=no --guardian=no \\\n  --config-dir=/etc/powerdns --local-address=\"\
+          $addr\"\n"
+        command:
+        - sh
+        - -ec
+        image: docker.io/powerdns/pdns-auth-49:4.9.17@sha256:b554df74bbde1afa7caedad4af9c91378be6d46d05807d089b3c7c443002e684
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - test -S /var/run/pdns/pdns.controlsocket
+          periodSeconds: 30
+        name: pdns-auth
+        ports:
+        - containerPort: 53
+          name: dns-udp
+          protocol: UDP
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - test -S /var/run/pdns/pdns.controlsocket
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 250m
+            memory: 192Mi
+          requests:
+            cpu: 20m
+            memory: 48Mi
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/powerdns
+          name: config
+          readOnly: true
+        - mountPath: /var/lib/powerdns
+          name: data
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - chown -R pdns:pdns /var/lib/powerdns
+        image: docker.io/powerdns/pdns-auth-49:4.9.17@sha256:b554df74bbde1afa7caedad4af9c91378be6d46d05807d089b3c7c443002e684
+        name: data-permissions
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /var/lib/powerdns
+          name: data
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+      - effect: NoSchedule
+        key: node.cilium.io/agent-not-ready
+        operator: Exists
+      volumes:
+      - configMap:
+          name: powerdns-cloud-authorities
+        name: config
+      - hostPath:
+          path: /var/lib/re8ch/powerdns-authority
+          type: DirectoryOrCreate
+        name: data
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: public-edge-domain-ex
+  namespace: regional-routing
+spec:
+  commonName: domain-ex
+  dnsNames:
+  - domain-ex
+  duration: 2160h
+  issuerRef:
+    kind: Issuer
+    name: public-edge-transfer-ca
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: public-edge-domain-ex-tls
+  usages:
+  - client auth
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: public-edge-hidden-primary
+  namespace: regional-routing
+spec:
+  commonName: hidden-primary.service.re8ch.com
+  dnsNames:
+  - hidden-primary.service.re8ch.com
+  duration: 2160h
+  ipAddresses:
+  - 2.28.106.230
+  issuerRef:
+    kind: Issuer
+    name: public-edge-transfer-ca
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: public-edge-hidden-primary-tls
+  usages:
+  - server auth
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: public-edge-muaya-lightweight
+  namespace: regional-routing
+spec:
+  commonName: muaya-lightweight
+  dnsNames:
+  - muaya-lightweight
+  duration: 2160h
+  issuerRef:
+    kind: Issuer
+    name: public-edge-transfer-ca
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: public-edge-muaya-lightweight-tls
+  usages:
+  - client auth
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: public-edge-overseas-la
+  namespace: regional-routing
+spec:
+  commonName: overseas-la
+  dnsNames:
+  - overseas-la
+  duration: 2160h
+  issuerRef:
+    kind: Issuer
+    name: public-edge-transfer-ca
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: public-edge-overseas-la-tls
+  usages:
+  - client auth
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: public-edge-suxunji
+  namespace: regional-routing
+spec:
+  commonName: suxunji
+  dnsNames:
+  - suxunji
+  duration: 2160h
+  issuerRef:
+    kind: Issuer
+    name: public-edge-transfer-ca
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: public-edge-suxunji-tls
+  usages:
+  - client auth
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: public-edge-transfer-ca
+  namespace: regional-routing
+spec:
+  commonName: PublicEdge transfer CA
+  duration: 87600h
+  isCA: true
+  issuerRef:
+    kind: Issuer
+    name: public-edge-bootstrap
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 720h
+  secretName: public-edge-transfer-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: public-edge-zan
+  namespace: regional-routing
+spec:
+  commonName: zan
+  dnsNames:
+  - zan
+  duration: 2160h
+  issuerRef:
+    kind: Issuer
+    name: public-edge-transfer-ca
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: public-edge-zan-tls
+  usages:
+  - client auth
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: public-edge-bootstrap
+  namespace: regional-routing
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: public-edge-transfer-ca
+  namespace: regional-routing
+spec:
+  ca:
+    secretName: public-edge-transfer-ca
+---
+apiVersion: v1
+data:
+  named.conf: 'zone "api.re8ch.com" { type slave; file "/var/lib/powerdns/api.re8ch.com.zone";
+    masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
+
+    zone "db-ro.re8ch.com" { type slave; file "/var/lib/powerdns/db-ro.re8ch.com.zone";
+    masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
+
+    zone "db-rw.re8ch.com" { type slave; file "/var/lib/powerdns/db-rw.re8ch.com.zone";
+    masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
+
+    zone "service.re8ch.com" { type slave; file "/var/lib/powerdns/service.re8ch.com.zone";
+    masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
+
+    zone "functions.re8ch.com" { type slave; file "/var/lib/powerdns/functions.re8ch.com.zone";
+    masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
+
+    zone "test.re8ch.com" { type slave; file "/var/lib/powerdns/test.re8ch.com.zone";
+    masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
+
+    '
+  pdns.conf: 'launch=bind
+
+    bind-config=/etc/powerdns/named.conf
+
+    local-port=53
+
+    secondary=yes
+
+    primary=no
+
+    allow-notify-from=42.194.130.91,2.28.106.230,179.255.126.104
+
+    version-string=anonymous
+
+    '
+kind: ConfigMap
+metadata:
+  name: powerdns-cloud-authorities
+  namespace: regional-routing
+---
+apiVersion: v1
+data:
+  public-key.pem: '-----BEGIN PUBLIC KEY-----
+
+    MCowBQYDK2VwAyEAuRt4VHqXwroUjgwTZWAFKLAec2oK3pDPnI+FHC6uIsU=
+
+    -----END PUBLIC KEY-----
+
+    '
+kind: ConfigMap
+metadata:
+  name: public-edge-route-snapshot-public-key
+  namespace: regional-routing
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
+    external-dns.alpha.kubernetes.io/hostname: catalog.re8ch.com
+    external-dns.alpha.kubernetes.io/target: catalog.re8ch.com.eo.dnse1.com
+    external-dns.alpha.kubernetes.io/ttl: '60'
+  labels:
+    networking.re8ch.com/dns-authority: public-edge
+  name: catalog-edgeone-dns-authority
+  namespace: regional-routing
+spec:
+  ingressClassName: external-dns-only
+  rules:
+  - host: catalog.re8ch.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: public-edge-manager
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix

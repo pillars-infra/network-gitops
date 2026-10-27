@@ -1,0 +1,42 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-dataspace
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: dataspace
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-dataspace
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-dataspace
+    resources:
+    - networking.k8s.io/Ingress
+    objectNames:
+    - storage-collaborator
+    forceConflictObjects:
+    - networking.k8s.io/Ingress/dataspace/storage-collaborator
+  inventory:
+    digest: sha256:7c0390c6c68740b4641066c9861b27c54fbf370a8748f6ca8fd60cec6171f944
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

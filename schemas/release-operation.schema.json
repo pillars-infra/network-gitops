@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://re8ch.com/schemas/release-operation.schema.json",
+  "title": "Release operation request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "operationId", "sequence", "action", "releaseId", "target", "contractDigest", "bundle", "inventoryDigest", "github", "issuedAt", "expiresAt", "nonce"],
+  "properties": {
+    "apiVersion": {"const": "delivery.re8ch.com/release-operation/v1alpha1"},
+    "operationId": {"type": "string", "format": "uuid"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "action": {"enum": ["reconcile", "force-reconcile", "reset", "suspend", "resume", "rollback"]},
+    "reason": {"type": "string", "maxLength": 512},
+    "idempotencyKey": {"type": "string", "minLength": 16, "maxLength": 128},
+    "approvalRef": {"type": "string", "maxLength": 253},
+    "forceConflictObjects": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "releaseId": {"type": "string", "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
+    "target": {"type": "string", "minLength": 1},
+    "contractDigest": {"$ref": "#/$defs/digest"},
+    "bundle": {
+      "type": "object", "additionalProperties": false, "required": ["reference", "digest", "payloadDigest", "signer", "issuer"],
+      "properties": {
+        "reference": {"type": "string", "pattern": "^oci://"},
+        "digest": {"$ref": "#/$defs/digest"},
+        "payloadDigest": {"$ref": "#/$defs/digest"},
+        "signer": {"type": "string", "minLength": 1},
+        "issuer": {"type": "string", "minLength": 1}
+      }
+    },
+    "inventoryDigest": {"$ref": "#/$defs/digest"},
+    "previousApprovedDigest": {"$ref": "#/$defs/digest"},
+    "github": {
+      "type": "object", "additionalProperties": false, "required": ["repository", "workflow", "ref", "commit", "runId", "environment", "audience"],
+      "properties": {
+        "repository": {"type": "string", "pattern": "^[^/]+/[^/]+$"},
+        "workflow": {"type": "string", "minLength": 1},
+        "ref": {"type": "string", "pattern": "^refs/heads/[A-Za-z0-9._/-]+$"},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "runId": {"type": "string", "pattern": "^[0-9]+$"},
+        "environment": {"type": "string", "minLength": 1},
+        "audience": {"type": "string", "format": "uri"}
+      }
+    },
+    "issuedAt": {"type": "string", "format": "date-time"},
+    "expiresAt": {"type": "string", "format": "date-time"},
+    "nonce": {"type": "string", "minLength": 16, "maxLength": 128}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}

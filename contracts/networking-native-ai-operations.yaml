@@ -1,0 +1,42 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-ai-operations
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: ai-operations
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-ai-operations
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-ai-operations
+    resources:
+    - networking.k8s.io/Ingress
+    objectNames:
+    - steel-browser
+    forceConflictObjects:
+    - networking.k8s.io/Ingress/ai-operations/steel-browser
+  inventory:
+    digest: sha256:f563f6d2717b60754027f6094769d81ab4dec18af9356c8b32c6462301fa05ae
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

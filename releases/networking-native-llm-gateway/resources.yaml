@@ -1,0 +1,61 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  annotations:
+    networking.re8ch.com/dns-authority: llm-gateway/litellm-dns-authority
+  name: litellm-public
+  namespace: llm-gateway
+spec:
+  hostnames:
+  - litellm.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: litellm-https
+  rules:
+  - backendRefs:
+    - name: litellm
+      port: 4000
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: litellm-service-public
+  namespace: llm-gateway
+spec:
+  hostnames:
+  - litellm.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - name: litellm
+      port: 4000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
+    external-dns.alpha.kubernetes.io/hostname: litellm.re8ch.com
+    external-dns.alpha.kubernetes.io/ttl: '60'
+    networking.re8ch.com/provider: public-edge-manager
+  labels:
+    networking.re8ch.com/dns-authority: migrated-to-service-zone
+  name: litellm-dns-authority
+  namespace: llm-gateway
+spec:
+  ingressClassName: external-dns-only
+  rules:
+  - host: litellm.re8ch.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: litellm
+            port:
+              number: 4000
+        path: /
+        pathType: Prefix

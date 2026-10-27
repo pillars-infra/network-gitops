@@ -49,3 +49,26 @@ Flux is deliberately not authorized to administer arbitrary admission policy.
 
 The incident evidence, commands and ownership decisions are recorded in
 [`docs/r640-cilium-gateway-recovery-2026-10-19.md`](docs/r640-cilium-gateway-recovery-2026-10-19.md).
+
+## Cloud native release execution
+
+`operations/releases/compile_native.py` projects the existing Kustomize root into
+26 namespace-scoped ReleaseContracts. Regenerate after desired-state edits and
+run `--check` in CI. `native-authority.json` contains exact inventories, bounded
+get/patch RBAC and empty state ConfigMaps for the central bootstrap owner.
+Adoption does not grant create/delete and pruning is disabled. Existing Roles
+may need separately reviewed bind/escalate privileges; this file grants neither.
+
+The `static-release` workflow reuses the service-backend SSA bundle/executor and
+the accepted-digest replay port in agent-gitops at commit
+`29bbf035b9aa1f8069becf526e7de8d73e095727`. Publish once with `mode=publish`,
+then use `mode=reconcile` to verify and replay the accepted immutable digest.
+`force_takeover` is restricted to the exact contract inventory; stop the previous
+Flux writer before adoption. Protected environment approval, signed provenance,
+server dry-run, durable state and optimistic concurrency remain enforced.
+
+Encrypted/SOPS objects, Secrets, Flux metadata, Helm releases, unpinned images
+and cluster network pools remain explicit in the omission ledger. Public native
+artifacts never decrypt them. Existing runtime values remain in place while the
+restricted cloud path is completed. This first cohort does not claim full Helm
+or secret adoption and does not restart a Flux controller.

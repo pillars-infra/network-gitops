@@ -1,0 +1,52 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-nuclio
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: nuclio
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-nuclio
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-nuclio
+    resources:
+    - gateway.networking.k8s.io/HTTPRoute
+    objectNames:
+    - ledger-accounting-public
+    - ledger-accounting-r640-public
+    - ledger-decision-public
+    - ledger-decision-r640-public
+    - service-zone-ledger-decisions-ledger-decisions-static-advfab
+    - service-zone-ledger-static-http-advfab
+    forceConflictObjects:
+    - gateway.networking.k8s.io/HTTPRoute/nuclio/ledger-accounting-public
+    - gateway.networking.k8s.io/HTTPRoute/nuclio/ledger-accounting-r640-public
+    - gateway.networking.k8s.io/HTTPRoute/nuclio/ledger-decision-public
+    - gateway.networking.k8s.io/HTTPRoute/nuclio/ledger-decision-r640-public
+    - gateway.networking.k8s.io/HTTPRoute/nuclio/service-zone-ledger-decisions-ledger-decisions-static-advfab
+    - gateway.networking.k8s.io/HTTPRoute/nuclio/service-zone-ledger-static-http-advfab
+  inventory:
+    digest: sha256:7702d4eda61715e6e79085758153e3864ac5f5f4f2f32f563f00974cf6f6b0cb
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

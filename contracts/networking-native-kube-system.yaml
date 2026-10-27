@@ -1,0 +1,117 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-kube-system
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: kube-system
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-kube-system
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-kube-system
+    resources:
+    - apps/DaemonSet
+    - apps/Deployment
+    - cert-manager.io/Certificate
+    - cilium.io/CiliumGatewayClassConfig
+    - cilium.io/CiliumNodeConfig
+    - core/ConfigMap
+    - core/Service
+    - core/ServiceAccount
+    - gateway.networking.k8s.io/Gateway
+    - gateway.networking.k8s.io/TCPRoute
+    - rbac.authorization.k8s.io/Role
+    - rbac.authorization.k8s.io/RoleBinding
+    objectNames:
+    - access-subdomains
+    - advfab-worker-node-ips
+    - cilium-multi-pool-cutover
+    - control-api-source
+    - control-dns-reachability
+    - control-transit-controller
+    - domain-api-bootstrap
+    - headlamp-service-pilot
+    - host-network-controller
+    - kube-api-observer-proxy
+    - kube-api-overseas-relay
+    - kube-api-public
+    - kube-dns
+    - native-routing-canary
+    - native-routing-mubao-wsl
+    - native-routing-rollout-order
+    - native-routing-wsl-control-plane
+    - overseas-flk-public-service-device
+    - podcidr-fabric-reconciler
+    - public-mesh-podcidr-reconciler
+    - r640-policy-update-budget
+    - r640-xdp-native
+    - re8ch-apps-public-gateway
+    - re8ch-gateway-canary
+    - re8ch-service-public-gateway
+    - re8ch-service-vip
+    - zerotier-planet
+    forceConflictObjects:
+    - apps/DaemonSet/kube-system/control-api-source
+    - apps/DaemonSet/kube-system/control-dns-reachability
+    - apps/DaemonSet/kube-system/control-transit-controller
+    - apps/DaemonSet/kube-system/host-network-controller
+    - apps/DaemonSet/kube-system/podcidr-fabric-reconciler
+    - apps/DaemonSet/kube-system/public-mesh-podcidr-reconciler
+    - apps/Deployment/kube-system/kube-api-observer-proxy
+    - apps/Deployment/kube-system/kube-api-overseas-relay
+    - apps/Deployment/kube-system/zerotier-planet
+    - cert-manager.io/Certificate/kube-system/access-subdomains
+    - cert-manager.io/Certificate/kube-system/headlamp-service-pilot
+    - cert-manager.io/Certificate/kube-system/re8ch-apps-public-gateway
+    - cert-manager.io/Certificate/kube-system/re8ch-service-public-gateway
+    - cilium.io/CiliumGatewayClassConfig/kube-system/re8ch-service-vip
+    - cilium.io/CiliumNodeConfig/kube-system/advfab-worker-node-ips
+    - cilium.io/CiliumNodeConfig/kube-system/domain-api-bootstrap
+    - cilium.io/CiliumNodeConfig/kube-system/native-routing-canary
+    - cilium.io/CiliumNodeConfig/kube-system/native-routing-mubao-wsl
+    - cilium.io/CiliumNodeConfig/kube-system/native-routing-wsl-control-plane
+    - cilium.io/CiliumNodeConfig/kube-system/overseas-flk-public-service-device
+    - cilium.io/CiliumNodeConfig/kube-system/r640-policy-update-budget
+    - cilium.io/CiliumNodeConfig/kube-system/r640-xdp-native
+    - core/ConfigMap/kube-system/cilium-multi-pool-cutover
+    - core/ConfigMap/kube-system/control-api-source
+    - core/ConfigMap/kube-system/control-dns-reachability
+    - core/ConfigMap/kube-system/kube-api-observer-proxy
+    - core/ConfigMap/kube-system/kube-api-overseas-relay
+    - core/ConfigMap/kube-system/native-routing-rollout-order
+    - core/Service/kube-system/kube-api-observer-proxy
+    - core/Service/kube-system/kube-api-overseas-relay
+    - core/Service/kube-system/kube-dns
+    - core/ServiceAccount/kube-system/control-dns-reachability
+    - core/ServiceAccount/kube-system/host-network-controller
+    - gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary
+    - gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public
+    - rbac.authorization.k8s.io/Role/kube-system/control-dns-reachability
+    - rbac.authorization.k8s.io/Role/kube-system/host-network-controller
+    - rbac.authorization.k8s.io/RoleBinding/kube-system/control-dns-reachability
+    - rbac.authorization.k8s.io/RoleBinding/kube-system/host-network-controller
+  inventory:
+    digest: sha256:57e0ad565211d886fe9f29778dadad39da77c8c3c7a4129aea50a865f6670b84
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

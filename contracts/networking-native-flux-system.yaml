@@ -1,0 +1,55 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-flux-system
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: flux-system
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-flux-system
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-flux-system
+    resources:
+    - batch/Job
+    - core/ServiceAccount
+    - gateway.networking.k8s.io/HTTPRoute
+    - rbac.authorization.k8s.io/Role
+    - rbac.authorization.k8s.io/RoleBinding
+    objectNames:
+    - among-clusters-legacy-agent-cleanup
+    - among-clusters-legacy-agent-cleanup-v2
+    - mihomo-node-labeler-inventory
+    - service-zone-hooks-github-flux-webhook
+    forceConflictObjects:
+    - batch/Job/flux-system/among-clusters-legacy-agent-cleanup-v2
+    - core/ServiceAccount/flux-system/among-clusters-legacy-agent-cleanup
+    - gateway.networking.k8s.io/HTTPRoute/flux-system/service-zone-hooks-github-flux-webhook
+    - rbac.authorization.k8s.io/Role/flux-system/among-clusters-legacy-agent-cleanup
+    - rbac.authorization.k8s.io/Role/flux-system/mihomo-node-labeler-inventory
+    - rbac.authorization.k8s.io/RoleBinding/flux-system/among-clusters-legacy-agent-cleanup
+    - rbac.authorization.k8s.io/RoleBinding/flux-system/mihomo-node-labeler-inventory
+  inventory:
+    digest: sha256:510f17055092c7ccac709eeac899130a6e46d9029343f4ce7eddca38942c3460
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

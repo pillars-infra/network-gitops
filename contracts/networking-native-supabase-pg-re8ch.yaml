@@ -1,0 +1,42 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-supabase-pg-re8ch
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: supabase-pg-re8ch
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-supabase-pg-re8ch
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-supabase-pg-re8ch
+    resources:
+    - gateway.networking.k8s.io/HTTPRoute
+    objectNames:
+    - supabase-service-public
+    forceConflictObjects:
+    - gateway.networking.k8s.io/HTTPRoute/supabase-pg-re8ch/supabase-service-public
+  inventory:
+    digest: sha256:f1647c0ab6d077ef1558ad3cefa7a2ba362190e51e8af6b08d146847a54bd03e
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

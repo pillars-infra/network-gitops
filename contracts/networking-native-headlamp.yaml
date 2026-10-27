@@ -1,0 +1,48 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-headlamp
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: headlamp
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-headlamp
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-headlamp
+    resources:
+    - gateway.networking.k8s.io/HTTPRoute
+    objectNames:
+    - headlamp-edge-origin
+    - headlamp-http-redirect
+    - headlamp-public
+    - headlamp-service-public
+    forceConflictObjects:
+    - gateway.networking.k8s.io/HTTPRoute/headlamp/headlamp-edge-origin
+    - gateway.networking.k8s.io/HTTPRoute/headlamp/headlamp-http-redirect
+    - gateway.networking.k8s.io/HTTPRoute/headlamp/headlamp-public
+    - gateway.networking.k8s.io/HTTPRoute/headlamp/headlamp-service-public
+  inventory:
+    digest: sha256:9713de985af9c6c57759fdbcb33801882d3e692d10102fea33ade184617f64c2
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

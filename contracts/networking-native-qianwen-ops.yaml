@@ -1,0 +1,56 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-qianwen-ops
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: qianwen-ops
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-qianwen-ops
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-qianwen-ops
+    resources:
+    - apps/Deployment
+    - core/Service
+    - core/ServiceAccount
+    - networking.k8s.io/Ingress
+    - rbac.authorization.k8s.io/Role
+    - rbac.authorization.k8s.io/RoleBinding
+    objectNames:
+    - cert-manager-read-cloudflare-dns-token
+    - external-dns-cloudflare
+    - read-cloudflare-dns-token
+    - tenant-apps-dns-placeholder
+    - tenant-apps-wildcard-dns-authority
+    forceConflictObjects:
+    - apps/Deployment/qianwen-ops/external-dns-cloudflare
+    - core/Service/qianwen-ops/tenant-apps-dns-placeholder
+    - core/ServiceAccount/qianwen-ops/external-dns-cloudflare
+    - networking.k8s.io/Ingress/qianwen-ops/tenant-apps-wildcard-dns-authority
+    - rbac.authorization.k8s.io/Role/qianwen-ops/read-cloudflare-dns-token
+    - rbac.authorization.k8s.io/RoleBinding/qianwen-ops/cert-manager-read-cloudflare-dns-token
+  inventory:
+    digest: sha256:92bdad3e145894010ea57703232a81fb2615995be7f58a8cb03ed1acf4459f3c
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []
