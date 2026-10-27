@@ -35,7 +35,12 @@ def fixture(tmp_path):
 @pytest.mark.parametrize('fault',['missing','deleted-after-get','version-changed'])
 def test_adoption_never_recreates_missing_or_changed_objects(tmp_path,fault):
     value,op,path=fixture(tmp_path);runner=ExistingRunner(fault)
-    with pytest.raises(executor.Rejected):executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state')
+    if fault=='missing':
+        with pytest.raises(executor.Rejected):executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state')
+    else:
+        result=executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state')
+        assert result['outcome']=='failed' and result['application']['appliedInventory']==[]
+        assert result['observedDigest'] is None
     assert not runner.written
     assert not (tmp_path/'state/state/demo.json').exists()
     if fault=='missing':assert not any(c[0][:2]==['kubectl','apply'] for c in runner.calls)

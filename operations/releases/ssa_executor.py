@@ -577,22 +577,44 @@ class Executor:
         for stage in stages:
             stage_objects = [by_identity[identity] for identity in stage["inventory"]]
             self.apply(stage_objects, manager, dry_run=True, force_objects=requested_force)
+        attempted_inventory, applied_inventory = [], []
+        command_timed_out = False
         try:
             for stage in stages:
-                stage_objects = [by_identity[identity] for identity in stage["inventory"]]
-                self.apply(stage_objects, manager, dry_run=False, force_objects=requested_force)
+                for identity in stage["inventory"]:
+                    attempted_inventory.append(identity)
+                    self.apply([by_identity[identity]], manager, dry_run=False, force_objects=requested_force)
+                    applied_inventory.append(identity)
             lifecycle = contract["spec"]["lifecycle"]
             healthy, reason = self.wait_healthy(
                 selected_objects, lifecycle["healthTimeoutSeconds"], lifecycle.get("healthChecks"))
+        except subprocess.TimeoutExpired:
+            command_timed_out = True
+            healthy, reason = False, "Kubernetes command timed out; write or health outcome unknown"
         except Rejected as error:
             healthy, reason = False, f"apply failed: {error}"
         outcome = "healthy"
         rollback_digest = None
         if not healthy:
+            if not previous:
+                complete = not command_timed_out and set(applied_inventory) == set(manifest["inventory"])
+                result = {
+                    "apiVersion": "delivery.re8ch.com/release-result/v1alpha1",
+                    "operationId": operation["operationId"], "releaseId": operation["releaseId"],
+                    "requestDigest": request_digest, "approvedDigest": operation["bundle"]["digest"],
+                    "observedDigest": operation["bundle"]["digest"] if complete else None,
+                    "inventoryDigest": manifest["inventoryDigest"], "startedAt": started.isoformat(),
+                    "finishedAt": self.now().isoformat(), "outcome": "failed",
+                    "health": {"status": "unknown" if command_timed_out else "unhealthy", "reason": ("no accepted rollback bundle; " + reason)[:512]},
+                    "application": {"status": "complete" if complete else "partial-or-unknown",
+                                    "attemptedInventory": sorted(set(attempted_inventory)),
+                                    "appliedInventory": sorted(set(applied_inventory))},
+                }
+                validate_schema(result, "release-operation-result.schema.json")
+                store.save_result(result)
+                return result
             if not finalize:
                 raise Rejected(f"partial stage health failed: {reason}")
-            if not previous:
-                raise Rejected("health failed and no accepted rollback bundle exists")
             try:
                 rollback_digest, reason = self.rollback(
                     previous, manifest, selected_objects, contract, operation, manager, store, reason)
@@ -669,7 +691,7 @@ def main() -> int:
                                   current_bundle_path=args.current_bundle,
                                   rollback_stages=set(args.rollback_stage))
     print(json.dumps(result, sort_keys=True))
-    return 0
+    return 1 if result.get("outcome") == "failed" else 0
 
 
 if __name__ == "__main__":

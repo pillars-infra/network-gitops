@@ -11,13 +11,15 @@
     "releaseId": {"type": "string", "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
     "requestDigest": {"$ref": "#/$defs/digest"},
     "approvedDigest": {"$ref": "#/$defs/digest"},
-    "observedDigest": {"$ref": "#/$defs/digest"},
+    "observedDigest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
     "inventoryDigest": {"$ref": "#/$defs/digest"},
     "startedAt": {"type": "string", "format": "date-time"},
     "finishedAt": {"type": "string", "format": "date-time"},
-    "outcome": {"enum": ["healthy", "rejected", "rolled-back", "rollback-failed"]},
+    "outcome": {"enum": ["healthy", "rejected", "rolled-back", "rollback-failed", "failed"]},
     "health": {"type": "object", "additionalProperties": false, "required": ["status"], "properties": {"status": {"enum": ["healthy", "unhealthy", "unknown"]}, "reason": {"type": "string", "maxLength": 512}}},
+    "application": {"type": "object", "additionalProperties": false, "required": ["status", "attemptedInventory", "appliedInventory"], "properties": {"status": {"enum": ["complete", "partial-or-unknown"]}, "attemptedInventory": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}, "appliedInventory": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}}},
     "rollbackDigest": {"$ref": "#/$defs/digest"}
   },
+  "allOf": [{"if": {"properties": {"outcome": {"const": "failed"}}}, "then": {"required": ["application"], "properties": {"health": {"properties": {"status": {"enum": ["unhealthy", "unknown"]}}}}}, "else": {"properties": {"observedDigest": {"$ref": "#/$defs/digest"}}}}],
   "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
 }
