@@ -30,13 +30,15 @@ spec:
     - dbgui-service-public
     - routeros-public-forward-controller
     - routeros-transit-controller
+    - routeros-transit-controller-m4d4tm44fd
     forceConflictObjects:
     - apps/Deployment/ops/routeros-public-forward-controller
     - apps/Deployment/ops/routeros-transit-controller
     - core/ConfigMap/ops/routeros-public-forward-controller
+    - core/ConfigMap/ops/routeros-transit-controller-m4d4tm44fd
     - gateway.networking.k8s.io/HTTPRoute/ops/dbgui-service-public
   inventory:
-    digest: sha256:4c5fa75a8490bec4ac545697c8e6d93761602f8d0896432589e3757eca0d943d
+    digest: sha256:14b8aeaccee18f33e41e68eb53d6b8ebfb4761436693f79bf0f9f59c12877077
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

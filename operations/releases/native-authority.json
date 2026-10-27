@@ -815,6 +815,55 @@
       }
     },
     {
+      "releaseId": "networking-native-flux-network-system",
+      "contract": "contracts/networking-native-flux-network-system.yaml",
+      "namespace": "flux-network-system",
+      "inventory": [
+        "core/ConfigMap/flux-network-system/cluster-node-inventory"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "cluster-node-inventory"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-flux-network-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-flux-network-system",
+          "namespace": "flux-network-system"
+        },
+        "data": {}
+      }
+    },
+    {
       "releaseId": "networking-native-flux-system",
       "contract": "contracts/networking-native-flux-system.yaml",
       "namespace": "flux-system",
@@ -980,9 +1029,15 @@
         "core/ConfigMap/kube-system/cilium-multi-pool-cutover",
         "core/ConfigMap/kube-system/control-api-source",
         "core/ConfigMap/kube-system/control-dns-reachability",
+        "core/ConfigMap/kube-system/control-transit-controller-98df2kft25",
+        "core/ConfigMap/kube-system/host-network-contract",
+        "core/ConfigMap/kube-system/host-network-controller-679588ggt2",
         "core/ConfigMap/kube-system/kube-api-observer-proxy",
         "core/ConfigMap/kube-system/kube-api-overseas-relay",
         "core/ConfigMap/kube-system/native-routing-rollout-order",
+        "core/ConfigMap/kube-system/podcidr-fabric-inventory",
+        "core/ConfigMap/kube-system/podcidr-fabric-reconciler",
+        "core/ConfigMap/kube-system/public-mesh-podcidr",
         "core/Service/kube-system/kube-api-observer-proxy",
         "core/Service/kube-system/kube-api-overseas-relay",
         "core/Service/kube-system/kube-dns",
@@ -1095,9 +1150,15 @@
             "cilium-multi-pool-cutover",
             "control-api-source",
             "control-dns-reachability",
+            "control-transit-controller-98df2kft25",
+            "host-network-contract",
+            "host-network-controller-679588ggt2",
             "kube-api-observer-proxy",
             "kube-api-overseas-relay",
-            "native-routing-rollout-order"
+            "native-routing-rollout-order",
+            "podcidr-fabric-inventory",
+            "podcidr-fabric-reconciler",
+            "public-mesh-podcidr"
           ],
           "verbs": [
             "get",
@@ -1546,6 +1607,7 @@
         "apps/Deployment/ops/routeros-public-forward-controller",
         "apps/Deployment/ops/routeros-transit-controller",
         "core/ConfigMap/ops/routeros-public-forward-controller",
+        "core/ConfigMap/ops/routeros-transit-controller-m4d4tm44fd",
         "gateway.networking.k8s.io/HTTPRoute/ops/dbgui-service-public"
       ],
       "rules": [
@@ -1573,7 +1635,8 @@
             "configmaps"
           ],
           "resourceNames": [
-            "routeros-public-forward-controller"
+            "routeros-public-forward-controller",
+            "routeros-transit-controller-m4d4tm44fd"
           ],
           "verbs": [
             "get",
@@ -2471,38 +2534,6 @@
     {
       "identity": "cilium.io/CiliumPodIPPool/_/tenant-apps",
       "reason": "cluster-network-authority"
-    },
-    {
-      "identity": "core/ConfigMap/flux-network-system/cluster-node-inventory",
-      "reason": "restricted-sops"
-    },
-    {
-      "identity": "core/ConfigMap/kube-system/control-transit-controller-98df2kft25",
-      "reason": "restricted-sops"
-    },
-    {
-      "identity": "core/ConfigMap/kube-system/host-network-contract",
-      "reason": "restricted-sops"
-    },
-    {
-      "identity": "core/ConfigMap/kube-system/host-network-controller-679588ggt2",
-      "reason": "restricted-sops"
-    },
-    {
-      "identity": "core/ConfigMap/kube-system/podcidr-fabric-inventory",
-      "reason": "restricted-sops"
-    },
-    {
-      "identity": "core/ConfigMap/kube-system/podcidr-fabric-reconciler",
-      "reason": "restricted-sops"
-    },
-    {
-      "identity": "core/ConfigMap/kube-system/public-mesh-podcidr",
-      "reason": "restricted-sops"
-    },
-    {
-      "identity": "core/ConfigMap/ops/routeros-transit-controller-m4d4tm44fd",
-      "reason": "restricted-sops"
     },
     {
       "identity": "core/Secret/advfab-system/cloudflare-advfab-dns-token",

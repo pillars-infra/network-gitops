@@ -126,20 +126,37 @@ jobs:
     if: always() && inputs.dry_run && !inputs.execute && github.ref == 'refs/heads/main' && needs.validate.result == 'success' && (needs.compile-sign.result == 'success' || (inputs.mode == 'reconcile' && needs.compile-sign.result == 'skipped'))
     needs: [validate, compile-sign]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment: ${{ needs.validate.outputs.environment }}
-    permissions: {contents: read, id-token: write}
+    permissions: {contents: read, id-token: write, packages: read}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
         with: {version: v1.33.1}
-      - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2'
-      - name: Acquire exact OIDC identity and prove denials
+      - uses: fluxcd/flux2/action@dede56a8fdcd1e0edca28630a979a51415bb56f8
+        with: {version: '2.9.5'}
+      - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+        with: {install-dir: '${{ runner.temp }}/cosign'}
+      - name: Isolate Docker credentials
+        run: |
+          echo "DOCKER_CONFIG=$RUNNER_TEMP/docker-config" >> "$GITHUB_ENV"
+          install -d "$RUNNER_TEMP/docker-config"
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: '${{ github.actor }}'
+          password: '${{ secrets.GITHUB_TOKEN }}'
+      - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2' 'jsonschema>=4.23'
+      - name: Install pinned SOPS
+        run: |
+          curl -fsSL --retry 4 https://github.com/getsops/sops/releases/download/v3.13.1/sops-v3.13.1.linux.amd64 -o "$RUNNER_TEMP/sops"
+          echo "620a9d7e3352ababeca6908cea24a6e8b14ce89a448ddbd3f94f1ef3398f470a  $RUNNER_TEMP/sops" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/sops"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Acquire exact OIDC identity
         env:
           KUBE_API_CA: '${{ secrets.KUBE_API_CA_PEM }}'
           EXECUTOR_AUDIENCE: '${{ needs.validate.outputs.audience }}'
-          RELEASE_ID: '${{ needs.validate.outputs.release-id }}'
-          TARGET_NAMESPACE: '${{ needs.validate.outputs.namespace }}'
         run: |
           set -euo pipefail
           printf '%s' "$KUBE_API_CA" > "$RUNNER_TEMP/re8ch-ca.crt"
@@ -153,31 +170,49 @@ jobs:
           kubectl config --kubeconfig "$kubeconfig" set-credentials release-executor --token="$token"
           kubectl config --kubeconfig "$kubeconfig" set-context release-executor --cluster=re8ch-main --user=release-executor
           kubectl config --kubeconfig "$kubeconfig" use-context release-executor
-          export KUBECONFIG="$kubeconfig"
-          state_name="$(python operations/releases/operation_materialize.py state-name --release-id "$RELEASE_ID")"
-          test "$(kubectl auth can-i patch "configmap/$state_name" -n "$TARGET_NAMESPACE")" = yes
-          for denied in "get secrets -n $TARGET_NAMESPACE" \
-            'patch helmreleases.helm.toolkit.fluxcd.io -n flux-network-system' "get pods/log -n $TARGET_NAMESPACE" \
-            "create serviceaccounts/token -n $TARGET_NAMESPACE" 'impersonate users'; do
-            read -r -a request <<<"$denied"
-            test "$(kubectl auth can-i "${request[@]}")" = no
-          done
           echo "KUBECONFIG=$kubeconfig" >> "$GITHUB_ENV"
-      - name: Prove exact contract inventory is accepted by server-side dry-run
-        env: {CONTRACT: '${{ inputs.contract }}'}
+          echo "EXECUTOR_AUDIENCE=$EXECUTOR_AUDIENCE" >> "$GITHUB_ENV"
+      - name: Verify signed artifact and perform bounded server-side preflight
+        env:
+          CONTRACT: '${{ inputs.contract }}'
+          SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
+          OCI_REFERENCE: '${{ needs.compile-sign.outputs.reference }}'
+          OCI_DIGEST: '${{ needs.compile-sign.outputs.digest }}'
+          RELEASE_ID: '${{ needs.validate.outputs.release-id }}'
+          TARGET_NAMESPACE: '${{ needs.validate.outputs.namespace }}'
         run: |
           set -euo pipefail
-          readarray -t fields < <(python - "$CONTRACT" <<'PY'
+          root="$RUNNER_TEMP/executor-state"
+          install -d "$RUNNER_TEMP/pulled" "$root/state" "$root/results/$RELEASE_ID"
+          state_name="$(python operations/releases/operation_materialize.py state-name --release-id "$RELEASE_ID")"
+          kubectl get configmap "$state_name" -n "$TARGET_NAMESPACE" -o json > "$RUNNER_TEMP/state-cm.json"
+          if [[ '${{ inputs.mode }}' == reconcile ]]; then
+            python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT" > "$RUNNER_TEMP/accepted.json"
+            OCI_REFERENCE="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["reference"])' "$RUNNER_TEMP/accepted.json")"
+            OCI_DIGEST="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["digest"])' "$RUNNER_TEMP/accepted.json")"
+          fi
+          immutable="${OCI_REFERENCE#oci://}@${OCI_DIGEST}"
+          cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com "$immutable" >/dev/null
+          flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
+          python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
+          request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
+            --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json")
+          if [[ '${{ inputs.force_takeover }}' == true ]]; then
+            request_args+=(--action force-reconcile)
+            while IFS= read -r object; do request_args+=(--force-object "$object"); done < <(
+              python - "$CONTRACT" <<'PY'
           import sys,yaml
-          spec=yaml.safe_load(open(sys.argv[1]))["spec"]
-          for value in (spec["source"]["path"],spec["authorization"]["fieldManager"]): print(value)
+          for value in yaml.safe_load(open(sys.argv[1]))["spec"]["authorization"].get("forceConflictObjects", []): print(value)
           PY
-          )
-          kubectl kustomize "${fields[0]}" > "$RUNNER_TEMP/rendered.yaml"
-          kubectl apply --server-side --dry-run=server --validate=false --field-manager="${fields[1]}" \
-            -f "$RUNNER_TEMP/rendered.yaml" -o name | tee runtime-dry-run.txt
+            )
+          fi
+          python operations/releases/operation_materialize.py "${request_args[@]}"
+          python operations/releases/ssa_preflight.py --contract "$CONTRACT" --operation "$RUNNER_TEMP/operation.json" \
+            --bundle "$RUNNER_TEMP/pulled/release.bundle" --state-dir "$root" > static-release-preflight.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with: {name: 'runtime-dry-run-${{ github.run_id }}', path: runtime-dry-run.txt, retention-days: 30, if-no-files-found: error}
+        if: always()
+        with: {name: 'static-release-preflight-${{ github.run_id }}', path: static-release-preflight.json, retention-days: 30, if-no-files-found: warn}
   execute:
     if: always() && inputs.execute && github.ref == 'refs/heads/main' && needs.validate.result == 'success' && (needs.compile-sign.result == 'success' || (inputs.mode == 'reconcile' && needs.compile-sign.result == 'skipped'))
     needs: [validate, compile-sign]
@@ -203,6 +238,12 @@ jobs:
           username: '${{ github.actor }}'
           password: '${{ secrets.GITHUB_TOKEN }}'
       - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2' 'jsonschema>=4.23'
+      - name: Install pinned SOPS
+        run: |
+          curl -fsSL --retry 4 https://github.com/getsops/sops/releases/download/v3.13.1/sops-v3.13.1.linux.amd64 -o "$RUNNER_TEMP/sops"
+          echo "620a9d7e3352ababeca6908cea24a6e8b14ce89a448ddbd3f94f1ef3398f470a  $RUNNER_TEMP/sops" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/sops"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - name: Acquire exact OIDC identity
         env:
           KUBE_API_CA: '${{ secrets.KUBE_API_CA_PEM }}'
@@ -225,6 +266,7 @@ jobs:
       - name: Pull signed digest, resume durable state and reconcile
         env:
           CONTRACT: '${{ inputs.contract }}'
+          SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
           OCI_REFERENCE: '${{ needs.compile-sign.outputs.reference }}'
           OCI_DIGEST: '${{ needs.compile-sign.outputs.digest }}'
           RELEASE_ID: '${{ needs.validate.outputs.release-id }}'

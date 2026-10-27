@@ -53,11 +53,12 @@ The incident evidence, commands and ownership decisions are recorded in
 ## Cloud native release execution
 
 `operations/releases/compile_native.py` projects the existing Kustomize root into
-26 namespace-scoped ReleaseContracts. Regenerate after desired-state edits and
+27 namespace-scoped ReleaseContracts. Regenerate after desired-state edits and
 run `--check` in CI. `native-authority.json` contains exact inventories, bounded
 get/patch RBAC and empty state ConfigMaps for the central bootstrap owner.
-Adoption does not grant create/delete and pruning is disabled. Existing Roles
-may need separately reviewed bind/escalate privileges; this file grants neither.
+Adoption does not grant create/delete and pruning is disabled. Role and
+RoleBinding objects remain platform-owned under `platformBootstrap`; this
+executor receives no bind/escalate privilege.
 
 The `static-release` workflow reuses the service-backend SSA bundle/executor and
 the accepted-digest replay port in agent-gitops at commit
@@ -67,8 +68,18 @@ then use `mode=reconcile` to verify and replay the accepted immutable digest.
 Flux writer before adoption. Protected environment approval, signed provenance,
 server dry-run, durable state and optimistic concurrency remain enforced.
 
-Encrypted/SOPS objects, Secrets, Flux metadata, Helm releases, unpinned images
-and cluster network pools remain explicit in the omission ledger. Public native
-artifacts never decrypt them. Existing runtime values remain in place while the
-restricted cloud path is completed. This first cohort does not claim full Helm
-or secret adoption and does not restart a Flux controller.
+Eight SOPS ConfigMaps are included as ciphertext. `SOPS_AGE_KEY` is provisioned
+only into the protected execute/preflight step, never the publisher. The executor
+verifies the signed bundle, decrypts the ConfigMap in memory before adding audit
+annotations (preserving SOPS MAC verification), checks plaintext parity and exact
+identity, and sends plaintext only through kubectl stdin. Sensitive stderr and
+command failures are redacted. Missing explicit key provisioning fails closed;
+runner-local default key discovery is not used. Secret objects remain forbidden.
+
+`dry_run=true` now preflights the same signed artifact and exact inventory through
+the executor without changing durable accepted state. Use `mode=publish` for a
+new release; `mode=reconcile` requires a previously healthy accepted artifact.
+
+Secrets, encrypted Helm values, Flux metadata, Helm rendering, unpinned images and
+cluster network pools remain explicit in the omission ledger. This does not
+claim full Helm or Secret adoption and does not restart a Flux controller.
