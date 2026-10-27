@@ -173,7 +173,7 @@
         "networking.k8s.io"
       ],
       "resources": [
-        "ingressclasss"
+        "ingressclasses"
       ],
       "resourceNames": [
         "advanced-fabric"
