@@ -299,6 +299,9 @@ class Executor:
                     raise Rejected(str(error)) from None
                 self._restricted_identities.add(object_identity(item))
                 annotated[index] = item
+            from gateway_defaults import explicit_http_route_defaults
+            item = explicit_http_route_defaults(item)
+            annotated[index] = item
             annotations = item.setdefault("metadata", {}).setdefault("annotations", {})
             annotations["delivery.re8ch.com/release-id"] = operation["releaseId"]
             annotations["delivery.re8ch.com/operation-id"] = operation["operationId"]
