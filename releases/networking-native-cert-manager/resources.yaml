@@ -3,33 +3,3 @@ kind: ServiceAccount
 metadata:
   name: cert-manager-cloudflare-bootstrap
   namespace: cert-manager
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: write-cloudflare-dns-token
-  namespace: cert-manager
-rules:
-- apiGroups:
-  - ''
-  resources:
-  - secrets
-  verbs:
-  - get
-  - create
-  - patch
-  - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: cert-manager-write-cloudflare-dns-token
-  namespace: cert-manager
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: write-cloudflare-dns-token
-subjects:
-- kind: ServiceAccount
-  name: cert-manager-cloudflare-bootstrap
-  namespace: cert-manager

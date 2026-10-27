@@ -33,8 +33,6 @@ spec:
     - core/ServiceAccount
     - gateway.networking.k8s.io/Gateway
     - gateway.networking.k8s.io/TCPRoute
-    - rbac.authorization.k8s.io/Role
-    - rbac.authorization.k8s.io/RoleBinding
     objectNames:
     - access-subdomains
     - advfab-worker-node-ips
@@ -99,12 +97,8 @@ spec:
     - core/ServiceAccount/kube-system/host-network-controller
     - gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary
     - gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public
-    - rbac.authorization.k8s.io/Role/kube-system/control-dns-reachability
-    - rbac.authorization.k8s.io/Role/kube-system/host-network-controller
-    - rbac.authorization.k8s.io/RoleBinding/kube-system/control-dns-reachability
-    - rbac.authorization.k8s.io/RoleBinding/kube-system/host-network-controller
   inventory:
-    digest: sha256:57e0ad565211d886fe9f29778dadad39da77c8c3c7a4129aea50a865f6670b84
+    digest: sha256:420700e6301e3ffd186432e14a33340d61448d774c03cbd1605668b49d77ea45
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

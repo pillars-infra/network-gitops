@@ -30,8 +30,6 @@ spec:
     - gateway.networking.k8s.io/HTTPRoute
     - networking.k8s.io/NetworkPolicy
     - policy/PodDisruptionBudget
-    - rbac.authorization.k8s.io/Role
-    - rbac.authorization.k8s.io/RoleBinding
     objectNames:
     - identity-egress
     - identity-egress-config
@@ -62,10 +60,8 @@ spec:
     - gateway.networking.k8s.io/HTTPRoute/egress-fabric/service-zone-agent-network-policy-public
     - networking.k8s.io/NetworkPolicy/egress-fabric/identity-egress
     - policy/PodDisruptionBudget/egress-fabric/identity-egress
-    - rbac.authorization.k8s.io/Role/egress-fabric/path-controller
-    - rbac.authorization.k8s.io/RoleBinding/egress-fabric/path-controller
   inventory:
-    digest: sha256:c8d3d74a6db30b657b47f2e77b2b08591d1dfda366d8b7a2f286f5a9e0f09913
+    digest: sha256:143805b81f3dfe3fe7ec66230a61fd5cf7295f8fd3898a57e5c5ca6b3584b45b
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

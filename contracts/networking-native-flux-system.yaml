@@ -26,23 +26,16 @@ spec:
     - batch/Job
     - core/ServiceAccount
     - gateway.networking.k8s.io/HTTPRoute
-    - rbac.authorization.k8s.io/Role
-    - rbac.authorization.k8s.io/RoleBinding
     objectNames:
     - among-clusters-legacy-agent-cleanup
     - among-clusters-legacy-agent-cleanup-v2
-    - mihomo-node-labeler-inventory
     - service-zone-hooks-github-flux-webhook
     forceConflictObjects:
     - batch/Job/flux-system/among-clusters-legacy-agent-cleanup-v2
     - core/ServiceAccount/flux-system/among-clusters-legacy-agent-cleanup
     - gateway.networking.k8s.io/HTTPRoute/flux-system/service-zone-hooks-github-flux-webhook
-    - rbac.authorization.k8s.io/Role/flux-system/among-clusters-legacy-agent-cleanup
-    - rbac.authorization.k8s.io/Role/flux-system/mihomo-node-labeler-inventory
-    - rbac.authorization.k8s.io/RoleBinding/flux-system/among-clusters-legacy-agent-cleanup
-    - rbac.authorization.k8s.io/RoleBinding/flux-system/mihomo-node-labeler-inventory
   inventory:
-    digest: sha256:510f17055092c7ccac709eeac899130a6e46d9029343f4ce7eddca38942c3460
+    digest: sha256:183d935692ce71546e78827dd5244f187d0bb7deb68e5572f236aa62c4b880ec
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

@@ -19,6 +19,7 @@ PLURALS={'NetworkPolicy':'networkpolicies','CiliumNetworkPolicy':'ciliumnetworkp
 def classify(document):
     if 'sops' in document:return 'restricted-sops'
     if document['kind']=='Secret':return 'secret'
+    if document['kind'] in {'Role','RoleBinding'}:return 'platform-bootstrap-rbac'
     if document['kind'] in {'HelmRelease','HelmChart'}:return 'cloud-helm-render'
     if document['apiVersion'].split('/')[0] in {'source.toolkit.fluxcd.io','kustomize.toolkit.fluxcd.io','helm.toolkit.fluxcd.io','notification.toolkit.fluxcd.io','image.toolkit.fluxcd.io'}:return 'flux-source-metadata'
     if not document['metadata'].get('namespace'):return 'cluster-network-authority'
@@ -27,11 +28,14 @@ def classify(document):
     return None
 
 def project(documents):
-    groups=defaultdict(list); omitted=[]
+    groups=defaultdict(list); omitted=[]; bootstrap=[]
     for d in documents:
         if not d:continue
         reason=classify(d)
-        if reason:omitted.append({'identity':object_identity(d),'reason':reason});continue
+        if reason:
+            omitted.append({'identity':object_identity(d),'reason':reason})
+            if reason=='platform-bootstrap-rbac':bootstrap.append(d)
+            continue
         groups[d['metadata']['namespace']].append(d)
     files={};releases=[]
     for namespace,objects in sorted(groups.items()):
@@ -55,7 +59,7 @@ def project(documents):
         state=state_configmap_name(name)
         rules.append({'apiGroups':[''],'resources':['configmaps'],'resourceNames':[state],'verbs':['get','patch']})
         releases.append({'releaseId':name,'contract':f'contracts/{name}.yaml','namespace':namespace,'inventory':inventory,'rules':rules,'stateConfigMap':{'apiVersion':'v1','kind':'ConfigMap','metadata':{'name':state,'namespace':namespace},'data':{}}})
-    ledger={'version':1,'source':'clusters/re8ch','executionGroup':'re8ch:release-executor:networking','verbsNote':'Existing-object adoption uses get/patch only; create/delete, Secret reads, impersonation and token minting are not granted. RBAC objects may additionally require reviewed bind/escalate authority.','releases':releases,'omitted':sorted(omitted,key=lambda x:x['identity'])}
+    ledger={'version':1,'source':'clusters/re8ch','executionGroup':'re8ch:release-executor:networking','verbsNote':'Existing-object adoption uses get/patch only; create/delete, Secret reads, impersonation and token minting are not granted. Role/RoleBinding objects remain platform-owned and are listed under platformBootstrap; no bind/escalate authority is requested.','releases':releases,'platformBootstrap':sorted(bootstrap,key=object_identity),'omitted':sorted(omitted,key=lambda x:x['identity'])}
     files['operations/releases/native-authority.json']=json.dumps(ledger,indent=2)+'\n'
     return files,ledger
 
@@ -71,7 +75,10 @@ def main():
         else:path.parent.mkdir(parents=True,exist_ok=True);path.write_text(content)
     existing={str(p.relative_to(ROOT)) for p in (ROOT/'contracts').glob('networking-native-*.yaml')}
     existing|={str(p.relative_to(ROOT)) for p in (ROOT/'releases').glob('networking-native-*/*') if p.is_file()}
-    stale.extend(sorted(existing-set(files)))
+    obsolete=sorted(existing-set(files))
+    if args.check:stale.extend(obsolete)
+    else:
+        for name in obsolete:(ROOT/name).unlink()
     if stale:raise SystemExit('native projection drift: '+', '.join(stale))
     print(json.dumps({'releases':len(ledger['releases']),'objects':sum(len(r['inventory']) for r in ledger['releases']),'omitted':len(ledger['omitted'])}))
 if __name__=='__main__':main()

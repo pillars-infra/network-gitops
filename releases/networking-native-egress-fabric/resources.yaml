@@ -19887,32 +19887,3 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: identity-egress
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: path-controller
-  namespace: egress-fabric
-rules:
-- apiGroups:
-  - ''
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: path-controller
-  namespace: egress-fabric
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: path-controller
-subjects:
-- kind: ServiceAccount
-  name: path-controller
-  namespace: egress-fabric
