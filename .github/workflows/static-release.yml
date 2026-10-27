@@ -54,6 +54,17 @@ jobs:
       - id: profile
         env: {CONTRACT: '${{ inputs.contract }}'}
         run: python operations/releases/profile.py --contract "$CONTRACT" --github-output "$GITHUB_OUTPUT"
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error
   compile-sign:
     if: github.ref == 'refs/heads/main' && inputs.mode == 'publish'
     needs: validate
@@ -160,6 +171,17 @@ jobs:
           PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with: {name: 'static-release-shadow-${{ github.run_id }}', path: static-release-shadow-evidence.json, retention-days: 30, if-no-files-found: error}
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error
   runtime-dry-run:
     if: always() && inputs.dry_run && !inputs.execute && github.ref == 'refs/heads/main' && needs.validate.result == 'success' && (needs.compile-sign.result == 'success' || (inputs.mode != 'publish' && needs.compile-sign.result == 'skipped'))
     needs: [validate, compile-sign]
@@ -261,6 +283,17 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with: {name: 'static-release-preflight-${{ github.run_id }}', path: static-release-preflight.json, retention-days: 30, if-no-files-found: warn}
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error
   execute:
     concurrency:
       group: networking-runtime-write
@@ -376,3 +409,14 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with: {name: 'static-release-result-${{ github.run_id }}', path: static-release-result.json, retention-days: 30, if-no-files-found: warn}
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error

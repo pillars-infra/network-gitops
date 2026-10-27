@@ -43,6 +43,17 @@ jobs:
           echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
       - id: select
         run: python operations/releases/select_accepted_releases.py --github-output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY"
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error
   reconcile:
     needs: select
     if: needs.select.outputs.has-accepted == 'true'
@@ -148,6 +159,17 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with: {name: 'networking-reconcile-${{ matrix.release-id }}-${{ github.run_id }}', path: '${{ runner.temp }}/result.json', retention-days: 30, if-no-files-found: warn}
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error
   selection-status:
     needs: [select, reconcile]
     if: always() && needs.select.outputs.invalid != '' && needs.select.outputs.invalid != '0'
@@ -157,3 +179,14 @@ jobs:
       - run: |
           echo "Invalid network acceptance state was excluded; see the select job summary." >&2
           exit 1
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error
