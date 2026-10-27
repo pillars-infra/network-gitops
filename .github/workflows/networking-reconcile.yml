@@ -122,10 +122,7 @@ jobs:
             --state-dir "$root" --release-id "$RELEASE_ID" --result "$RUNNER_TEMP/result.json" --output "$RUNNER_TEMP/state-patch.json"
           if [[ -s "$RUNNER_TEMP/state-patch.json" ]]; then
             # Refresh the outer kubectl identity after potentially long health checks.
-            curl -fsS --get -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" --data-urlencode "audience=$EXECUTOR_AUDIENCE" \
-              "$ACTIONS_ID_TOKEN_REQUEST_URL" > "$RUNNER_TEMP/state-oidc.json"
-            token="$(jq -er '.value | strings | select(length > 0)' "$RUNNER_TEMP/state-oidc.json")"; echo "::add-mask::$token"
-            kubectl config set-credentials release-executor --token="$token" >/dev/null
+            python operations/releases/refresh_kubeconfig.py
             kubectl patch configmap "$state_name" -n "$TARGET_NAMESPACE" --type merge --patch-file "$RUNNER_TEMP/state-patch.json"
           fi
           if (( executor_status != 0 )); then exit "$executor_status"; fi
