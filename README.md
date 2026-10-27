@@ -1,17 +1,18 @@
 # RE8CH Network GitOps
 
-Private desired-state authority for RE8CH Gateway, DNS, Cilium, and cross-cluster network configuration. Open-source networking products remain in their own organizations.
+Public desired-state authority for RE8CH Gateway, DNS, Cilium, and cross-cluster network configuration. Open-source networking products remain in their own organizations.
 
-This repository is reconciled by the autonomous controller stack in
-`flux-network-system`. Main Flux owns the controller lifecycle, Flux CRDs and
-bounded bootstrap RBAC; it does not own this repository's Source,
-Kustomization, Helm releases or runtime inventory. A main Flux failure must not
-stop Network Flux from fetching and applying a signed Network GitOps revision.
+GitHub Actions builds and signs immutable release artifacts. The bounded SSA
+executor applies reviewed contracts and replays accepted digests from the cloud.
+Local Flux controllers are retired and must not be restored as a fallback.
+Retained Flux resources describe historical inputs; they do not authorize a
+second runtime writer. Source publication and successful runtime adoption are
+separate facts, verified through workflow results and accepted-state evidence.
 
 ## Cilium authority and R640 Gateway recovery
 
-`flux-network-system/cilium` adopts the existing `kube-system/cilium` Helm
-release; it does not install a second release. The vendored chart and every
+`networking-helm-cilium-kube-system` adopts resources of the existing
+`kube-system/cilium` release; it does not install a second release. The vendored chart and every
 runtime image are digest locked. Cilium CRDs remain owned by the main platform
 guardrail.
 
@@ -26,16 +27,16 @@ The R640 recovery completed in two reviewed stages:
 
 The `cilium-gateway-cec-update-freeze` admission policy is not part of desired
 state. The freeze and the temporary proxy-return iptables guard were deleted
-after the fixed operator, R640 agent and real traffic probes succeeded. Network
-Flux is deliberately not authorized to administer arbitrary admission policy.
+after the fixed operator, R640 agent and real traffic probes succeeded. The cloud
+network executor is not authorized to administer arbitrary admission policy.
 
 ## Steady-state invariants
 
-- `flux-network-system/cilium` is the only GitOps owner of the existing
-  `kube-system/cilium` Helm release; no second release may be installed.
+- The cloud Cilium contract is the only adoption path for the existing
+  `kube-system/cilium` resources; do not start a second Helm/Flux writer.
 - The vendored chart and all images are immutable and digest locked.
-- Helm chart reconciliation follows `ChartVersion`, not every repository
-  revision, and `rollOutCiliumPods` remains disabled.
+- Chart versions and archive digests are locked for cloud compilation.
+  `rollOutCiliumPods` remains disabled.
 - An offline worker does not fail or roll back an otherwise converged Cilium
   upgrade. Per-node health is monitored separately.
 - R640 retains native XDP and eBPF masquerading on `eno2np1`. Its
@@ -69,7 +70,8 @@ Flux writer before adoption. Protected environment approval, signed provenance,
 server dry-run, durable state and optimistic concurrency remain enforced.
 
 Eight SOPS ConfigMaps are included as ciphertext. `SOPS_AGE_KEY` is provisioned
-only into the protected execute/preflight step, never the publisher. The executor
+into protected execute/preflight steps and the fixed Advanced Fabric compiler.
+Ordinary publication never receives the key. The executor
 verifies the signed bundle, decrypts the ConfigMap in memory before adding audit
 annotations (preserving SOPS MAC verification), checks plaintext parity and exact
 identity, and sends plaintext only through kubectl stdin. Sensitive stderr and
@@ -80,9 +82,15 @@ runner-local default key discovery is not used. Secret objects remain forbidden.
 the executor without changing durable accepted state. Use `mode=publish` for a
 new release; `mode=reconcile` requires a previously healthy accepted artifact.
 
-Secrets, encrypted Helm values, Flux metadata, Helm rendering, unpinned images and
-cluster network pools remain explicit in the omission ledger. This does not
-claim full Helm or Secret adoption and does not restart a Flux controller.
+Secret objects, platform-owned bootstrap/RBAC/CRDs, unpinned images and unsupported
+cluster network pools remain explicit in the omission ledgers. Encrypted Helm
+values use the protected compilation path below. No local Flux writer is needed.
+
+Use `mode=reuse`, `reuse_digest` and `reuse_source_commit` to preflight or accept a
+previously published artifact before any accepted state exists. The workflow
+verifies the certificate's build SHA and compares the entire current contract and
+source closure with that ancestor commit; it never rebuilds in reuse mode.
+`mode=reconcile` selects the accepted artifact from durable state instead.
 
 ## Cloud Helm rendering
 
@@ -96,9 +104,22 @@ Four charts (Cilium, PublicEdge, Among Clusters agent/hub) project 47 namespaced
 runtime objects into six bounded contracts. `helm-authority.json` holds exact
 bootstrap/RBAC manifests separately. Existing Cilium TLS Secrets are preserved,
 not regenerated into public artifacts. Hook/one-shot operations are excluded
-from periodic reconcile. Advanced Fabric remains on the protected rendering
-path because its source combines encrypted values and a restricted inventory
-ConfigMap; the ordinary compiler fails closed on these inputs.
+from periodic reconcile.
+
+Advanced Fabric uses a separate fixed protected compile step for its encrypted
+HelmRelease and inventory ConfigMap. It renders the same pinned chart and reviewed
+Kustomize overlays, excludes hooks and platform bootstrap resources, and encrypts
+22 existing runtime objects before ordinary OCI signing. Only object identities
+remain visible; no decrypted resources are uploaded. The executor verifies the
+artifact before decrypting and validates the exact identities and image pins.
+
+Initial Advanced Fabric adoption additionally checks the restricted topology
+source digest and live spec parity against the SSA resourceVersion precondition.
+Any difference or concurrent change blocks adoption; diagnostics expose only
+fixed-category counts. This check runs for both server preflight and execution.
+After a healthy acceptance, reconcile may repair drift while still validating the
+source pin. Exact platform-owned diagnostic RBAC grants only GET on
+`ops/restricted-topology-context`.
 
 All native and Helm adoption contracts set `authorization.requireExisting=true`.
 The executor fetches each object's resourceVersion and supplies it as an SSA
