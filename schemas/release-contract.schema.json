@@ -37,6 +37,7 @@
           "required": ["renderer", "revision"],
           "properties": {
             "renderer": {"enum": ["helm", "kustomize"]},
+            "protectedHelm": {"enum": ["advanced-fabric"]},
             "revision": {"type": "string", "minLength": 1},
             "repository": {"type": "string", "minLength": 1},
             "path": {"type": "string", "minLength": 1},

@@ -23,6 +23,7 @@ CLUSTER_SCOPED = {
     "APIService", "ClusterRole", "ClusterRoleBinding", "CustomResourceDefinition",
     "Namespace", "Node", "PersistentVolume", "StorageClass", "ValidatingWebhookConfiguration",
     "MutatingWebhookConfiguration", "CSIDriver", "PriorityClass", "RuntimeClass",
+    "IngressClass", "AdvancedFabric",
     "VolumeSnapshotClass", "ValidatingAdmissionPolicy", "ValidatingAdmissionPolicyBinding",
 }
 MAX_RENDERED_BYTES = 10 * 1024 * 1024
@@ -97,7 +98,10 @@ def normalize_documents(rendered: bytes, contract: dict) -> tuple[list[dict], li
             raise ValueError(f"object must declare exact namespace {namespace}: {resource}/{name}")
         if raw["kind"] == "Secret":
             raise ValueError(f"Secret payloads are forbidden in release bundles: {name}")
+        from restricted_object import FIELD, validate
+        if FIELD in raw:validate(raw)
         if 'sops' in raw:
+
             from restricted_configmap import bind_source
             raw=bind_source(raw)
         assert_pinned_images(raw)

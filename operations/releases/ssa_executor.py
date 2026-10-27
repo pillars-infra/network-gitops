@@ -267,6 +267,12 @@ class Executor:
     def with_audit(self, objects: list[dict], operation: dict) -> list[dict]:
         annotated = json.loads(json.dumps(objects))
         for index, item in enumerate(annotated):
+            from restricted_object import FIELD, decrypt
+            if FIELD in item:
+                try:item=decrypt(item,self.command)
+                except (RestrictedConfigError,ValueError,KeyError,TypeError):raise Rejected('invalid restricted Helm payload') from None
+                self._restricted_identities.add(object_identity(item))
+                annotated[index]=item
             if "sops" in item:
                 try:
                     item = decrypt_configmap(item, self.command)

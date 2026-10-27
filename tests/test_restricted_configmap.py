@@ -92,7 +92,11 @@ def test_missing_provisioned_key_never_uses_runner_local_credentials(tmp_path,mo
 def test_publish_never_receives_age_key_and_runtime_steps_are_protected():
     import yaml
     jobs=yaml.safe_load((Path(__file__).resolve().parents[1]/'.github/workflows/static-release.yml').read_text())['jobs']
-    assert 'SOPS_AGE_KEY' not in json.dumps(jobs['compile-sign'])
+    protected=[s for s in jobs['compile-sign']['steps'] if 'SOPS_AGE_KEY' in s.get('env',{})]
+    assert len(protected)==1
+    assert protected[0]['if']=="inputs.contract == 'contracts/networking-helm-advanced-fabric-kube-system.yaml'"
+    assert jobs['compile-sign']['environment']=='${{ needs.validate.outputs.environment }}'
+    assert all('SOPS_AGE_KEY' not in json.dumps(s) for s in jobs['compile-sign']['steps'] if s.get('id')=='publish')
     for name in ['execute','runtime-dry-run']:
         job=jobs[name]
         assert job['environment']=='${{ needs.validate.outputs.environment }}'
