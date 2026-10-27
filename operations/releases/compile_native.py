@@ -12,12 +12,15 @@ import subprocess
 import yaml
 from unified_bundle import api_group, canonical, compile_bundle, digest, object_identity, assert_pinned_images
 from operation_materialize import state_configmap_name
+from restricted_configmap import validate_envelope
 from profile import REPOSITORY, WORKFLOW, ENVIRONMENT, AUDIENCE, SIGNER
 ROOT=Path(__file__).resolve().parents[2]
 PLURALS={'NetworkPolicy':'networkpolicies','CiliumNetworkPolicy':'ciliumnetworkpolicies','PeerPolicy':'peerpolicies','Ingress':'ingresses'}
 
 def classify(document):
-    if 'sops' in document:return 'restricted-sops'
+    if 'sops' in document:
+        if document['kind']!='ConfigMap':return 'restricted-sops'
+        validate_envelope(document)
     if document['kind']=='Secret':return 'secret'
     if document['kind'] in {'Role','RoleBinding'}:return 'platform-bootstrap-rbac'
     if document['kind'] in {'HelmRelease','HelmChart'}:return 'cloud-helm-render'

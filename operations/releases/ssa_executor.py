@@ -27,6 +27,7 @@ from typing import Callable
 import yaml
 
 from unified_bundle import canonical, digest, object_identity, validate_schema
+from restricted_configmap import decrypt_configmap, RestrictedConfigError
 
 PROTECTED_KINDS = {"Namespace", "CustomResourceDefinition", "PersistentVolume", "PersistentVolumeClaim", "StorageClass",
                    "CephCluster", "CephFilesystem", "CephBlockPool", "CephFilesystemSubVolumeGroup"}
@@ -153,6 +154,7 @@ class Executor:
         self.runner = runner
         self.now = now
         self.sleeper = sleeper
+        self._restricted_identities: set[str] = set()
         self._kube_token: str | None = None
         self._kube_token_refresh_at = 0.0
 
@@ -187,15 +189,22 @@ class Executor:
         self._kube_token_refresh_at = now + 180
         return token
 
-    def command(self, argv: list[str], stdin: str | None = None, timeout: int = 60) -> subprocess.CompletedProcess[str]:
+    def command(self, argv: list[str], stdin: str | None = None, timeout: int = 60, redact: bool = False) -> subprocess.CompletedProcess[str]:
         effective = list(argv)
+        if effective and effective[0] == "sops" and not (os.environ.get("SOPS_AGE_KEY") or os.environ.get("SOPS_AGE_KEY_FILE")):
+            raise Rejected("restricted age identity was not provisioned")
         if effective and effective[0] == "kubectl":
             token = self.actions_kube_token()
             if token:
                 effective.insert(1, "--token=" + token)
-        result = self.runner(effective, input=stdin, text=True, capture_output=True, timeout=timeout, check=False)
+        try:
+            result = self.runner(effective, input=stdin, text=True, capture_output=True, timeout=timeout, check=False)
+        except (OSError, subprocess.SubprocessError):
+            if redact:
+                raise Rejected("restricted command failed; diagnostics withheld") from None
+            raise
         if result.returncode:
-            message = (result.stderr or result.stdout or "command failed")[-2048:]
+            message = "restricted command failed; diagnostics withheld" if redact else (result.stderr or result.stdout or "command failed")[-2048:]
             raise Rejected(message)
         return result
 
@@ -254,10 +263,16 @@ class Executor:
         self.command(["cosign", "verify", "--certificate-identity", bundle["signer"],
                       "--certificate-oidc-issuer", bundle["issuer"], reference], timeout=120)
 
-    @staticmethod
-    def with_audit(objects: list[dict], operation: dict) -> list[dict]:
+    def with_audit(self, objects: list[dict], operation: dict) -> list[dict]:
         annotated = json.loads(json.dumps(objects))
-        for item in annotated:
+        for index, item in enumerate(annotated):
+            if "sops" in item:
+                try:
+                    item = decrypt_configmap(item, self.command)
+                except RestrictedConfigError as error:
+                    raise Rejected(str(error)) from None
+                self._restricted_identities.add(object_identity(item))
+                annotated[index] = item
             annotations = item.setdefault("metadata", {}).setdefault("annotations", {})
             annotations["delivery.re8ch.com/release-id"] = operation["releaseId"]
             annotations["delivery.re8ch.com/operation-id"] = operation["operationId"]
@@ -272,7 +287,7 @@ class Executor:
             if dry_run:
                 argv.append("--dry-run=server")
             argv += ["-f", "-"]
-            self.command(argv, json.dumps(item), timeout=120)
+            self.command(argv, json.dumps(item), timeout=120, redact=object_identity(item) in self._restricted_identities)
 
     @staticmethod
     def pointer(value: object, pointer: str) -> object:

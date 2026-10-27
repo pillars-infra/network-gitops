@@ -21,9 +21,10 @@ def test_sensitive_or_controller_inputs_never_become_public_native_bundles(kind)
 def test_sops_and_unpinned_workloads_are_explicitly_deferred():
     encrypted=obj();encrypted['sops']={'age':[]}
     deployment=obj('Deployment');deployment['spec']={'template':{'spec':{'containers':[{'name':'app','image':'example:latest'}]}}}
-    _,ledger=project([encrypted,deployment,obj(namespace=None)])
+    with pytest.raises(ValueError):project([encrypted])
+    _,ledger=project([deployment,obj(namespace=None)])
     assert not ledger['releases']
-    assert {x['reason'] for x in ledger['omitted']}=={'restricted-sops','image-digest-required','cluster-network-authority'}
+    assert {x['reason'] for x in ledger['omitted']}=={'image-digest-required','cluster-network-authority'}
 
 def test_namespaces_are_separate_and_adoption_does_not_grant_create_delete():
     one=obj(namespace='one');two=obj(namespace='two')

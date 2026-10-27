@@ -40,9 +40,12 @@ spec:
     - control-api-source
     - control-dns-reachability
     - control-transit-controller
+    - control-transit-controller-98df2kft25
     - domain-api-bootstrap
     - headlamp-service-pilot
+    - host-network-contract
     - host-network-controller
+    - host-network-controller-679588ggt2
     - kube-api-observer-proxy
     - kube-api-overseas-relay
     - kube-api-public
@@ -52,7 +55,9 @@ spec:
     - native-routing-rollout-order
     - native-routing-wsl-control-plane
     - overseas-flk-public-service-device
+    - podcidr-fabric-inventory
     - podcidr-fabric-reconciler
+    - public-mesh-podcidr
     - public-mesh-podcidr-reconciler
     - r640-policy-update-budget
     - r640-xdp-native
@@ -87,9 +92,15 @@ spec:
     - core/ConfigMap/kube-system/cilium-multi-pool-cutover
     - core/ConfigMap/kube-system/control-api-source
     - core/ConfigMap/kube-system/control-dns-reachability
+    - core/ConfigMap/kube-system/control-transit-controller-98df2kft25
+    - core/ConfigMap/kube-system/host-network-contract
+    - core/ConfigMap/kube-system/host-network-controller-679588ggt2
     - core/ConfigMap/kube-system/kube-api-observer-proxy
     - core/ConfigMap/kube-system/kube-api-overseas-relay
     - core/ConfigMap/kube-system/native-routing-rollout-order
+    - core/ConfigMap/kube-system/podcidr-fabric-inventory
+    - core/ConfigMap/kube-system/podcidr-fabric-reconciler
+    - core/ConfigMap/kube-system/public-mesh-podcidr
     - core/Service/kube-system/kube-api-observer-proxy
     - core/Service/kube-system/kube-api-overseas-relay
     - core/Service/kube-system/kube-dns
@@ -98,7 +109,7 @@ spec:
     - gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary
     - gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public
   inventory:
-    digest: sha256:420700e6301e3ffd186432e14a33340d61448d774c03cbd1605668b49d77ea45
+    digest: sha256:545a56bc4572797995c81a9c978486074b4f433e4e0314813ce535ba9340878d
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

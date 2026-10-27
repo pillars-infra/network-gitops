@@ -124,7 +124,11 @@ def state_patch(configmap: Path, state_dir: Path, release_id: str, result_path: 
     metadata = cm.get("metadata", {})
     if metadata.get("name") != state_configmap_name(release_id) or not metadata.get("resourceVersion"):
         raise ValueError("state patch requires the original release ConfigMap and resourceVersion")
-    state = json.loads((state_dir / "state" / f"{release_id}.json").read_text())
+    state_path = state_dir / "state" / f"{release_id}.json"
+    if not state_path.exists():
+        output.unlink(missing_ok=True)
+        return  # Rejected before first acceptance; preserve empty bootstrap state.
+    state = json.loads(state_path.read_text())
     validate_schema(state, "release-accepted-state.schema.json")
     if state["releaseId"] != release_id:
         raise ValueError("state patch belongs to another release")
