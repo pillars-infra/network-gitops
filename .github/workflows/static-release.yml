@@ -137,7 +137,7 @@ jobs:
               verified=true
               break
             fi
-            sleep 2
+            sleep "$attempt"
           done
           [[ "$verified" == true ]]
           {
