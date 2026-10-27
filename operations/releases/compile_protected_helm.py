@@ -50,6 +50,10 @@ def compile_fixed():
     if command(['helm','version','--short']).stdout.strip().split('+')[0]!=locks['helmVersion']:raise ValueError('Helm compiler version differs')
     locked=locks['releases']['advanced-fabric']
     if release['spec']['releaseName']!=locked['releaseName'] or release['spec']['targetNamespace']!=locked['namespace']:raise ValueError('release identity differs')
+    reference=release['spec']['chartRef']
+    if reference.get('kind')!='OCIRepository' or reference.get('namespace',release['metadata']['namespace'])!=release['metadata']['namespace']:raise ValueError('unreviewed chart reference')
+    declared=next(d for d in yaml.safe_load_all(root) if d and d.get('kind')=='OCIRepository' and d['metadata']['name']==reference['name'] and d['metadata']['namespace']==release['metadata']['namespace'])
+    if locked['chart']['oci']!=declared['spec']['url']+'@'+declared['spec']['ref']['digest']:raise ValueError('Helm OCI declaration differs from lock')
     chart=fetch_chart('advanced-fabric',locked,ROOT/'.cache/network-charts')
     objects=render(release,chart,locks['kubernetesVersion'])
     observed=json.loads((ROOT/'operations/releases/advanced-fabric-inventory.json').read_text())['objects']
