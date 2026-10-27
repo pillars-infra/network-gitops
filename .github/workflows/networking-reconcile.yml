@@ -34,7 +34,7 @@ jobs:
       max-parallel: 1
       matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
     concurrency:
-      group: networking-static-release-${{ matrix.contract }}
+      group: networking-runtime-write
       cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 15
