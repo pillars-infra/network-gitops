@@ -12,6 +12,9 @@ on:
       - .github/workflows/networking-reconcile.yml
 permissions:
   contents: read
+concurrency:
+  group: networking-accepted-reconcile
+  cancel-in-progress: false
 jobs:
   select:
     if: github.ref == 'refs/heads/main'
