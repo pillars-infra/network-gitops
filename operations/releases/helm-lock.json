@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "kubernetesVersion": "v1.36.0-rc3+k3s1",
+  "helmVersion": "v4.2.3",
+  "releases": {
+    "advanced-fabric": {
+      "chart": {
+        "oci": "oci://ghcr.io/advanced-fabrics/charts/advanced-fabric@sha256:50f1b59b98081f74e4cf51ad91ea2f7253b26cbd653674c1126907f3cd403819",
+        "sha256": "4cc2378800d05d144a99d1d28255ed1ca8b8050ae1ae7dea6a133fd3cb8bd757"
+      },
+      "namespace": "kube-system",
+      "releaseName": "service-vip-fabric",
+      "restricted": true
+    },
+    "among-clusters-agent": {
+      "chart": {
+        "oci": "oci://ghcr.io/re8ch/charts/among-clusters-agent@sha256:e546d8e9056a85b813488524282727a6135a0cc544f39d2dc5a8afe23bb042a3",
+        "sha256": "4a8f58197f0ab4f9e6d727463a2535fa185d3320cc0c4139ebb0af1d50fbb76f"
+      },
+      "namespace": "among-clusters",
+      "releaseName": "among-clusters-agent",
+      "restricted": false
+    },
+    "among-clusters-hub": {
+      "chart": {
+        "oci": "oci://ghcr.io/re8ch/charts/among-clusters-hub@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b",
+        "sha256": "3b9416cf5203527f77f06cd90873dde38252c0be3c097da6f1b8e145813dec2c"
+      },
+      "namespace": "among-clusters",
+      "releaseName": "among-clusters-hub",
+      "restricted": false
+    },
+    "cilium": {
+      "chart": {
+        "path": "charts/cilium-1.21.0-dev.tgz",
+        "sha256": "5eea9d46a5afb92d5ce8b6456b8288b39159fbfd4c4b71efc8a44116105a6147"
+      },
+      "namespace": "kube-system",
+      "releaseName": "cilium",
+      "restricted": false
+    },
+    "public-edge-manager": {
+      "chart": {
+        "oci": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:b5a9a2cd60ff53da529388f2b1d5fa65a6ccc9a705262f9dcd3d3650c6ddc351",
+        "sha256": "f51733dae4af487852b44c2db1af4328b0e7a2ef42cd8eb3b204ce296c04bb41"
+      },
+      "namespace": "regional-routing",
+      "releaseName": "public-edge-manager",
+      "restricted": false
+    }
+  }
+}

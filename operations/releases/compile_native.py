@@ -22,7 +22,8 @@ def classify(document):
         if document['kind']!='ConfigMap':return 'restricted-sops'
         validate_envelope(document)
     if document['kind']=='Secret':return 'secret'
-    if document['kind'] in {'Role','RoleBinding'}:return 'platform-bootstrap-rbac'
+    if document['kind']=='Job':return 'one-shot-operation'
+    if document['kind'] in {'Role','RoleBinding','ClusterRole','ClusterRoleBinding'}:return 'platform-bootstrap-rbac'
     if document['kind'] in {'HelmRelease','HelmChart'}:return 'cloud-helm-render'
     if document['apiVersion'].split('/')[0] in {'source.toolkit.fluxcd.io','kustomize.toolkit.fluxcd.io','helm.toolkit.fluxcd.io','notification.toolkit.fluxcd.io','image.toolkit.fluxcd.io'}:return 'flux-source-metadata'
     if not document['metadata'].get('namespace'):return 'cluster-network-authority'
@@ -30,7 +31,7 @@ def classify(document):
     except ValueError:return 'image-digest-required'
     return None
 
-def project(documents):
+def project(documents, prefix="networking-native", source_context=None):
     groups=defaultdict(list); omitted=[]; bootstrap=[]
     for d in documents:
         if not d:continue
@@ -42,13 +43,13 @@ def project(documents):
         groups[d['metadata']['namespace']].append(d)
     files={};releases=[]
     for namespace,objects in sorted(groups.items()):
-        objects.sort(key=object_identity);name='networking-native-'+namespace;folder=f'releases/{name}'
+        objects.sort(key=object_identity);name=prefix+'-'+namespace;folder=f'releases/{name}'
         inventory=sorted(object_identity(o) for o in objects)
         contract={'apiVersion':'delivery.re8ch.com/v1alpha1','kind':'ReleaseContract','metadata':{'name':name},'spec':{
             'authorityDomain':'networking','target':{'cluster':'re8ch','namespace':namespace},
-            'source':{'renderer':'kustomize','revision':'github-main-reviewed','repository':REPOSITORY,'path':folder},
+            'source':{'renderer':'kustomize','revision':'github-main-reviewed','repository':REPOSITORY,'path':folder,**(source_context or {})},
             'provenance':{'repository':REPOSITORY,'workflow':WORKFLOW,'ref':'refs/heads/main','environment':ENVIRONMENT,'audience':AUDIENCE,'signer':SIGNER,'issuer':'https://token.actions.githubusercontent.com'},
-            'authorization':{'fieldManager':'re8ch-release/'+name,'resources':sorted({api_group(o['apiVersion'])+'/'+o['kind'] for o in objects}),'objectNames':sorted({o['metadata']['name'] for o in objects}),'forceConflictObjects':inventory},
+            'authorization':{'requireExisting':True,'fieldManager':'re8ch-release/'+name,'resources':sorted({api_group(o['apiVersion'])+'/'+o['kind'] for o in objects}),'objectNames':sorted({o['metadata']['name'] for o in objects}),'forceConflictObjects':inventory},
             'inventory':{'digest':digest(canonical(inventory))},
             'lifecycle':{'prune':False,'healthTimeoutSeconds':300,'protectedKinds':['Namespace','CustomResourceDefinition','PersistentVolume','PersistentVolumeClaim','StorageClass'],'deletionAllowlist':[]}}}
         rendered=yaml.safe_dump_all(objects,sort_keys=False)

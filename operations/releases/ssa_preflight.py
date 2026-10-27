@@ -17,6 +17,7 @@ def preflight(executor,contract,operation,bundle,state_dir):
     if any(o['kind'] in PROTECTED_KINDS and object_identity(o) in requested for o in objects):
         raise Rejected('protected objects cannot use force-conflicts')
     audited=executor.with_audit(objects,operation)
+    if contract["spec"]["authorization"].get("requireExisting",False):audited=executor.with_existing_versions(audited)
     executor.apply(audited,contract['spec']['authorization']['fieldManager'],dry_run=True,force_objects=requested)
     return {'releaseId':operation['releaseId'],'preflight':'accepted','inventory':[object_identity(o) for o in objects]}
 

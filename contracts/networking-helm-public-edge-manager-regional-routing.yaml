@@ -1,0 +1,70 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-helm-public-edge-manager-regional-routing
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: regional-routing
+  source:
+    renderer: kustomize
+    revision: helm-oci@sha256:b5a9a2cd60ff53da529388f2b1d5fa65a6ccc9a705262f9dcd3d3650c6ddc351
+    repository: pillars-infra/network-gitops
+    path: releases/networking-helm-public-edge-manager-regional-routing
+    chartOCI: oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:b5a9a2cd60ff53da529388f2b1d5fa65a6ccc9a705262f9dcd3d3650c6ddc351
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-helm-public-edge-manager-regional-routing
+    resources:
+    - apps/DaemonSet
+    - apps/Deployment
+    - core/ConfigMap
+    - core/Service
+    - core/ServiceAccount
+    objectNames:
+    - public-edge-manager
+    - public-edge-manager-cli
+    - public-edge-manager-controller
+    - public-edge-manager-dns
+    - public-edge-manager-globalping
+    - public-edge-manager-hidden-primary
+    - public-edge-manager-records
+    - public-edge-manager-redirector
+    - public-edge-nameservers
+    - public-edge-runtime
+    forceConflictObjects:
+    - apps/DaemonSet/regional-routing/public-edge-manager
+    - apps/DaemonSet/regional-routing/public-edge-manager-redirector
+    - apps/Deployment/regional-routing/public-edge-manager-cli
+    - apps/Deployment/regional-routing/public-edge-manager-controller
+    - apps/Deployment/regional-routing/public-edge-manager-globalping
+    - apps/Deployment/regional-routing/public-edge-manager-hidden-primary
+    - core/ConfigMap/regional-routing/public-edge-manager
+    - core/ConfigMap/regional-routing/public-edge-manager-records
+    - core/ConfigMap/regional-routing/public-edge-nameservers
+    - core/ConfigMap/regional-routing/public-edge-runtime
+    - core/Service/regional-routing/public-edge-manager
+    - core/Service/regional-routing/public-edge-manager-dns
+    - core/ServiceAccount/regional-routing/public-edge-manager
+    - core/ServiceAccount/regional-routing/public-edge-manager-cli
+  inventory:
+    digest: sha256:033eaf206c82096b3ecc5cf80f2f5baba5ce1ed32b4b5406584234e20fbefe8c
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

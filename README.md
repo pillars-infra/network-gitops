@@ -83,3 +83,25 @@ new release; `mode=reconcile` requires a previously healthy accepted artifact.
 Secrets, encrypted Helm values, Flux metadata, Helm rendering, unpinned images and
 cluster network pools remain explicit in the omission ledger. This does not
 claim full Helm or Secret adoption and does not restart a Flux controller.
+
+## Cloud Helm rendering
+
+`compile_helm.py` uses the existing pinned chart digests, source HelmRelease
+values and Kustomize post-renderers. The lock binds chart archive hashes, Helm
+v4.2.3 and the observed Kubernetes capability version. CI verifies cached chart
+bytes before reuse and reproduces the reviewed snapshots; reconcile later pulls
+the signed compiled OCI artifact without downloading/rendering Helm again.
+
+Four charts (Cilium, PublicEdge, Among Clusters agent/hub) project 47 namespaced
+runtime objects into six bounded contracts. `helm-authority.json` holds exact
+bootstrap/RBAC manifests separately. Existing Cilium TLS Secrets are preserved,
+not regenerated into public artifacts. Hook/one-shot operations are excluded
+from periodic reconcile. Advanced Fabric remains on the protected rendering
+path because its source combines encrypted values and a restricted inventory
+ConfigMap; the ordinary compiler fails closed on these inputs.
+
+All native and Helm adoption contracts set `authorization.requireExisting=true`.
+The executor fetches each object's resourceVersion and supplies it as an SSA
+precondition for both dry-run and apply, including rollback. Missing objects
+fail closed; this adoption path cannot recreate a deleted object. Explicit new
+resource creation remains a separate publication authority.

@@ -1,0 +1,58 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-helm-among-clusters-hub-among-clusters
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: among-clusters
+  source:
+    renderer: kustomize
+    revision: helm-oci@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b
+    repository: pillars-infra/network-gitops
+    path: releases/networking-helm-among-clusters-hub-among-clusters
+    chartOCI: oci://ghcr.io/re8ch/charts/among-clusters-hub@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-helm-among-clusters-hub-among-clusters
+    resources:
+    - apps/Deployment
+    - cilium.io/CiliumNetworkPolicy
+    - core/Service
+    - core/ServiceAccount
+    - gateway.networking.k8s.io/HTTPRoute
+    - networking.k8s.io/Ingress
+    - networking.k8s.io/NetworkPolicy
+    objectNames:
+    - among-clusters-hub
+    - among-clusters-hub-gateway
+    - among-clusters-ingest
+    forceConflictObjects:
+    - apps/Deployment/among-clusters/among-clusters-hub
+    - cilium.io/CiliumNetworkPolicy/among-clusters/among-clusters-hub-gateway
+    - core/Service/among-clusters/among-clusters-hub
+    - core/ServiceAccount/among-clusters/among-clusters-hub
+    - gateway.networking.k8s.io/HTTPRoute/among-clusters/among-clusters-ingest
+    - networking.k8s.io/Ingress/among-clusters/among-clusters-ingest
+    - networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-hub
+  inventory:
+    digest: sha256:794d0b281ea558275c37d566e770a430f77aca01980cdbdcdc84217efc1a1578
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: among-clusters-credential-broker
+  namespace: credential-broker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-credential-broker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: among-clusters-credential-broker
+    spec:
+      serviceAccountName: among-clusters-credential-broker
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: broker
+        image: ghcr.io/re8ch/among-clusters@sha256:36065d8d2335e0a447d24a0b07562c859b54cee1cfb1e824e536addfe2d6557a
+        command:
+        - /broker
+        env:
+        - name: HUB_ENDPOINT
+          value: http://among-clusters-hub.among-clusters.svc
+        - name: CREDENTIAL_NAMESPACE
+          value: credential-broker
+        ports:
+        - name: http
+          containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: among-clusters-credential-broker
+  namespace: credential-broker
+spec:
+  selector:
+    app.kubernetes.io/name: among-clusters-credential-broker
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: among-clusters-credential-broker
+  namespace: credential-broker
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: among-clusters-hub
+  namespace: credential-broker
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: among-clusters
+  to:
+  - group: ''
+    kind: Service
+    name: among-clusters-credential-broker
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: among-clusters-credential-broker
+  namespace: credential-broker
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-credential-broker
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: headlamp
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53

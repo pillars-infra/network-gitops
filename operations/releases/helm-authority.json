@@ -1,0 +1,3766 @@
+{
+  "version": 1,
+  "executionGroup": "re8ch:release-executor:networking",
+  "releases": [
+    {
+      "releaseId": "networking-helm-among-clusters-agent-among-clusters",
+      "contract": "contracts/networking-helm-among-clusters-agent-among-clusters.yaml",
+      "namespace": "among-clusters",
+      "inventory": [
+        "apps/Deployment/among-clusters/among-clusters-agent",
+        "apps/Deployment/among-clusters/among-clusters-gateway",
+        "core/Service/among-clusters/among-clusters-gateway",
+        "core/ServiceAccount/among-clusters/among-clusters-agent",
+        "networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-agent",
+        "networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-gateway"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "among-clusters-agent",
+            "among-clusters-gateway"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "among-clusters-agent"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "among-clusters-gateway"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "networkpolicies"
+          ],
+          "resourceNames": [
+            "among-clusters-agent",
+            "among-clusters-gateway"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-helm-among-clusters-agent-among-clusters"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-helm-among-clusters-agent-among-clusters",
+          "namespace": "among-clusters"
+        },
+        "data": {}
+      },
+      "source": {
+        "renderer": "kustomize",
+        "revision": "helm-oci@sha256:e546d8e9056a85b813488524282727a6135a0cc544f39d2dc5a8afe23bb042a3",
+        "repository": "pillars-infra/network-gitops",
+        "path": "releases/networking-helm-among-clusters-agent-among-clusters",
+        "chartOCI": "oci://ghcr.io/re8ch/charts/among-clusters-agent@sha256:e546d8e9056a85b813488524282727a6135a0cc544f39d2dc5a8afe23bb042a3"
+      },
+      "renderedSHA256": "82f69b5917648e9b6808e5eb9f3fd1524a54bde777426a2f243d6d326c12bc3c"
+    },
+    {
+      "releaseId": "networking-helm-among-clusters-hub-among-clusters",
+      "contract": "contracts/networking-helm-among-clusters-hub-among-clusters.yaml",
+      "namespace": "among-clusters",
+      "inventory": [
+        "apps/Deployment/among-clusters/among-clusters-hub",
+        "cilium.io/CiliumNetworkPolicy/among-clusters/among-clusters-hub-gateway",
+        "core/Service/among-clusters/among-clusters-hub",
+        "core/ServiceAccount/among-clusters/among-clusters-hub",
+        "gateway.networking.k8s.io/HTTPRoute/among-clusters/among-clusters-ingest",
+        "networking.k8s.io/Ingress/among-clusters/among-clusters-ingest",
+        "networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-hub"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "among-clusters-hub"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnetworkpolicies"
+          ],
+          "resourceNames": [
+            "among-clusters-hub-gateway"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "among-clusters-hub"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "among-clusters-hub"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "among-clusters-ingest"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "among-clusters-ingest"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "networkpolicies"
+          ],
+          "resourceNames": [
+            "among-clusters-hub"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-helm-among-clusters-hub-among-clusters"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-helm-among-clusters-hub-among-clusters",
+          "namespace": "among-clusters"
+        },
+        "data": {}
+      },
+      "source": {
+        "renderer": "kustomize",
+        "revision": "helm-oci@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b",
+        "repository": "pillars-infra/network-gitops",
+        "path": "releases/networking-helm-among-clusters-hub-among-clusters",
+        "chartOCI": "oci://ghcr.io/re8ch/charts/among-clusters-hub@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b"
+      },
+      "renderedSHA256": "dcb2986ae7c6d941010229f21cb9672fa20b2ff990d298bb0e2c3571cf618a9a"
+    },
+    {
+      "releaseId": "networking-helm-among-clusters-hub-credential-broker",
+      "contract": "contracts/networking-helm-among-clusters-hub-credential-broker.yaml",
+      "namespace": "credential-broker",
+      "inventory": [
+        "apps/Deployment/credential-broker/among-clusters-credential-broker",
+        "core/Service/credential-broker/among-clusters-credential-broker",
+        "core/ServiceAccount/credential-broker/among-clusters-credential-broker",
+        "gateway.networking.k8s.io/ReferenceGrant/credential-broker/among-clusters-hub",
+        "networking.k8s.io/NetworkPolicy/credential-broker/among-clusters-credential-broker"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "among-clusters-credential-broker"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "among-clusters-credential-broker"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "among-clusters-credential-broker"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "referencegrants"
+          ],
+          "resourceNames": [
+            "among-clusters-hub"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "networkpolicies"
+          ],
+          "resourceNames": [
+            "among-clusters-credential-broker"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-helm-among-clusters-hub-credential-broker"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-helm-among-clusters-hub-credential-broker",
+          "namespace": "credential-broker"
+        },
+        "data": {}
+      },
+      "source": {
+        "renderer": "kustomize",
+        "revision": "helm-oci@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b",
+        "repository": "pillars-infra/network-gitops",
+        "path": "releases/networking-helm-among-clusters-hub-credential-broker",
+        "chartOCI": "oci://ghcr.io/re8ch/charts/among-clusters-hub@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b"
+      },
+      "renderedSHA256": "b9f6fa5461c5466076ab2268215db1e3c4d3e91560fc56314abc503cfaf33553"
+    },
+    {
+      "releaseId": "networking-helm-among-clusters-hub-kube-system",
+      "contract": "contracts/networking-helm-among-clusters-hub-kube-system.yaml",
+      "namespace": "kube-system",
+      "inventory": [
+        "cert-manager.io/Certificate/kube-system/among-clusters-ingest-tls"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "cert-manager.io"
+          ],
+          "resources": [
+            "certificates"
+          ],
+          "resourceNames": [
+            "among-clusters-ingest-tls"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-helm-among-clusters-hub-kube-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-helm-among-clusters-hub-kube-system",
+          "namespace": "kube-system"
+        },
+        "data": {}
+      },
+      "source": {
+        "renderer": "kustomize",
+        "revision": "helm-oci@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b",
+        "repository": "pillars-infra/network-gitops",
+        "path": "releases/networking-helm-among-clusters-hub-kube-system",
+        "chartOCI": "oci://ghcr.io/re8ch/charts/among-clusters-hub@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b"
+      },
+      "renderedSHA256": "2b8e534c410bf91cb9a46ba697fe6ca72b1851428f650b1492824d9c1b9bc684"
+    },
+    {
+      "releaseId": "networking-helm-cilium-kube-system",
+      "contract": "contracts/networking-helm-cilium-kube-system.yaml",
+      "namespace": "kube-system",
+      "inventory": [
+        "apps/DaemonSet/kube-system/cilium",
+        "apps/Deployment/kube-system/cilium-operator",
+        "apps/Deployment/kube-system/hubble-relay",
+        "apps/Deployment/kube-system/hubble-ui",
+        "core/ConfigMap/kube-system/cilium-config",
+        "core/ConfigMap/kube-system/hubble-relay-config",
+        "core/ConfigMap/kube-system/hubble-ui-nginx",
+        "core/Service/kube-system/hubble-peer",
+        "core/Service/kube-system/hubble-relay",
+        "core/Service/kube-system/hubble-ui",
+        "core/ServiceAccount/kube-system/cilium",
+        "core/ServiceAccount/kube-system/cilium-operator",
+        "core/ServiceAccount/kube-system/hubble-relay",
+        "core/ServiceAccount/kube-system/hubble-ui"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "daemonsets"
+          ],
+          "resourceNames": [
+            "cilium"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "cilium-operator",
+            "hubble-relay",
+            "hubble-ui"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "cilium-config",
+            "hubble-relay-config",
+            "hubble-ui-nginx"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "cilium",
+            "cilium-operator",
+            "hubble-relay",
+            "hubble-ui"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "hubble-peer",
+            "hubble-relay",
+            "hubble-ui"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-helm-cilium-kube-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-helm-cilium-kube-system",
+          "namespace": "kube-system"
+        },
+        "data": {}
+      },
+      "source": {
+        "renderer": "kustomize",
+        "revision": "helm-archive@sha256:5eea9d46a5afb92d5ce8b6456b8288b39159fbfd4c4b71efc8a44116105a6147",
+        "repository": "pillars-infra/network-gitops",
+        "path": "releases/networking-helm-cilium-kube-system",
+        "chart": "charts/cilium-1.21.0-dev.tgz",
+        "chartDigest": "sha256:5eea9d46a5afb92d5ce8b6456b8288b39159fbfd4c4b71efc8a44116105a6147"
+      },
+      "renderedSHA256": "d4e742cded31f44a3404a30fc159614b288b49af56e0623c8ad61c9b8c7abf3e"
+    },
+    {
+      "releaseId": "networking-helm-public-edge-manager-regional-routing",
+      "contract": "contracts/networking-helm-public-edge-manager-regional-routing.yaml",
+      "namespace": "regional-routing",
+      "inventory": [
+        "apps/DaemonSet/regional-routing/public-edge-manager",
+        "apps/DaemonSet/regional-routing/public-edge-manager-redirector",
+        "apps/Deployment/regional-routing/public-edge-manager-cli",
+        "apps/Deployment/regional-routing/public-edge-manager-controller",
+        "apps/Deployment/regional-routing/public-edge-manager-globalping",
+        "apps/Deployment/regional-routing/public-edge-manager-hidden-primary",
+        "core/ConfigMap/regional-routing/public-edge-manager",
+        "core/ConfigMap/regional-routing/public-edge-manager-records",
+        "core/ConfigMap/regional-routing/public-edge-nameservers",
+        "core/ConfigMap/regional-routing/public-edge-runtime",
+        "core/Service/regional-routing/public-edge-manager",
+        "core/Service/regional-routing/public-edge-manager-dns",
+        "core/ServiceAccount/regional-routing/public-edge-manager",
+        "core/ServiceAccount/regional-routing/public-edge-manager-cli"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "daemonsets"
+          ],
+          "resourceNames": [
+            "public-edge-manager",
+            "public-edge-manager-redirector"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "public-edge-manager-cli",
+            "public-edge-manager-controller",
+            "public-edge-manager-globalping",
+            "public-edge-manager-hidden-primary"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "public-edge-manager",
+            "public-edge-manager-records",
+            "public-edge-nameservers",
+            "public-edge-runtime"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "public-edge-manager",
+            "public-edge-manager-cli"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "public-edge-manager",
+            "public-edge-manager-dns"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-helm-public-edge-manager-regional-routing"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-helm-public-edge-manager-regional-routing",
+          "namespace": "regional-routing"
+        },
+        "data": {}
+      },
+      "source": {
+        "renderer": "kustomize",
+        "revision": "helm-oci@sha256:b5a9a2cd60ff53da529388f2b1d5fa65a6ccc9a705262f9dcd3d3650c6ddc351",
+        "repository": "pillars-infra/network-gitops",
+        "path": "releases/networking-helm-public-edge-manager-regional-routing",
+        "chartOCI": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:b5a9a2cd60ff53da529388f2b1d5fa65a6ccc9a705262f9dcd3d3650c6ddc351"
+      },
+      "renderedSHA256": "a2d5b72a99e2824acaddfafdfa56880f3295d4a01dfc59dae1f80788484605ae"
+    }
+  ],
+  "platformBootstrap": [
+    {
+      "apiVersion": "admissionregistration.k8s.io/v1",
+      "kind": "ValidatingAdmissionPolicy",
+      "metadata": {
+        "name": "gateway.cilium.io"
+      },
+      "spec": {
+        "failurePolicy": "Fail",
+        "matchConstraints": {
+          "resourceRules": [
+            {
+              "apiGroups": [
+                "gateway.networking.k8s.io"
+              ],
+              "apiVersions": [
+                "v1"
+              ],
+              "operations": [
+                "CREATE",
+                "UPDATE"
+              ],
+              "resources": [
+                "gateways"
+              ]
+            }
+          ]
+        },
+        "validations": [
+          {
+            "expression": "object.spec.gatewayClassName != 'cilium' || (has(object.spec.listeners)) && object.spec.listeners.filter(e, has(e.tls) && has(e.tls.mode) && e.tls.mode == 'Terminate').all(e, e.tls.certificateRefs.size() == 1)",
+            "message": "cilium GatewayClass requires exactly one certificateRef per listener when tls.mode is Terminate.",
+            "reason": "Invalid"
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "admissionregistration.k8s.io/v1",
+      "kind": "ValidatingAdmissionPolicyBinding",
+      "metadata": {
+        "name": "gateway.cilium.io"
+      },
+      "spec": {
+        "policyName": "gateway.cilium.io",
+        "validationActions": [
+          "Deny"
+        ],
+        "matchResources": {
+          "resourceRules": [
+            {
+              "apiGroups": [
+                "gateway.networking.k8s.io"
+              ],
+              "apiVersions": [
+                "v1"
+              ],
+              "resources": [
+                "gateways"
+              ],
+              "operations": [
+                "CREATE",
+                "UPDATE"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "metadata": {
+        "name": "authenticatedlinks.peering.re8ch.com"
+      },
+      "spec": {
+        "group": "peering.re8ch.com",
+        "scope": "Namespaced",
+        "names": {
+          "plural": "authenticatedlinks",
+          "singular": "authenticatedlink",
+          "kind": "AuthenticatedLink",
+          "shortNames": [
+            "aclink"
+          ]
+        },
+        "versions": [
+          {
+            "name": "v1alpha1",
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
+            },
+            "schema": {
+              "openAPIV3Schema": {
+                "type": "object",
+                "properties": {
+                  "spec": {
+                    "type": "object",
+                    "required": [
+                      "peerRef",
+                      "transport"
+                    ],
+                    "properties": {
+                      "peerRef": {
+                        "type": "string"
+                      },
+                      "transport": {
+                        "type": "string",
+                        "enum": [
+                          "quic-mtls"
+                        ]
+                      },
+                      "localGateway": {
+                        "type": "string"
+                      },
+                      "remoteGateway": {
+                        "type": "string"
+                      },
+                      "sessionIdentity": {
+                        "type": "string",
+                        "pattern": "^spiffe://"
+                      }
+                    }
+                  },
+                  "status": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "Pending",
+                          "Connecting",
+                          "Ready",
+                          "Disconnected",
+                          "Blocked",
+                          "Closed",
+                          "Failed"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "enum": [
+                          "",
+                          "NATUnreachable",
+                          "IdentityMismatch",
+                          "BundleMismatch",
+                          "PolicyDenied",
+                          "TransportError",
+                          "PersistentSessionUnavailable",
+                          "ObservationStale",
+                          "Revoked"
+                        ]
+                      },
+                      "latencyMillis": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 0
+                      },
+                      "lastHandshakeAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "lastObservedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "observedGeneration": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "metadata": {
+        "name": "clusteridentities.peering.re8ch.com"
+      },
+      "spec": {
+        "group": "peering.re8ch.com",
+        "scope": "Namespaced",
+        "names": {
+          "plural": "clusteridentities",
+          "singular": "clusteridentity",
+          "kind": "ClusterIdentity",
+          "shortNames": [
+            "acid"
+          ]
+        },
+        "versions": [
+          {
+            "name": "v1alpha1",
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
+            },
+            "additionalPrinterColumns": [
+              {
+                "name": "Trust Domain",
+                "type": "string",
+                "jsonPath": ".spec.trustDomain"
+              },
+              {
+                "name": "State",
+                "type": "string",
+                "jsonPath": ".status.state"
+              }
+            ],
+            "schema": {
+              "openAPIV3Schema": {
+                "type": "object",
+                "properties": {
+                  "spec": {
+                    "type": "object",
+                    "required": [
+                      "clusterID",
+                      "trustDomain",
+                      "spiffeID",
+                      "bundleDigest",
+                      "publicKey"
+                    ],
+                    "properties": {
+                      "clusterID": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 63
+                      },
+                      "region": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 63
+                      },
+                      "trustDomain": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9.-]+$"
+                      },
+                      "spiffeID": {
+                        "type": "string",
+                        "pattern": "^spiffe://"
+                      },
+                      "bundleDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      },
+                      "publicKey": {
+                        "type": "string",
+                        "minLength": 43,
+                        "maxLength": 128
+                      },
+                      "capabilities": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "gatewayEndpoints": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^quic://"
+                        }
+                      },
+                      "suspended": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    }
+                  },
+                  "status": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "Pending",
+                          "Ready",
+                          "Suspended",
+                          "Revoked"
+                        ]
+                      },
+                      "lastSeenAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "observedGeneration": {
+                        "type": "integer",
+                        "format": "int64"
+                      },
+                      "lastGeneration": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 0
+                      },
+                      "lastNonce": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "metadata": {
+        "name": "importedservices.peering.re8ch.com"
+      },
+      "spec": {
+        "group": "peering.re8ch.com",
+        "scope": "Namespaced",
+        "names": {
+          "plural": "importedservices",
+          "singular": "importedservice",
+          "kind": "ImportedService",
+          "shortNames": [
+            "acimport"
+          ]
+        },
+        "versions": [
+          {
+            "name": "v1alpha1",
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
+            },
+            "schema": {
+              "openAPIV3Schema": {
+                "type": "object",
+                "properties": {
+                  "spec": {
+                    "type": "object",
+                    "required": [
+                      "advertisementRef",
+                      "peerRef",
+                      "localServiceName"
+                    ],
+                    "properties": {
+                      "advertisementRef": {
+                        "type": "string"
+                      },
+                      "peerRef": {
+                        "type": "string"
+                      },
+                      "localServiceName": {
+                        "type": "string"
+                      },
+                      "localPort": {
+                        "type": "integer",
+                        "minimum": 1024,
+                        "maximum": 65535
+                      },
+                      "suspended": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    }
+                  },
+                  "status": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "Pending",
+                          "Ready",
+                          "Suspended",
+                          "Expired",
+                          "Failed"
+                        ]
+                      },
+                      "serviceRef": {
+                        "type": "string"
+                      },
+                      "reason": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "metadata": {
+        "name": "managedaccessgrants.peering.re8ch.com"
+      },
+      "spec": {
+        "group": "peering.re8ch.com",
+        "scope": "Namespaced",
+        "names": {
+          "plural": "managedaccessgrants",
+          "singular": "managedaccessgrant",
+          "kind": "ManagedAccessGrant",
+          "shortNames": [
+            "acgrant"
+          ]
+        },
+        "versions": [
+          {
+            "name": "v1alpha1",
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
+            },
+            "schema": {
+              "openAPIV3Schema": {
+                "type": "object",
+                "properties": {
+                  "spec": {
+                    "type": "object",
+                    "required": [
+                      "peerRef",
+                      "advertisementRef",
+                      "expiresAt",
+                      "rules"
+                    ],
+                    "x-kubernetes-validations": [
+                      {
+                        "rule": "self.scope == 'Cluster' || (has(self.namespaces) && size(self.namespaces) > 0)",
+                        "message": "Namespaced grants require at least one namespace"
+                      }
+                    ],
+                    "properties": {
+                      "peerRef": {
+                        "type": "string"
+                      },
+                      "advertisementRef": {
+                        "type": "string"
+                      },
+                      "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "scope": {
+                        "type": "string",
+                        "enum": [
+                          "Namespaced",
+                          "Cluster"
+                        ],
+                        "default": "Namespaced"
+                      },
+                      "namespaces": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "rules": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "apiGroups",
+                            "resources",
+                            "verbs"
+                          ],
+                          "properties": {
+                            "apiGroups": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "resources": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "verbs": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "get",
+                                  "list",
+                                  "watch",
+                                  "create",
+                                  "update",
+                                  "patch",
+                                  "delete",
+                                  "bind",
+                                  "escalate",
+                                  "impersonate",
+                                  "*"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "approved": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "revoked": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    }
+                  },
+                  "status": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "Pending",
+                          "AwaitingLocalApproval",
+                          "Provisioning",
+                          "Active",
+                          "Expired",
+                          "Revoked",
+                          "Failed"
+                        ]
+                      },
+                      "credentialRef": {
+                        "type": "string"
+                      },
+                      "lastRenewedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "reason": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "metadata": {
+        "name": "peerpolicies.peering.re8ch.com"
+      },
+      "spec": {
+        "group": "peering.re8ch.com",
+        "scope": "Namespaced",
+        "names": {
+          "plural": "peerpolicies",
+          "singular": "peerpolicy",
+          "kind": "PeerPolicy",
+          "shortNames": [
+            "acpolicy"
+          ]
+        },
+        "versions": [
+          {
+            "name": "v1alpha1",
+            "served": true,
+            "storage": true,
+            "schema": {
+              "openAPIV3Schema": {
+                "type": "object",
+                "properties": {
+                  "spec": {
+                    "type": "object",
+                    "required": [
+                      "peerSelector",
+                      "serviceClasses",
+                      "protocols"
+                    ],
+                    "properties": {
+                      "peerSelector": {
+                        "type": "object",
+                        "properties": {
+                          "matchNames": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "matchAllReady": {
+                            "type": "boolean",
+                            "default": false
+                          }
+                        }
+                      },
+                      "serviceClasses": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "protocols": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "http",
+                            "https",
+                            "tcp",
+                            "tls",
+                            "kubernetes-api"
+                          ]
+                        }
+                      },
+                      "ports": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 65535
+                        }
+                      },
+                      "directions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "import",
+                            "export"
+                          ]
+                        }
+                      },
+                      "maxAdvertisements": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 100
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "metadata": {
+        "name": "peers.peering.re8ch.com"
+      },
+      "spec": {
+        "group": "peering.re8ch.com",
+        "scope": "Namespaced",
+        "names": {
+          "plural": "peers",
+          "singular": "peer",
+          "kind": "Peer",
+          "shortNames": [
+            "acpeer"
+          ]
+        },
+        "versions": [
+          {
+            "name": "v1alpha1",
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
+            },
+            "schema": {
+              "openAPIV3Schema": {
+                "type": "object",
+                "properties": {
+                  "spec": {
+                    "type": "object",
+                    "required": [
+                      "localIdentityRef",
+                      "remoteIdentityRef",
+                      "invitationRef",
+                      "transports"
+                    ],
+                    "properties": {
+                      "localIdentityRef": {
+                        "type": "string"
+                      },
+                      "remoteIdentityRef": {
+                        "type": "string"
+                      },
+                      "invitationRef": {
+                        "type": "string"
+                      },
+                      "transports": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "quic-mtls",
+                            "wireguard",
+                            "cilium",
+                            "istio"
+                          ]
+                        }
+                      },
+                      "suspended": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    }
+                  },
+                  "status": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "PendingConfirmation",
+                          "Ready",
+                          "Suspended",
+                          "Revoked",
+                          "Failed"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "observedGeneration": {
+                        "type": "integer",
+                        "format": "int64"
+                      },
+                      "localBundleConfirmed": {
+                        "type": "boolean"
+                      },
+                      "remoteBundleConfirmed": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "metadata": {
+        "name": "publicedges.networking.re8ch.com"
+      },
+      "spec": {
+        "group": "networking.re8ch.com",
+        "names": {
+          "kind": "PublicEdge",
+          "plural": "publicedges",
+          "shortNames": [
+            "pedge"
+          ],
+          "singular": "publicedge"
+        },
+        "scope": "Cluster",
+        "versions": [
+          {
+            "additionalPrinterColumns": [
+              {
+                "jsonPath": ".spec.area",
+                "name": "Area",
+                "type": "string"
+              },
+              {
+                "jsonPath": ".spec.region",
+                "name": "Region",
+                "type": "string"
+              },
+              {
+                "jsonPath": ".spec.capacityMbps",
+                "name": "Capacity",
+                "type": "integer"
+              },
+              {
+                "jsonPath": ".spec.endpoint.value",
+                "name": "Published",
+                "type": "string"
+              },
+              {
+                "jsonPath": ".status.conditions[?(@.type==\"Ready\")].status",
+                "name": "Ready",
+                "type": "string"
+              }
+            ],
+            "name": "v1alpha1",
+            "schema": {
+              "openAPIV3Schema": {
+                "properties": {
+                  "spec": {
+                    "properties": {
+                      "area": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "capacityMbps": {
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "discovery": {
+                        "type": "object",
+                        "x-kubernetes-preserve-unknown-fields": true
+                      },
+                      "draining": {
+                        "type": "boolean"
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "endpoint": {
+                        "properties": {
+                          "probeAddress": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": [
+                              "PublicIP",
+                              "AnycastIP",
+                              "HostnameTunnel"
+                            ],
+                            "type": "string"
+                          },
+                          "value": {
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "value"
+                        ],
+                        "type": "object"
+                      },
+                      "forwarding": {
+                        "properties": {
+                          "mode": {
+                            "enum": [
+                              "DirectGateway",
+                              "RegionalRelay"
+                            ],
+                            "type": "string"
+                          },
+                          "originArea": {
+                            "type": "string"
+                          },
+                          "originGatewayVIP": {
+                            "format": "ipv4",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "gatewayRef": {
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "namespace": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "gatewayVIP": {
+                        "format": "ipv4",
+                        "type": "string"
+                      },
+                      "nodeName": {
+                        "type": "string"
+                      },
+                      "ports": {
+                        "items": {
+                          "maximum": 65535,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "type": "array"
+                      },
+                      "priority": {
+                        "maximum": 1000,
+                        "minimum": -1000,
+                        "type": "integer"
+                      },
+                      "priorityByRegion": {
+                        "additionalProperties": {
+                          "type": "integer"
+                        },
+                        "type": "object"
+                      },
+                      "protocols": {
+                        "items": {
+                          "enum": [
+                            "dns-udp",
+                            "dns-tcp",
+                            "http",
+                            "https",
+                            "tls-passthrough",
+                            "grpc",
+                            "tcp",
+                            "udp"
+                          ],
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "region": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "serviceClasses": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "area",
+                      "region",
+                      "endpoint",
+                      "gatewayVIP",
+                      "enabled",
+                      "draining",
+                      "capacityMbps",
+                      "protocols"
+                    ],
+                    "type": "object"
+                  },
+                  "status": {
+                    "type": "object",
+                    "x-kubernetes-preserve-unknown-fields": true
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "apiextensions.k8s.io/v1",
+      "kind": "CustomResourceDefinition",
+      "metadata": {
+        "name": "serviceadvertisements.peering.re8ch.com"
+      },
+      "spec": {
+        "group": "peering.re8ch.com",
+        "scope": "Namespaced",
+        "names": {
+          "plural": "serviceadvertisements",
+          "singular": "serviceadvertisement",
+          "kind": "ServiceAdvertisement",
+          "shortNames": [
+            "acadv"
+          ]
+        },
+        "versions": [
+          {
+            "name": "v1alpha1",
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
+            },
+            "schema": {
+              "openAPIV3Schema": {
+                "type": "object",
+                "properties": {
+                  "spec": {
+                    "type": "object",
+                    "required": [
+                      "publisherRef",
+                      "serviceIdentity",
+                      "serviceClass",
+                      "protocol",
+                      "port",
+                      "targetPeers",
+                      "ttlSeconds",
+                      "generation",
+                      "policyRef"
+                    ],
+                    "properties": {
+                      "publisherRef": {
+                        "type": "string"
+                      },
+                      "serviceIdentity": {
+                        "type": "string",
+                        "pattern": "^spiffe://"
+                      },
+                      "serviceClass": {
+                        "type": "string"
+                      },
+                      "protocol": {
+                        "type": "string",
+                        "enum": [
+                          "http",
+                          "https",
+                          "tcp",
+                          "tls",
+                          "kubernetes-api"
+                        ]
+                      },
+                      "port": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 65535
+                      },
+                      "localServiceRef": {
+                        "type": "object",
+                        "required": [
+                          "name"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "namespace": {
+                            "type": "string"
+                          },
+                          "portName": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "gatewayEndpoints": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^quic://"
+                        }
+                      },
+                      "targetPeers": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "ttlSeconds": {
+                        "type": "integer",
+                        "minimum": 30,
+                        "maximum": 86400
+                      },
+                      "generation": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      },
+                      "policyRef": {
+                        "type": "string"
+                      },
+                      "revoked": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    },
+                    "x-kubernetes-validations": [
+                      {
+                        "rule": "!has(self.localServiceRef) || !has(self.localServiceRef.namespace)",
+                        "message": "Cross-namespace service references are forbidden; omit namespace for the local namespace"
+                      }
+                    ]
+                  },
+                  "status": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "Pending",
+                          "Active",
+                          "Expired",
+                          "Denied",
+                          "Revoked"
+                        ]
+                      },
+                      "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "reason": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      }
+    },
+    {
+      "apiVersion": "gateway.networking.k8s.io/v1",
+      "kind": "GatewayClass",
+      "metadata": {
+        "name": "cilium"
+      },
+      "spec": {
+        "controllerName": "io.cilium/gateway-controller",
+        "description": "The default Cilium GatewayClass"
+      }
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "metadata": {
+        "name": "among-clusters-agent-observer"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "verbs": [
+            "get",
+            "list"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "metadata": {
+        "name": "among-clusters-credential-broker-auth-review"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "authentication.k8s.io"
+          ],
+          "resources": [
+            "tokenreviews"
+          ],
+          "verbs": [
+            "create"
+          ]
+        },
+        {
+          "apiGroups": [
+            "authorization.k8s.io"
+          ],
+          "resources": [
+            "subjectaccessreviews"
+          ],
+          "verbs": [
+            "create"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "metadata": {
+        "name": "among-clusters-hub"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "clusteridentities",
+            "clusteridentities/status",
+            "peers",
+            "peers/status",
+            "authenticatedlinks",
+            "authenticatedlinks/status",
+            "peerpolicies",
+            "serviceadvertisements",
+            "serviceadvertisements/status",
+            "importedservices",
+            "importedservices/status",
+            "managedaccessgrants",
+            "managedaccessgrants/status"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch",
+            "create",
+            "update",
+            "patch",
+            "delete"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets",
+            "services"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "create",
+            "update",
+            "patch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "metadata": {
+        "name": "among-clusters-view",
+        "labels": {
+          "rbac.authorization.k8s.io/aggregate-to-view": "true"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "clusteridentities",
+            "peers",
+            "authenticatedlinks",
+            "peerpolicies",
+            "serviceadvertisements",
+            "importedservices",
+            "managedaccessgrants"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "metadata": {
+        "name": "cilium",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "networkpolicies"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "discovery.k8s.io"
+          ],
+          "resources": [
+            "endpointslices"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "namespaces",
+            "services",
+            "pods",
+            "nodes"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "apiextensions.k8s.io"
+          ],
+          "resources": [
+            "customresourcedefinitions"
+          ],
+          "verbs": [
+            "list",
+            "watch",
+            "get"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumloadbalancerippools",
+            "ciliumbgpnodeconfigs",
+            "ciliumbgpadvertisements",
+            "ciliumbgppeerconfigs",
+            "ciliumclusterwideenvoyconfigs",
+            "ciliumclusterwidenetworkpolicies",
+            "ciliumegressgatewaypolicies",
+            "ciliumendpoints",
+            "ciliumendpointslices",
+            "ciliumenvoyconfigs",
+            "ciliumidentities",
+            "ciliumlocalredirectpolicies",
+            "ciliumnetworkpolicies",
+            "ciliumnodes",
+            "ciliumnodeconfigs",
+            "ciliumcidrgroups",
+            "ciliuml2announcementpolicies",
+            "ciliumpodippools",
+            "ciliumdatapathplugins"
+          ],
+          "verbs": [
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumidentities",
+            "ciliumendpoints",
+            "ciliumnodes"
+          ],
+          "verbs": [
+            "create"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumidentities"
+          ],
+          "verbs": [
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumendpoints"
+          ],
+          "verbs": [
+            "delete",
+            "get"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnodes",
+            "ciliumnodes/status"
+          ],
+          "verbs": [
+            "get",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumendpoints/status",
+            "ciliumendpoints",
+            "ciliuml2announcementpolicies/status",
+            "ciliumbgpnodeconfigs/status"
+          ],
+          "verbs": [
+            "patch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "metadata": {
+        "name": "cilium-operator",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "pods"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "cilium-config"
+          ],
+          "verbs": [
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "nodes"
+          ],
+          "verbs": [
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "nodes",
+            "nodes/status"
+          ],
+          "verbs": [
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "discovery.k8s.io"
+          ],
+          "resources": [
+            "endpointslices"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services/status"
+          ],
+          "verbs": [
+            "update",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "namespaces",
+            "secrets",
+            "serviceaccounts"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch",
+            "create",
+            "update",
+            "delete",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "discovery.k8s.io"
+          ],
+          "resources": [
+            "endpointslices"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch",
+            "create",
+            "update",
+            "delete",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnetworkpolicies",
+            "ciliumclusterwidenetworkpolicies"
+          ],
+          "verbs": [
+            "create",
+            "update",
+            "deletecollection",
+            "patch",
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnetworkpolicies/status",
+            "ciliumclusterwidenetworkpolicies/status"
+          ],
+          "verbs": [
+            "patch",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumendpoints",
+            "ciliumidentities"
+          ],
+          "verbs": [
+            "delete",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumidentities"
+          ],
+          "verbs": [
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnodes"
+          ],
+          "verbs": [
+            "create",
+            "update",
+            "get",
+            "list",
+            "watch",
+            "delete"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnodes/status"
+          ],
+          "verbs": [
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumendpointslices",
+            "ciliumenvoyconfigs",
+            "ciliumbgppeerconfigs",
+            "ciliumbgpadvertisements",
+            "ciliumbgpnodeconfigs",
+            "ciliumcidrgroups"
+          ],
+          "verbs": [
+            "create",
+            "update",
+            "get",
+            "list",
+            "watch",
+            "delete",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumbgpclusterconfigs/status",
+            "ciliumbgppeerconfigs/status"
+          ],
+          "verbs": [
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "apiextensions.k8s.io"
+          ],
+          "resources": [
+            "customresourcedefinitions"
+          ],
+          "verbs": [
+            "create",
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "apiextensions.k8s.io"
+          ],
+          "resources": [
+            "customresourcedefinitions"
+          ],
+          "verbs": [
+            "update"
+          ],
+          "resourceNames": [
+            "ciliumloadbalancerippools.cilium.io",
+            "ciliumbgpclusterconfigs.cilium.io",
+            "ciliumbgppeerconfigs.cilium.io",
+            "ciliumbgpadvertisements.cilium.io",
+            "ciliumbgpnodeconfigs.cilium.io",
+            "ciliumbgpnodeconfigoverrides.cilium.io",
+            "ciliumclusterwideenvoyconfigs.cilium.io",
+            "ciliumclusterwidenetworkpolicies.cilium.io",
+            "ciliumegressgatewaypolicies.cilium.io",
+            "ciliumendpoints.cilium.io",
+            "ciliumendpointslices.cilium.io",
+            "ciliumenvoyconfigs.cilium.io",
+            "ciliumidentities.cilium.io",
+            "ciliumlocalredirectpolicies.cilium.io",
+            "ciliumnetworkpolicies.cilium.io",
+            "ciliumnodes.cilium.io",
+            "ciliumnodeconfigs.cilium.io",
+            "ciliumcidrgroups.cilium.io",
+            "ciliuml2announcementpolicies.cilium.io",
+            "ciliumpodippools.cilium.io",
+            "ciliumgatewayclassconfigs.cilium.io",
+            "ciliumdatapathplugins.cilium.io"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumloadbalancerippools",
+            "ciliumpodippools",
+            "ciliumbgpclusterconfigs",
+            "ciliumbgpnodeconfigoverrides",
+            "ciliumbgppeerconfigs",
+            "ciliumdatapathplugins"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumpodippools"
+          ],
+          "verbs": [
+            "create"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumloadbalancerippools/status"
+          ],
+          "verbs": [
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "coordination.k8s.io"
+          ],
+          "resources": [
+            "leases"
+          ],
+          "verbs": [
+            "create",
+            "get",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "gatewayclasses",
+            "gateways",
+            "tcproutes",
+            "udproutes",
+            "tlsroutes",
+            "httproutes",
+            "grpcroutes",
+            "referencegrants",
+            "referencepolicies",
+            "backendtlspolicies",
+            "listenersets"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "gatewayclasses"
+          ],
+          "verbs": [
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "gatewayclasses/status",
+            "gateways/status",
+            "httproutes/status",
+            "grpcroutes/status",
+            "tlsroutes/status",
+            "backendtlspolicies/status",
+            "tcproutes/status",
+            "udproutes/status",
+            "listenersets/status"
+          ],
+          "verbs": [
+            "update",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumgatewayclassconfigs"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumgatewayclassconfigs/status"
+          ],
+          "verbs": [
+            "update",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "multicluster.x-k8s.io"
+          ],
+          "resources": [
+            "serviceimports"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumendpointslices"
+          ],
+          "verbs": [
+            "deletecollection"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "ClusterRole",
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "metadata": {
+        "name": "hubble-ui",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "componentstatuses",
+            "namespaces",
+            "nodes",
+            "pods",
+            "services"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "apiextensions.k8s.io"
+          ],
+          "resources": [
+            "customresourcedefinitions"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "metadata": {
+        "name": "public-edge-manager"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "networking.re8ch.com"
+          ],
+          "resources": [
+            "publicedges"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch",
+            "create",
+            "patch",
+            "update",
+            "delete"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.re8ch.com"
+          ],
+          "resources": [
+            "publicedges/status"
+          ],
+          "verbs": [
+            "get",
+            "patch",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.re8ch.com"
+          ],
+          "resources": [
+            "networkpathassessments"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "nodes"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch",
+            "patch",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "gateways",
+            "httproutes",
+            "tlsroutes"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "coordination.k8s.io"
+          ],
+          "resources": [
+            "leases"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch",
+            "create",
+            "patch",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch",
+            "create",
+            "patch",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services",
+            "endpoints"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "discovery.k8s.io"
+          ],
+          "resources": [
+            "endpointslices"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "metadata": {
+        "name": "public-edge-manager-cli-read"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "networking.re8ch.com"
+          ],
+          "resources": [
+            "publicedges"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "gateways"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "metadata": {
+        "name": "among-clusters-agent-observer"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "among-clusters-agent-observer"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "among-clusters-agent",
+          "namespace": "among-clusters"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "metadata": {
+        "name": "among-clusters-credential-broker-auth-review"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "among-clusters-credential-broker-auth-review"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "among-clusters-credential-broker",
+          "namespace": "credential-broker"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "metadata": {
+        "name": "among-clusters-hub"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "among-clusters-hub"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "among-clusters-hub",
+          "namespace": "among-clusters"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "metadata": {
+        "name": "cilium",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "cilium"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "metadata": {
+        "name": "cilium-operator",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "cilium-operator"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium-operator",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "kind": "ClusterRoleBinding",
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "metadata": {
+        "name": "hubble-ui",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "hubble-ui"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "hubble-ui",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "metadata": {
+        "name": "public-edge-manager"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "public-edge-manager"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "public-edge-manager",
+          "namespace": "regional-routing"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "metadata": {
+        "name": "public-edge-manager-cli-read"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "public-edge-manager-cli-read"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "public-edge-manager-cli",
+          "namespace": "regional-routing"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "among-clusters-agent-identity",
+        "namespace": "among-clusters"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "among-clusters-agent-identity"
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "get",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "create"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "among-clusters-service-routes"
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "get",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "create"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "cilium-gateway-secrets",
+        "namespace": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "cilium-operator-gateway-secrets",
+        "namespace": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "create",
+            "delete",
+            "update",
+            "patch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "cilium-operator-tlsinterception-secrets",
+        "namespace": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "create",
+            "delete",
+            "update",
+            "patch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "cilium-tlsinterception-secrets",
+        "namespace": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "among-clusters-credential-broker",
+        "namespace": "credential-broker"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "get",
+            "create",
+            "update",
+            "delete"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "cilium-bgp-control-plane-secrets",
+        "namespace": "kube-system",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "cilium-config-agent",
+        "namespace": "kube-system",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "cilium-operator-ztunnel",
+        "namespace": "kube-system",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "daemonsets"
+          ],
+          "verbs": [
+            "create",
+            "delete",
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "public-edge-manager-cloudflare",
+        "namespace": "qianwen-ops"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "cloudflare-pg-dns-controller-secret"
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "get"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "public-edge-manager-cli",
+        "namespace": "regional-routing"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "public-edge-runtime"
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "get",
+            "patch",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "among-clusters-agent-identity",
+        "namespace": "among-clusters"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "among-clusters-agent-identity"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "among-clusters-agent"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cilium-gateway-secrets",
+        "namespace": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "cilium-gateway-secrets"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cilium-operator-gateway-secrets",
+        "namespace": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "cilium-operator-gateway-secrets"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium-operator",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cilium-operator-tlsinterception-secrets",
+        "namespace": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "cilium-operator-tlsinterception-secrets"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium-operator",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cilium-tlsinterception-secrets",
+        "namespace": "cilium-secrets",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "cilium-tlsinterception-secrets"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "among-clusters-credential-broker",
+        "namespace": "credential-broker"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "among-clusters-credential-broker"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "among-clusters-credential-broker",
+          "namespace": "credential-broker"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cilium-bgp-control-plane-secrets",
+        "namespace": "kube-system",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "cilium-bgp-control-plane-secrets"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cilium-config-agent",
+        "namespace": "kube-system",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "cilium-config-agent"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cilium-operator-ztunnel",
+        "namespace": "kube-system",
+        "labels": {
+          "app.kubernetes.io/part-of": "cilium",
+          "helm.sh/chart": "cilium-1.21.0-dev"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "cilium-operator-ztunnel"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cilium-operator",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "public-edge-manager-cloudflare",
+        "namespace": "qianwen-ops"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "public-edge-manager-cloudflare"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "public-edge-manager",
+          "namespace": "regional-routing"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "public-edge-manager-cli",
+        "namespace": "regional-routing"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "public-edge-manager-cli"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "public-edge-manager-cli",
+          "namespace": "regional-routing"
+        }
+      ]
+    }
+  ],
+  "omitted": [
+    {
+      "identity": "helm.toolkit.fluxcd.io/HelmRelease/flux-network-system/advanced-fabric",
+      "reason": "protected-render-required",
+      "chart": {
+        "oci": "oci://ghcr.io/advanced-fabrics/charts/advanced-fabric@sha256:50f1b59b98081f74e4cf51ad91ea2f7253b26cbd653674c1126907f3cd403819",
+        "sha256": "4cc2378800d05d144a99d1d28255ed1ca8b8050ae1ae7dea6a133fd3cb8bd757"
+      }
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/among-clusters/among-clusters-agent-identity",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/among-clusters/among-clusters-agent-identity",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/credential-broker/among-clusters-credential-broker",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/credential-broker/among-clusters-credential-broker",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "core/Secret/kube-system/cilium-ca",
+      "reason": "preserve-existing-secret"
+    },
+    {
+      "identity": "core/Secret/kube-system/hubble-relay-client-certs",
+      "reason": "preserve-existing-secret"
+    },
+    {
+      "identity": "core/Secret/kube-system/hubble-server-certs",
+      "reason": "preserve-existing-secret"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/cilium-secrets/cilium-gateway-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/cilium-secrets/cilium-operator-gateway-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/cilium-secrets/cilium-operator-tlsinterception-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/cilium-secrets/cilium-tlsinterception-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/kube-system/cilium-bgp-control-plane-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/kube-system/cilium-config-agent",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/kube-system/cilium-operator-ztunnel",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/cilium-secrets/cilium-gateway-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/cilium-secrets/cilium-operator-gateway-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/cilium-secrets/cilium-operator-tlsinterception-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/cilium-secrets/cilium-tlsinterception-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/kube-system/cilium-bgp-control-plane-secrets",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/kube-system/cilium-config-agent",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/kube-system/cilium-operator-ztunnel",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/qianwen-ops/public-edge-manager-cloudflare",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/regional-routing/public-edge-manager-cli",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/qianwen-ops/public-edge-manager-cloudflare",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/regional-routing/public-edge-manager-cli",
+      "reason": "platform-bootstrap-rbac"
+    }
+  ],
+  "charts": [
+    {
+      "name": "among-clusters-agent",
+      "chart": {
+        "oci": "oci://ghcr.io/re8ch/charts/among-clusters-agent@sha256:e546d8e9056a85b813488524282727a6135a0cc544f39d2dc5a8afe23bb042a3",
+        "sha256": "4a8f58197f0ab4f9e6d727463a2535fa185d3320cc0c4139ebb0af1d50fbb76f"
+      },
+      "objects": 10
+    },
+    {
+      "name": "among-clusters-hub",
+      "chart": {
+        "oci": "oci://ghcr.io/re8ch/charts/among-clusters-hub@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b",
+        "sha256": "3b9416cf5203527f77f06cd90873dde38252c0be3c097da6f1b8e145813dec2c"
+      },
+      "objects": 27
+    },
+    {
+      "name": "cilium",
+      "chart": {
+        "path": "charts/cilium-1.21.0-dev.tgz",
+        "sha256": "5eea9d46a5afb92d5ce8b6456b8288b39159fbfd4c4b71efc8a44116105a6147"
+      },
+      "objects": 41
+    },
+    {
+      "name": "public-edge-manager",
+      "chart": {
+        "oci": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:b5a9a2cd60ff53da529388f2b1d5fa65a6ccc9a705262f9dcd3d3650c6ddc351",
+        "sha256": "f51733dae4af487852b44c2db1af4328b0e7a2ef42cd8eb3b204ce296c04bb41"
+      },
+      "objects": 23
+    }
+  ]
+}

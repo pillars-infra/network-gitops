@@ -1,0 +1,738 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: public-edge-manager
+  namespace: regional-routing
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: public-edge-manager
+  template:
+    metadata:
+      annotations:
+        checksum/config: 1272401a91cbd2726a4b0e70f9dc3c70f86a1d4399e806bdc5fe3cd6ddc69e08
+      labels:
+        app.kubernetes.io/name: public-edge-manager
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: networking.re8ch.com/public-edge-authority-ready
+                operator: In
+                values:
+                - 'true'
+      containers:
+      - env:
+        - name: RECORDS_FILE
+          value: /etc/public-edge-records/records.json
+        - name: RUNTIME_FILE
+          value: /etc/public-edge-runtime/runtime.json
+        - name: NAMESERVERS_FILE
+          value: /etc/public-edge-nameservers/nameservers.json
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: KUBERNETES_API_FALLBACK_URLS_JSON
+          value: '["https://10.250.0.1:6443","https://10.181.22.128:6443"]'
+        - name: HTTP_PORT
+          value: '18080'
+        - name: DNS_PORT
+          value: '53'
+        - name: PROBE_CONNECT_TIMEOUT_SECONDS
+          value: '5'
+        - name: PROBE_RESPONSE_TIMEOUT_SECONDS
+          value: '12'
+        - name: PROBE_INTERVAL_SECONDS
+          value: '15'
+        - name: PROBE_MAX_WORKERS
+          value: '8'
+        envFrom:
+        - configMapRef:
+            name: public-edge-manager
+        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        imagePullPolicy: IfNotPresent
+        name: manager
+        readinessProbe:
+          exec:
+            command:
+            - test
+            - -f
+            - /dev/shm/public-edge-dns-ready
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 0
+          runAsNonRoot: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/public-edge-records
+          name: records
+          readOnly: true
+        - mountPath: /etc/public-edge-runtime
+          name: runtime
+          readOnly: true
+        - mountPath: /etc/public-edge-snapshot-public
+          name: snapshot-public-key
+          readOnly: true
+        - mountPath: /etc/public-edge-nameservers
+          name: nameservers
+          readOnly: true
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: public-edge-manager
+      tolerations:
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+      - effect: NoSchedule
+        key: node.cilium.io/agent-not-ready
+        operator: Exists
+      - effect: NoSchedule
+        key: dedicated
+        operator: Equal
+        value: overseas-edge
+      volumes:
+      - configMap:
+          name: public-edge-manager-records
+        name: records
+      - configMap:
+          name: public-edge-runtime
+        name: runtime
+      - configMap:
+          name: public-edge-route-snapshot-public-key
+        name: snapshot-public-key
+      - configMap:
+          name: public-edge-nameservers
+        name: nameservers
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 2
+    type: RollingUpdate
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: public-edge-manager-redirector
+  namespace: regional-routing
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: public-edge-manager-redirector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: public-edge-manager-redirector
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: networking.re8ch.com/public-edge-ready
+                operator: In
+                values:
+                - 'true'
+      containers:
+      - command:
+        - python
+        - -m
+        - public_edge_manager.redirector
+        env:
+        - name: API_GROUP
+          value: networking.re8ch.com
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        imagePullPolicy: IfNotPresent
+        name: redirector
+        ports:
+        - containerPort: 80
+          hostPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 443
+          hostPort: 443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          periodSeconds: 5
+          tcpSocket:
+            port: http
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 0
+          runAsNonRoot: false
+          runAsUser: 0
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      priorityClassName: system-node-critical
+      serviceAccountName: public-edge-manager
+      tolerations:
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+      - effect: NoSchedule
+        key: node.cilium.io/agent-not-ready
+        operator: Exists
+      - effect: NoSchedule
+        key: dedicated
+        operator: Equal
+        value: overseas-edge
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: public-edge-manager-cli
+  namespace: regional-routing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: public-edge-manager-cli
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: public-edge-manager-cli
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - 'trap : TERM INT; sleep infinity & wait'
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: API_GROUP
+          value: networking.re8ch.com
+        - name: GATEWAY_NAMESPACE
+          value: kube-system
+        - name: RUNTIME_CONFIGMAP
+          value: public-edge-runtime
+        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        imagePullPolicy: IfNotPresent
+        name: cli
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+      serviceAccountName: public-edge-manager-cli
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: public-edge-manager-controller
+  namespace: regional-routing
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: public-edge-manager-controller
+  template:
+    metadata:
+      annotations:
+        checksum/config: 1272401a91cbd2726a4b0e70f9dc3c70f86a1d4399e806bdc5fe3cd6ddc69e08
+      labels:
+        app.kubernetes.io/name: public-edge-manager-controller
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: scheduling.re8ch.com/provider
+                operator: Exists
+              - key: scheduling.re8ch.com/provider
+                operator: NotIn
+                values:
+                - wsl
+                - onprem
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: public-edge-manager-controller
+              topologyKey: topology.kubernetes.io/region
+            weight: 100
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: public-edge-manager-controller
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - command:
+        - python
+        - -m
+        - public_edge_manager.controller
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: DISCOVERY_INTERVAL_SECONDS
+          value: '15'
+        - name: DISCOVERY_PROBE_TIMEOUT_SECONDS
+          value: '2'
+        - name: DEFAULT_CAPACITY_MBPS
+          value: '1'
+        - name: MINIMUM_CAPACITY_MBPS
+          value: '100'
+        - name: EXCLUDED_NODE_NAMES_JSON
+          value: '["overseas-kl","overseas-la"]'
+        - name: EXCLUDED_AUTHORITY_NODE_NAMES_JSON
+          value: '["r640","domain-ex","muaya-lightweight","suxunji","zan"]'
+        - name: CLUSTER_INVENTORY_NAMESPACE
+          value: flux-network-system
+        - name: CLUSTER_INVENTORY_CONFIGMAP
+          value: cluster-node-inventory
+        - name: CLUSTER_INVENTORY_KEY
+          value: nodes.json
+        - name: MAX_NAMESERVERS
+          value: '5'
+        - name: GATEWAY_NAMESPACE
+          value: kube-system
+        - name: GATEWAY_SELECTOR
+          value: networking.re8ch.com/public-edge-gateway=true
+        - name: AUTHORITY_LABEL
+          value: networking.re8ch.com/public-edge-authority-ready
+        - name: AUTHORITY_QUALIFIED_LABEL
+          value: networking.re8ch.com/public-edge-authority-qualified
+        - name: INGRESS_LABEL
+          value: networking.re8ch.com/public-edge-ready
+        - name: SERVICE_CLASSES
+          value: api,db-ro,db-rw,web,registry,service-pilot,service-overseas
+        - name: PARENT_ZONE
+          value: re8ch.com
+        - name: NAMESERVER_MIGRATION_PHASE
+          value: legacy
+        - name: CHILD_ZONES_JSON
+          value: '["api.re8ch.com","db-ro.re8ch.com","db-rw.re8ch.com","service.re8ch.com","functions.re8ch.com","test.re8ch.com"]'
+        - name: ADDRESS_ZONES_JSON
+          value: '["api.re8ch.com","db-ro.re8ch.com","db-rw.re8ch.com"]'
+        - name: REQUIRED_ADDRESS_NAMES_JSON
+          value: '["headlamp.service.re8ch.com"]'
+        - name: SECONDARY_NAMESERVERS_BY_ZONE_JSON
+          value: '{"service.re8ch.com":["ns1.he.net.","ns2.he.net.","ns3.he.net."]}'
+        - name: EXTERNAL_AUTHORITIES_JSON
+          value: '[{"address":"223.159.210.222","enabled":false,"id":"routeros-r640","nameserver":"ns-routeros.re8ch.com.","region":"cn-hunan"},{"address":"124.220.77.50","enabled":true,"id":"tencent-domain-ex","nameserver":"ns-domain-ex.re8ch.com.","region":"cn-shanghai"},{"address":"47.103.114.218","enabled":true,"id":"aliyun-muaya-lightweight","nameserver":"ns-muaya-lightweight.re8ch.com.","region":"cn-shanghai"},{"address":"101.34.217.95","enabled":true,"id":"tencent-suxunji","nameserver":"ns-suxunji.re8ch.com.","region":"cn-shanghai"},{"address":"1.14.174.244","enabled":true,"id":"tencent-zan","nameserver":"ns-zan.re8ch.com.","region":"cn-guangdong"}]'
+        - name: NAMESERVER_CONFIGMAP
+          value: public-edge-nameservers
+        - name: CF_SECRET_NAMESPACE
+          value: qianwen-ops
+        - name: CF_SECRET_NAME
+          value: cloudflare-pg-dns-controller-secret
+        - name: CF_SECRET_KEY
+          value: CF_API_TOKEN
+        envFrom:
+        - configMapRef:
+            name: public-edge-manager
+        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        imagePullPolicy: IfNotPresent
+        name: controller
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+      dnsConfig:
+        nameservers:
+        - 1.1.1.1
+        - 8.8.8.8
+      dnsPolicy: None
+      hostNetwork: true
+      serviceAccountName: public-edge-manager
+      tolerations:
+      - effect: NoSchedule
+        key: dedicated
+        operator: Equal
+        value: overseas-edge
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: public-edge-manager-globalping
+  name: public-edge-manager-globalping
+  namespace: regional-routing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: public-edge-manager-globalping
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 1272401a91cbd2726a4b0e70f9dc3c70f86a1d4399e806bdc5fe3cd6ddc69e08
+      labels:
+        app.kubernetes.io/name: public-edge-manager-globalping
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - command:
+        - python
+        - -m
+        - public_edge_manager.globalping_observer
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: GLOBALPING_API_URL
+          value: https://api.globalping.io
+        - name: GLOBALPING_INTERVAL_SECONDS
+          value: '1800'
+        - name: GLOBALPING_LOCATIONS_JSON
+          value: '[{"magic":"World"}]'
+        - name: GLOBALPING_PROBE_LIMIT
+          value: '10'
+        - name: GLOBALPING_MAX_TARGETS_PER_KIND
+          value: '8'
+        - name: GLOBALPING_MAX_MEASUREMENTS_PER_CYCLE
+          value: '12'
+        - name: GLOBALPING_OUTPUT_CONFIGMAP
+          value: public-edge-globalping-quality
+        - name: GLOBALPING_DNS_TARGETS_JSON
+          value: '["api.re8ch.com","db-ro.re8ch.com","db-rw.re8ch.com","service.re8ch.com"]'
+        - name: GLOBALPING_HTTP_TARGETS_JSON
+          value: '[{"acceptedStatuses":[200],"hostname":"db-rw.re8ch.com","method":"GET","path":"/auth/ready"}]'
+        - name: GLOBALPING_EDGE_HTTP_TARGETS_JSON
+          value: '[{"acceptedStatuses":[200],"hostname":"db-rw.re8ch.com","method":"GET","path":"/auth/ready"}]'
+        - name: GLOBALPING_AUTHORITY_ADDRESSES_JSON
+          value: '["124.220.77.50","47.103.114.218","101.34.217.95","1.14.174.244"]'
+        envFrom:
+        - configMapRef:
+            name: public-edge-manager
+        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        imagePullPolicy: IfNotPresent
+        name: observer
+        resources:
+          limits:
+            cpu: 100m
+            memory: 96Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+      serviceAccountName: public-edge-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: public-edge-manager-hidden-primary
+  namespace: regional-routing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: public-edge-manager-hidden-primary
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/transfer-config: 7aebe660ee8dc8e2620e3234697def7b303aaf33709b915dad17adbe2c81ea85
+      labels:
+        app.kubernetes.io/name: public-edge-manager-hidden-primary
+    spec:
+      containers:
+      - env:
+        - name: NODE_NAME
+          value: overseas-flk
+        - name: DNS_TRANSFER_ROLE
+          value: primary
+        - name: DNS_PORT
+          value: '5353'
+        - name: HTTP_PORT
+          value: '18081'
+        - name: XOT_LISTEN_ADDRESS
+          value: 0.0.0.0:853
+        - name: ROUTE_SNAPSHOT_LISTEN_ADDRESS
+          value: 0.0.0.0:8443
+        - name: RECORDS_FILE
+          value: /etc/public-edge-records/records.json
+        - name: RUNTIME_FILE
+          value: /etc/public-edge-runtime/runtime.json
+        - name: NAMESERVERS_FILE
+          value: /etc/public-edge-nameservers/nameservers.json
+        envFrom:
+        - configMapRef:
+            name: public-edge-manager
+        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        imagePullPolicy: IfNotPresent
+        name: hidden-primary
+        ports:
+        - containerPort: 853
+          hostPort: 853
+          name: xot
+          protocol: TCP
+        - containerPort: 8443
+          hostPort: 8443
+          name: snapshot
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 0
+          runAsNonRoot: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/public-edge-records
+          name: records
+          readOnly: true
+        - mountPath: /etc/public-edge-runtime
+          name: runtime
+          readOnly: true
+        - mountPath: /etc/public-edge-nameservers
+          name: nameservers
+          readOnly: true
+        - mountPath: /etc/public-edge-xot
+          name: xot-tls
+          readOnly: true
+        - mountPath: /etc/public-edge-snapshot-tls
+          name: snapshot-tls
+          readOnly: true
+        - mountPath: /etc/public-edge-snapshot-signing
+          name: signing-key
+          readOnly: true
+        - mountPath: /var/lib/public-edge
+          name: state
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeName: overseas-flk
+      serviceAccountName: public-edge-manager
+      tolerations:
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+      - effect: NoSchedule
+        key: node.cilium.io/agent-not-ready
+        operator: Exists
+      - effect: NoSchedule
+        key: dedicated
+        operator: Equal
+        value: overseas-edge
+      volumes:
+      - configMap:
+          name: public-edge-manager-records
+        name: records
+      - configMap:
+          name: public-edge-runtime
+        name: runtime
+      - configMap:
+          name: public-edge-nameservers
+        name: nameservers
+      - name: xot-tls
+        secret:
+          secretName: public-edge-hidden-primary-tls
+      - name: snapshot-tls
+        secret:
+          secretName: public-edge-hidden-primary-tls
+      - name: signing-key
+        secret:
+          secretName: public-edge-route-snapshot-signing
+      - emptyDir: {}
+        name: state
+---
+apiVersion: v1
+data:
+  API_GROUP: networking.re8ch.com
+  AXFR_ALLOWED_CIDRS_JSON: '["216.218.133.2/32","124.220.77.50/32","47.103.114.218/32","101.34.217.95/32","1.14.174.244/32"]'
+  AXFR_ZONES_JSON: '["auth.re8ch.com.","service.re8ch.com.","api.re8ch.com.","db-ro.re8ch.com.","db-rw.re8ch.com.","functions.re8ch.com.","test.re8ch.com."]'
+  CANDIDATE_CAPACITY_WEIGHT: '10'
+  CANDIDATE_FAILOVER_GRACE_SECONDS: '300'
+  CANDIDATE_LATENCY_DIVISOR_MS: '20'
+  CANDIDATE_LATENCY_PENALTY_CAP: '50'
+  CANDIDATE_LOCAL_AREA_BONUS: '100000'
+  CANDIDATE_LOCAL_NODE_BONUS: '0'
+  CANDIDATE_MIN_HOLD_SECONDS: '600'
+  CANDIDATE_MIN_READY_SECONDS: '120'
+  CANDIDATE_PRIORITY_WEIGHT: '1'
+  CLIENT_AREA_CIDRS_JSON: '{"CN":["223.5.5.0/24","119.29.29.0/24","114.114.114.0/24"],"EU":["80.80.80.0/24","9.9.9.0/24"],"US":["8.8.8.0/24","8.8.4.0/24"]}'
+  DNS_TRANSFER_ROLE: disabled
+  FABRIC_EVIDENCE_ALLOWED_STATES_JSON: '["Ready","Partial"]'
+  FABRIC_EVIDENCE_API_GROUP: networking.re8ch.com
+  FABRIC_EVIDENCE_API_VERSION: v1alpha2
+  FABRIC_EVIDENCE_MODE: Required
+  FABRIC_EVIDENCE_RESOURCE: networkpathassessments
+  FABRIC_REQUIRE_DNS_DEPENDENCIES: 'false'
+  FABRIC_REQUIRE_NODE_READY: 'false'
+  GLOBALPING_QUALITY_MAX_AGE_SECONDS: '2700'
+  GLOBALPING_QUALITY_MODE: Shadow
+  NAMESERVERS: ns-bootstrap.re8ch.com.
+  PROBE_USER_AGENT: public-edge-manager/0.8.2
+  PUBLICATION_ADAPTERS_JSON: '{}'
+  PUBLICATION_ENABLED: 'false'
+  PUBLICATION_REFS_JSON: '{}'
+  READINESS_GATES_JSON: '{}'
+  ROUTE_SNAPSHOT_ENDPOINT: https://2.28.106.230:8443/v1/route-snapshot
+  ROUTE_SNAPSHOT_LISTEN_ADDRESS: 0.0.0.0:8443
+  ROUTE_SNAPSHOT_MAX_STALE_SECONDS: '900'
+  ROUTE_SNAPSHOT_REFRESH_SECONDS: '15'
+  ROUTE_SNAPSHOT_STATE_PATH: /var/lib/public-edge/route-snapshot.json
+  ROUTING_POLICY_JSON: '{"defaultRegion":"default","regions":{"CN":[{"id":"r640","ip":"223.159.210.222","region":"CN"},{"id":"overseas-flk","ip":"2.28.106.230","region":"EU"},{"id":"overseas-la","ip":"179.255.126.104","region":"US"}],"EU":[{"id":"overseas-flk","ip":"2.28.106.230","region":"EU"},{"id":"overseas-la","ip":"179.255.126.104","region":"US"},{"id":"r640","ip":"223.159.210.222","region":"CN"}],"US":[{"id":"overseas-la","ip":"179.255.126.104","region":"US"},{"id":"overseas-flk","ip":"2.28.106.230","region":"EU"},{"id":"r640","ip":"223.159.210.222","region":"CN"}],"default":[{"id":"r640","ip":"223.159.210.222","region":"CN"},{"id":"overseas-flk","ip":"2.28.106.230","region":"EU"},{"id":"overseas-la","ip":"179.255.126.104","region":"US"}]},"trustedEcsPrefixes":["223.5.5.0/24","119.29.29.0/24","114.114.114.0/24","8.8.8.0/24","8.8.4.0/24","80.80.80.0/24","9.9.9.0/24"]}'
+  SECONDARY_NAMESERVERS_BY_ZONE_JSON: '{"service.re8ch.com":["ns1.he.net.","ns2.he.net.","ns3.he.net."]}'
+  SOA_RNAME: hostmaster.re8ch.com.
+  TRUSTED_ECS_PREFIXES_JSON: '["223.5.5.0/24","119.29.29.0/24","114.114.114.0/24","8.8.8.0/24","8.8.4.0/24","80.80.80.0/24","9.9.9.0/24"]'
+  XOT_LISTEN_ADDRESS: 0.0.0.0:853
+  XOT_SECONDARIES_JSON: '[{"dnsName":"overseas-la","id":"overseas-la"},{"dnsName":"domain-ex","id":"domain-ex"},{"dnsName":"muaya-lightweight","id":"muaya-lightweight"},{"dnsName":"suxunji","id":"suxunji"},{"dnsName":"zan","id":"zan"}]'
+  XOT_SERVER_NAME: hidden-primary.service.re8ch.com
+kind: ConfigMap
+metadata:
+  name: public-edge-manager
+  namespace: regional-routing
+---
+apiVersion: v1
+data:
+  records.json: '{"externalRecords":{"_acme-challenge.service.re8ch.com.":[{"externalCDN":true,"provider":"cloudflare-dns01","type":"CNAME","value":"_acme-challenge.re8ch.com."}],"_dnsauth.auth.re8ch.com.":[{"externalCDN":true,"provider":"tencent-edgeone","type":"CNAME","value":"auth.re8ch.com.eoacme0.com."}],"aliyun-ap-northeast-1.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.ap-northeast-1.fc.aliyuncs.com."}],"aliyun-ap-northeast-1.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.ap-northeast-1.fc.aliyuncs.com."}],"aliyun-ap-southeast-1.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.ap-southeast-1.fc.aliyuncs.com."}],"aliyun-ap-southeast-1.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.ap-southeast-1.fc.aliyuncs.com."}],"aliyun-ap-southeast-3.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.ap-southeast-3.fc.aliyuncs.com."}],"aliyun-ap-southeast-3.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.ap-southeast-3.fc.aliyuncs.com."}],"aliyun-ap-southeast-5.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.ap-southeast-5.fc.aliyuncs.com."}],"aliyun-ap-southeast-5.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.ap-southeast-5.fc.aliyuncs.com."}],"aliyun-cn-beijing.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-beijing.fc.aliyuncs.com."}],"aliyun-cn-beijing.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-beijing.fc.aliyuncs.com."}],"aliyun-cn-chengdu.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-chengdu.fc.aliyuncs.com."}],"aliyun-cn-chengdu.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-chengdu.fc.aliyuncs.com."}],"aliyun-cn-hangzhou.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-hangzhou.fc.aliyuncs.com."}],"aliyun-cn-hangzhou.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-hangzhou.fc.aliyuncs.com."}],"aliyun-cn-hongkong.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-hongkong.fc.aliyuncs.com."}],"aliyun-cn-hongkong.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-hongkong.fc.aliyuncs.com."}],"aliyun-cn-huhehaote.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-huhehaote.fc.aliyuncs.com."}],"aliyun-cn-huhehaote.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-huhehaote.fc.aliyuncs.com."}],"aliyun-cn-qingdao.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-qingdao.fc.aliyuncs.com."}],"aliyun-cn-qingdao.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-qingdao.fc.aliyuncs.com."}],"aliyun-cn-shanghai.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-shanghai.fc.aliyuncs.com."}],"aliyun-cn-shanghai.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-shanghai.fc.aliyuncs.com."}],"aliyun-cn-shenzhen.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-shenzhen.fc.aliyuncs.com."}],"aliyun-cn-shenzhen.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-shenzhen.fc.aliyuncs.com."}],"aliyun-cn-zhangjiakou.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-zhangjiakou.fc.aliyuncs.com."}],"aliyun-cn-zhangjiakou.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-zhangjiakou.fc.aliyuncs.com."}],"aliyun-eu-central-1.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.eu-central-1.fc.aliyuncs.com."}],"aliyun-eu-central-1.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.eu-central-1.fc.aliyuncs.com."}],"aliyun-eu-west-1.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.eu-west-1.fc.aliyuncs.com."}],"aliyun-eu-west-1.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.eu-west-1.fc.aliyuncs.com."}],"aliyun-us-east-1.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.us-east-1.fc.aliyuncs.com."}],"aliyun-us-east-1.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.us-east-1.fc.aliyuncs.com."}],"aliyun-us-west-1.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.us-west-1.fc.aliyuncs.com."}],"aliyun-us-west-1.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.us-west-1.fc.aliyuncs.com."}],"aliyun.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-hangzhou.fc.aliyuncs.com."}],"aliyun.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"aliyun-fc","type":"CNAME","value":"1184182212873855.cn-hangzhou.fc.aliyuncs.com."}],"dnshenet-key.service.re8ch.com.":[{"externalCDN":true,"provider":"he-ownership","type":"TXT","value":"hEoXQWWZ7vJQ0rqzfWB8E/Ifpsi+OzthgIJJJX9v9/E"}],"hidden-primary.service.re8ch.com.":[{"externalCDN":true,"provider":"public-edge-xot","type":"A","value":"2.28.106.230"}],"tencent.anycam.functions.re8ch.com.":[{"externalCDN":true,"provider":"tencent-scf","type":"CNAME","value":"1301339749.ap-guangzhou.tencentscf.com."}],"tencent.ledger.functions.re8ch.com.":[{"externalCDN":true,"provider":"tencent-scf","type":"CNAME","value":"1301339749.ap-guangzhou.tencentscf.com."}]},"services":{"admin.service.re8ch.com.":{"acceptedStatuses":[200,400,401,405,406],"class":"service-pilot","probePath":"/mcp","service":"admin-service"},"aesthete.service.re8ch.com.":{"acceptedStatuses":[200],"class":"service-pilot","probePath":"/api/auth/challenge","service":"aesthete-native-api"},"agent.service.re8ch.com.":{"acceptedStatuses":[200,400,401,403,405],"class":"service-pilot","probePath":"/v1/mobile/control","service":"agent-service"},"among-clusters.service.re8ch.com.":{"acceptedStatuses":[200],"class":"service-pilot","probePath":"/healthz","service":"among-clusters-service"},"api.re8ch.com.":{"acceptedStatuses":[200],"class":"api","probePath":"/auth/me","service":"api"},"auth.re8ch.com.":{"acceptedStatuses":[200],"class":"web","probePath":"/","service":"auth"},"cloud-disk.service.re8ch.com.":{"acceptedStatuses":[302],"class":"service-pilot","probePath":"/","service":"cloud-disk-service"},"codex.service.re8ch.com.":{"acceptedStatuses":[200,302,307,401],"class":"service-pilot","probePath":"/ui","service":"codex-service"},"collab.tools.re8ch.com.":{"acceptedStatuses":[200,307],"class":"web","probePath":"/.well-known/jmap","service":"collab"},"db-ro.re8ch.com.":{"acceptedStatuses":[200],"class":"db-ro","probePath":"/auth/ready","service":"db-ro"},"db-rw.re8ch.com.":{"acceptedStatuses":[200],"class":"db-rw","probePath":"/auth/ready","service":"db-rw"},"dbgui.re8ch.com.":{"class":"web","probePath":"/","service":"dbgui"},"dbgui.service.re8ch.com.":{"class":"service-pilot","probePath":"/","service":"dbgui-service"},"grafana.service.re8ch.com.":{"class":"service-pilot","probePath":"/grafana/api/health","service":"grafana-service"},"headlamp.service.re8ch.com.":{"class":"service-pilot","probePath":"/","service":"headlamp-service"},"hooks.re8ch.com.":{"acceptedStatuses":[400,404],"class":"web","probePath":"/hook/","service":"hooks"},"hooks.service.re8ch.com.":{"acceptedStatuses":[400,404],"class":"service-pilot","probePath":"/hook/","service":"hooks-service"},"id.re8ch.com.":{"acceptedStatuses":[200],"class":"web","probePath":"/.well-known/openid-configuration","service":"stalwart"},"ledger-decisions.service.re8ch.com.":{"acceptedStatuses":[200,302,307,401,403],"class":"service-pilot","probePath":"/","service":"ledger-decisions-service"},"litellm.service.re8ch.com.":{"class":"service-pilot","probePath":"/health/readiness","service":"litellm-service"},"mail.re8ch.com.":{"acceptedStatuses":[200],"class":"web","probePath":"/api/health","service":"mail"},"mail.service.re8ch.com.":{"acceptedStatuses":[200,302,307],"class":"service-pilot","probePath":"/","service":"mail-service"},"opensandbox.service.re8ch.com.":{"class":"service-pilot","probePath":"/","service":"opensandbox-service"},"pay-api.service.re8ch.com.":{"acceptedStatuses":[200,401,404],"class":"service-overseas","probePath":"/health","service":"pay-api"},"pay.service.re8ch.com.":{"acceptedStatuses":[200,302,307,401],"class":"service-overseas","probePath":"/","service":"pay-service"},"phonycenter.service.re8ch.com.":{"class":"service-pilot","probePath":"/","service":"phonycenter-service"},"registry.re8ch.com.":{"class":"registry","probePath":"/v2/","service":"registry"},"stalwart-admin.service.re8ch.com.":{"acceptedStatuses":[200,302],"class":"service-pilot","probePath":"/admin","service":"stalwart-admin"},"supabase.service.re8ch.com.":{"class":"service-pilot","probePath":"/","service":"supabase-service"},"tools.service.re8ch.com.":{"acceptedStatuses":[200],"class":"service-pilot","probePath":"/.well-known/oauth-protected-resource/tenant-native/mcp","service":"tools-service"}},"zones":["auth.re8ch.com.","api.re8ch.com.","db-ro.re8ch.com.","db-rw.re8ch.com.","service.re8ch.com.","functions.re8ch.com.","test.re8ch.com."]}'
+kind: ConfigMap
+metadata:
+  name: public-edge-manager-records
+  namespace: regional-routing
+---
+apiVersion: v1
+data:
+  nameservers.json: '{"nameservers":["ns-bootstrap.re8ch.com."]}'
+kind: ConfigMap
+metadata:
+  name: public-edge-nameservers
+  namespace: regional-routing
+---
+apiVersion: v1
+data:
+  runtime.json: '{"model":{},"routes":{},"services":{}}'
+kind: ConfigMap
+metadata:
+  annotations:
+    helm.sh/resource-policy: keep
+  name: public-edge-runtime
+  namespace: regional-routing
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: public-edge-manager
+  namespace: regional-routing
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 18080
+  selector:
+    app.kubernetes.io/name: public-edge-manager
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: public-edge-manager-dns
+  namespace: regional-routing
+spec:
+  ports:
+  - name: dns-udp
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+    targetPort: 53
+  selector:
+    app.kubernetes.io/name: public-edge-manager
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: public-edge-manager
+  namespace: regional-routing
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: public-edge-manager-cli
+  namespace: regional-routing
