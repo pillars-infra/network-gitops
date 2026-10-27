@@ -15,9 +15,14 @@ NAME='networking-helm-advanced-fabric-kube-system'
 STAGE='source-validation'
 RECIPIENT='age1c7camhc8ql85t5u4hrjmsmkurfa0n0v7lg05espasa9fqapjz5vqql8lfj'
 
+class ProtectedCommandError(ValueError):
+    def __init__(self,code):
+        self.code=code
+        super().__init__('protected compiler command failed; diagnostics withheld')
+
 def command(argv,source=None,**kwargs):
     result=subprocess.run(argv,input=source,text=True,capture_output=True,timeout=120)
-    if result.returncode:raise ValueError('protected compiler command failed; diagnostics withheld')
+    if result.returncode:raise ProtectedCommandError(result.returncode)
     return result
 
 def merge(base,overlay):
@@ -38,8 +43,9 @@ def compile_fixed():
     source=[d for d in yaml.safe_load_all((ROOT/'clusters/re8ch/resources.yaml').read_text()) if d]
     original=next(d for d in source if d.get('kind')=='HelmRelease' and d['metadata']['name']=='advanced-fabric')
     inventory=next(d for d in source if d.get('kind')=='ConfigMap' and d['metadata']['name']=='cluster-node-inventory')
-    STAGE='values-decryption'
+    STAGE='helm-values-decryption'
     original_plain=json.loads(command(['sops','--decrypt','--input-type','json','--output-type','json','/dev/stdin'],json.dumps(original)).stdout)
+    STAGE='inventory-values-decryption'
     plain_inventory=decrypt_configmap(bind_source(inventory),command)
     root=command(['kubectl','kustomize','clusters/re8ch']).stdout
     release=next(d for d in yaml.safe_load_all(root) if d and d.get('kind')=='HelmRelease' and d['metadata']['name']=='advanced-fabric')
@@ -80,5 +86,7 @@ if __name__=='__main__':
         target=Path(os.environ['RUNNER_TEMP'])/'protected-rendered.yaml'
         target.write_text(output);target.chmod(0o600)
         print('Protected Advanced Fabric ciphertext render complete')
+    except ProtectedCommandError as error:
+        raise SystemExit('Protected Advanced Fabric compilation failed at '+STAGE+' (command exit '+str(error.code)+'); diagnostics withheld') from None
     except Exception:
         raise SystemExit('Protected Advanced Fabric compilation failed at '+STAGE+'; diagnostics withheld') from None
