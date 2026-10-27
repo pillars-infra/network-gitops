@@ -1,0 +1,127 @@
+name: networking-reconcile
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '13,43 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - contracts/networking-*.yaml
+      - releases/**
+      - operations/releases/**
+      - .github/workflows/networking-reconcile.yml
+permissions:
+  contents: read
+jobs:
+  select:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2'
+      - id: select
+        run: echo "matrix=$(python operations/releases/profile.py --replay-matrix)" >> "$GITHUB_OUTPUT"
+  reconcile:
+    needs: select
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    concurrency:
+      group: networking-static-release-${{ matrix.contract }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: ${{ matrix.environment }}
+    permissions: {contents: read, id-token: write, packages: read}
+    env:
+      # The executor refreshes OIDC tokens during SSA, after the login step.
+      EXECUTOR_AUDIENCE: '${{ matrix.audience }}'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
+        with: {version: v1.33.1}
+      - uses: fluxcd/flux2/action@dede56a8fdcd1e0edca28630a979a51415bb56f8
+        with: {version: '2.9.5'}
+      - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: '${{ github.actor }}'
+          password: '${{ secrets.GITHUB_TOKEN }}'
+      - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2' 'jsonschema>=4.23'
+      - name: Install pinned SOPS
+        run: |
+          curl -fsSL --retry 4 https://github.com/getsops/sops/releases/download/v3.13.1/sops-v3.13.1.linux.amd64 -o "$RUNNER_TEMP/sops"
+          echo "620a9d7e3352ababeca6908cea24a6e8b14ce89a448ddbd3f94f1ef3398f470a  $RUNNER_TEMP/sops" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/sops"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Acquire exact OIDC identity and prove denials
+        env:
+          KUBE_API_CA: '${{ secrets.KUBE_API_CA_PEM }}'
+          RELEASE_ID: '${{ matrix.release-id }}'
+          TARGET_NAMESPACE: '${{ matrix.namespace }}'
+        run: |
+          set -euo pipefail
+          printf '%s' "$KUBE_API_CA" > "$RUNNER_TEMP/re8ch-ca.crt"
+          curl -fsS --get -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" --data-urlencode "audience=$EXECUTOR_AUDIENCE" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL" > "$RUNNER_TEMP/oidc.json"
+          token="$(jq -r .value "$RUNNER_TEMP/oidc.json")"; echo "::add-mask::$token"
+          kubeconfig="$RUNNER_TEMP/executor.kubeconfig"
+          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://kube-api.re8ch.com:6443 \
+            --certificate-authority="$RUNNER_TEMP/re8ch-ca.crt" --embed-certs=true
+          kubectl config --kubeconfig "$kubeconfig" set-credentials release-executor --token="$token"
+          kubectl config --kubeconfig "$kubeconfig" set-context release-executor --cluster=re8ch-main --user=release-executor
+          kubectl config --kubeconfig "$kubeconfig" use-context release-executor
+          export KUBECONFIG="$kubeconfig"
+          state_name="$(python operations/releases/operation_materialize.py state-name --release-id "$RELEASE_ID")"
+          test "$(kubectl auth can-i patch "configmap/$state_name" -n "$TARGET_NAMESPACE")" = yes
+          for denied in "create configmaps -n $TARGET_NAMESPACE" "get secrets -n $TARGET_NAMESPACE" \
+            'patch kustomizations.kustomize.toolkit.fluxcd.io -n flux-system' "get pods/log -n $TARGET_NAMESPACE" \
+            "create serviceaccounts/token -n $TARGET_NAMESPACE" 'impersonate users'; do
+            read -r -a request <<<"$denied"; test "$(kubectl auth can-i "${request[@]}")" = no
+          done
+          echo "KUBECONFIG=$kubeconfig" >> "$GITHUB_ENV"
+      - id: accepted
+        name: Resolve accepted state and reconcile without rebuilding
+        env:
+          SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
+          CONTRACT: '${{ matrix.contract }}'
+          RELEASE_ID: '${{ matrix.release-id }}'
+          TARGET_NAMESPACE: '${{ matrix.namespace }}'
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/executor-state"; install -d "$RUNNER_TEMP/pulled" "$root/state" "$root/results/$RELEASE_ID"
+          state_name="$(python operations/releases/operation_materialize.py state-name --release-id "$RELEASE_ID")"
+          kubectl get configmap "$state_name" -n "$TARGET_NAMESPACE" --ignore-not-found -o json > "$RUNNER_TEMP/state-cm.json"
+          if [[ ! -s "$RUNNER_TEMP/state-cm.json" ]] || ! jq -e '.data["accepted-state.json"] // empty' "$RUNNER_TEMP/state-cm.json" >/dev/null; then
+            echo "No accepted artifact for $RELEASE_ID; initial publication requires the protected publish workflow." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
+          python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" \
+              --contract "$CONTRACT" > "$RUNNER_TEMP/accepted-bundle.json"
+          OCI_REFERENCE="$(jq -r .reference "$RUNNER_TEMP/accepted-bundle.json")"
+          OCI_DIGEST="$(jq -r .digest "$RUNNER_TEMP/accepted-bundle.json")"
+          immutable="${OCI_REFERENCE#oci://}@${OCI_DIGEST}"
+          cosign verify --certificate-identity '${{ matrix.signer }}' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com "$immutable" >/dev/null
+          flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
+          python operations/releases/operation_materialize.py request --replay-only --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
+            --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json"
+          executor_status=0
+          python operations/releases/ssa_executor.py --contract "$CONTRACT" --operation "$RUNNER_TEMP/operation.json" \
+            --bundle "$RUNNER_TEMP/pulled/release.bundle" --state-dir "$root" > "$RUNNER_TEMP/result.json" || executor_status=$?
+          python operations/releases/operation_materialize.py state-patch --configmap "$RUNNER_TEMP/state-cm.json" \
+            --state-dir "$root" --release-id "$RELEASE_ID" --result "$RUNNER_TEMP/result.json" --output "$RUNNER_TEMP/state-patch.json"
+          if [[ -s "$RUNNER_TEMP/state-patch.json" ]]; then
+            kubectl patch configmap "$state_name" -n "$TARGET_NAMESPACE" --type merge --patch-file "$RUNNER_TEMP/state-patch.json"
+          fi
+          if (( executor_status != 0 )); then exit "$executor_status"; fi
+          jq -e '.outcome == "healthy" and .health.status == "healthy"' "$RUNNER_TEMP/result.json" >/dev/null
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with: {name: 'networking-reconcile-${{ matrix.release-id }}-${{ github.run_id }}', path: '${{ runner.temp }}/result.json', retention-days: 30, if-no-files-found: warn}

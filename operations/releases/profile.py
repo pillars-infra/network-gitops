@@ -40,8 +40,30 @@ def validate_contract(path):
         raise ValueError('source must be the reviewed projection')
     return {'release-id': name, 'namespace': spec['target']['namespace'], 'domain':'networking', 'environment':ENVIRONMENT, 'audience':AUDIENCE, 'kubernetes-group':'re8ch:release-executor:networking', 'signer':SIGNER}
 
+REPLAY_WORKFLOW = '.github/workflows/networking-reconcile.yml'
+REPLAY_ENVIRONMENT = 'release-reconciler-networking'
+REPLAY_AUDIENCE = 'https://kube-api.re8ch.com/release-reconciler-networking'
+
+def replay_provenance(contract):
+    spec=contract['spec']
+    expected=dict(repository=REPOSITORY,workflow=WORKFLOW,ref='refs/heads/main',environment=ENVIRONMENT,audience=AUDIENCE,signer=SIGNER,issuer='https://token.actions.githubusercontent.com')
+    if spec.get('authorityDomain')!='networking' or spec.get('provenance')!=expected:
+        return None
+    return dict(repository=REPOSITORY,workflow=REPLAY_WORKFLOW,ref='refs/heads/main',environment=REPLAY_ENVIRONMENT,audience=REPLAY_AUDIENCE)
+
+def replay_matrix():
+    result=[]
+    for path in sorted((ROOT/'contracts').glob('networking-*.yaml')):
+        relative=path.relative_to(ROOT)
+        profile=validate_contract(relative)
+        result.append({**profile,'contract':str(relative),'environment':REPLAY_ENVIRONMENT,'audience':REPLAY_AUDIENCE})
+    return result
+
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--contract',type=Path,required=True);p.add_argument('--github-output',type=Path);args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--contract',type=Path);p.add_argument('--replay-matrix',action='store_true');p.add_argument('--github-output',type=Path);args=p.parse_args()
+    if args.replay_matrix:
+        print(json.dumps({'include':replay_matrix()},separators=(',',':')));return
+    if args.contract is None:p.error('--contract required')
     value=validate_contract(args.contract)
     if args.github_output:
         with args.github_output.open('a') as f:

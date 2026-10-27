@@ -126,3 +126,9 @@ The executor fetches each object's resourceVersion and supplies it as an SSA
 precondition for both dry-run and apply, including rollback. Missing objects
 fail closed; this adoption path cannot recreate a deleted object. Explicit new
 resource creation remains a separate publication authority.
+
+## Accepted artifact reconciliation
+
+`networking-reconcile.yml` runs on relevant main changes and twice hourly. It reads each release's durable accepted state, skips releases without acceptance, verifies the publisher signature, and replays that exact healthy digest through the existing SSA executor. It never builds, publishes, changes an inventory, requests force, or migrates a contract. Publication and first adoption retain the protected `static-release.yml` workflow. Both workflows share per-contract concurrency.
+
+The separate `release-reconciler-networking` Environment needs `KUBE_API_CA_PEM` and `SOPS_AGE_KEY`. Its OIDC audience is `https://kube-api.re8ch.com/release-reconciler-networking`, restricted to this repository's main `networking-reconcile.yml` workflow. Platform provisioning maps it to the existing exact networking permissions; no new Kubernetes grants are required. The SOPS key is available only during accepted execution, never an artifact or log. Provision this identity before enabling successful automatic runtime execution.
