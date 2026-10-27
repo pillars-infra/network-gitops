@@ -26,6 +26,8 @@ def validate_contract(path):
         raise ValueError('unexpected networking execution identity')
     if name.startswith('networking-native-'):
         expected_source=dict(renderer='kustomize', revision='github-main-reviewed', repository=REPOSITORY, path=f'releases/{name}')
+    elif name=='networking-helm-advanced-fabric-kube-system':
+        expected_source=dict(renderer='kustomize', revision='github-main-reviewed',repository=REPOSITORY,path=f'releases/{name}',protectedHelm='advanced-fabric')
     else:
         ledger=json.loads((ROOT/'operations/releases/helm-authority.json').read_text())
         entry=next((r for r in ledger['releases'] if r['releaseId']==name),None)

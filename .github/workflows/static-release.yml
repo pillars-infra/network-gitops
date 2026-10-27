@@ -77,6 +77,22 @@ jobs:
           username: '${{ github.actor }}'
           password: '${{ secrets.GITHUB_TOKEN }}'
       - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2' 'jsonschema>=4.23'
+      - name: Install fixed protected Helm compiler
+        if: inputs.contract == 'contracts/networking-helm-advanced-fabric-kube-system.yaml'
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
+        with: {version: v4.2.3}
+      - name: Install protected compiler SOPS
+        if: inputs.contract == 'contracts/networking-helm-advanced-fabric-kube-system.yaml'
+        run: |
+          curl -fsSL --retry 4 https://github.com/getsops/sops/releases/download/v3.13.1/sops-v3.13.1.linux.amd64 -o "$RUNNER_TEMP/sops"
+          echo "620a9d7e3352ababeca6908cea24a6e8b14ce89a448ddbd3f94f1ef3398f470a  $RUNNER_TEMP/sops" | sha256sum --check
+          chmod +x "$RUNNER_TEMP/sops"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Compile reviewed Advanced Fabric into encrypted objects
+        if: inputs.contract == 'contracts/networking-helm-advanced-fabric-kube-system.yaml'
+        env:
+          SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
+        run: python operations/releases/compile_protected_helm.py
       - id: publish
         name: Compile, publish, sign, and verify bundle
         env: {CONTRACT: '${{ inputs.contract }}'}
@@ -94,7 +110,11 @@ jobs:
           [[ "${fields[4]}" == .github/workflows/static-release.yml ]]
           [[ "${fields[5]}" == '${{ needs.validate.outputs.domain }}' ]]
           [[ "${fields[6]}" == '${{ needs.validate.outputs.signer }}' ]]
-          kubectl kustomize "${fields[1]}" > "$RUNNER_TEMP/rendered.yaml"
+          if [[ "$CONTRACT" == contracts/networking-helm-advanced-fabric-kube-system.yaml ]]; then
+            cp "$RUNNER_TEMP/protected-rendered.yaml" "$RUNNER_TEMP/rendered.yaml"
+          else
+            kubectl kustomize "${fields[1]}" > "$RUNNER_TEMP/rendered.yaml"
+          fi
           python operations/releases/unified_bundle.py --contract "$CONTRACT" --rendered "$RUNNER_TEMP/rendered.yaml" \
             --output "$RUNNER_TEMP/release.bundle" > "$RUNNER_TEMP/bundle-metadata.json"
           install -d "$RUNNER_TEMP/oci"

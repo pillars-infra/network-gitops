@@ -1,0 +1,85 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-helm-advanced-fabric-kube-system
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: kube-system
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-helm-advanced-fabric-kube-system
+    protectedHelm: advanced-fabric
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-helm-advanced-fabric-kube-system
+    resources:
+    - apps/DaemonSet
+    - apps/Deployment
+    - cert-manager.io/Certificate
+    - cert-manager.io/Issuer
+    - core/ConfigMap
+    - core/Service
+    - core/ServiceAccount
+    - networking.advfab.org/AdvancedFabric
+    - networking.k8s.io/IngressClass
+    - policy/PodDisruptionBudget
+    objectNames:
+    - advanced-fabric
+    - advanced-fabric-agent
+    - advanced-fabric-controller
+    - advanced-fabric-dns
+    - advanced-fabric-dns-selfsigned
+    - advanced-fabric-doh
+    - advanced-fabric-node-exporter
+    - advanced-fabric-observation-api
+    - advanced-fabric-pod-conformance
+    - advanced-fabric-runtime
+    - advanced-fabric-virtual-ingress
+    forceConflictObjects:
+    - apps/DaemonSet/kube-system/advanced-fabric-agent
+    - apps/DaemonSet/kube-system/advanced-fabric-pod-conformance
+    - apps/Deployment/kube-system/advanced-fabric-controller
+    - apps/Deployment/kube-system/advanced-fabric-doh
+    - apps/Deployment/kube-system/advanced-fabric-virtual-ingress
+    - cert-manager.io/Certificate/kube-system/advanced-fabric-dns
+    - cert-manager.io/Issuer/kube-system/advanced-fabric-dns-selfsigned
+    - core/ConfigMap/kube-system/advanced-fabric-dns
+    - core/ConfigMap/kube-system/advanced-fabric-runtime
+    - core/ConfigMap/kube-system/advanced-fabric-virtual-ingress
+    - core/Service/kube-system/advanced-fabric-dns
+    - core/Service/kube-system/advanced-fabric-doh
+    - core/Service/kube-system/advanced-fabric-node-exporter
+    - core/Service/kube-system/advanced-fabric-observation-api
+    - core/ServiceAccount/kube-system/advanced-fabric
+    - core/ServiceAccount/kube-system/advanced-fabric-dns
+    - core/ServiceAccount/kube-system/advanced-fabric-doh
+    - networking.advfab.org/AdvancedFabric/_/advanced-fabric
+    - networking.k8s.io/IngressClass/_/advanced-fabric
+    - policy/PodDisruptionBudget/kube-system/advanced-fabric-controller
+    - policy/PodDisruptionBudget/kube-system/advanced-fabric-dns
+    - policy/PodDisruptionBudget/kube-system/advanced-fabric-virtual-ingress
+    allowClusterScoped: true
+  inventory:
+    digest: sha256:7a573c30902149bd88e40b1f21598e11aeddb1a38b09799662d3155b89dc9883
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

@@ -1,0 +1,266 @@
+{
+  "releaseId": "networking-helm-advanced-fabric-kube-system",
+  "namespace": "kube-system",
+  "contract": "contracts/networking-helm-advanced-fabric-kube-system.yaml",
+  "inventory": [
+    "apps/DaemonSet/kube-system/advanced-fabric-agent",
+    "apps/DaemonSet/kube-system/advanced-fabric-pod-conformance",
+    "apps/Deployment/kube-system/advanced-fabric-controller",
+    "apps/Deployment/kube-system/advanced-fabric-doh",
+    "apps/Deployment/kube-system/advanced-fabric-virtual-ingress",
+    "cert-manager.io/Certificate/kube-system/advanced-fabric-dns",
+    "cert-manager.io/Issuer/kube-system/advanced-fabric-dns-selfsigned",
+    "core/ConfigMap/kube-system/advanced-fabric-dns",
+    "core/ConfigMap/kube-system/advanced-fabric-runtime",
+    "core/ConfigMap/kube-system/advanced-fabric-virtual-ingress",
+    "core/Service/kube-system/advanced-fabric-dns",
+    "core/Service/kube-system/advanced-fabric-doh",
+    "core/Service/kube-system/advanced-fabric-node-exporter",
+    "core/Service/kube-system/advanced-fabric-observation-api",
+    "core/ServiceAccount/kube-system/advanced-fabric",
+    "core/ServiceAccount/kube-system/advanced-fabric-dns",
+    "core/ServiceAccount/kube-system/advanced-fabric-doh",
+    "networking.advfab.org/AdvancedFabric/_/advanced-fabric",
+    "networking.k8s.io/IngressClass/_/advanced-fabric",
+    "policy/PodDisruptionBudget/kube-system/advanced-fabric-controller",
+    "policy/PodDisruptionBudget/kube-system/advanced-fabric-dns",
+    "policy/PodDisruptionBudget/kube-system/advanced-fabric-virtual-ingress"
+  ],
+  "rules": [
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        "policy"
+      ],
+      "resources": [
+        "poddisruptionbudgets"
+      ],
+      "resourceNames": [
+        "advanced-fabric-controller",
+        "advanced-fabric-dns",
+        "advanced-fabric-virtual-ingress"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "serviceaccounts"
+      ],
+      "resourceNames": [
+        "advanced-fabric",
+        "advanced-fabric-dns",
+        "advanced-fabric-doh"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "configmaps"
+      ],
+      "resourceNames": [
+        "advanced-fabric-dns",
+        "advanced-fabric-runtime",
+        "advanced-fabric-virtual-ingress"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "services"
+      ],
+      "resourceNames": [
+        "advanced-fabric-dns",
+        "advanced-fabric-doh",
+        "advanced-fabric-node-exporter",
+        "advanced-fabric-observation-api"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        "apps"
+      ],
+      "resources": [
+        "daemonsets"
+      ],
+      "resourceNames": [
+        "advanced-fabric-agent",
+        "advanced-fabric-pod-conformance"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        "apps"
+      ],
+      "resources": [
+        "deployments"
+      ],
+      "resourceNames": [
+        "advanced-fabric-controller",
+        "advanced-fabric-doh",
+        "advanced-fabric-virtual-ingress"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        "cert-manager.io"
+      ],
+      "resources": [
+        "certificates"
+      ],
+      "resourceNames": [
+        "advanced-fabric-dns"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        "cert-manager.io"
+      ],
+      "resources": [
+        "issuers"
+      ],
+      "resourceNames": [
+        "advanced-fabric-dns-selfsigned"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "cluster",
+      "apiGroups": [
+        "networking.k8s.io"
+      ],
+      "resources": [
+        "ingressclasses"
+      ],
+      "resourceNames": [
+        "advanced-fabric"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "cluster",
+      "apiGroups": [
+        "networking.advfab.org"
+      ],
+      "resources": [
+        "advancedfabrics"
+      ],
+      "resourceNames": [
+        "advanced-fabric"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    },
+    {
+      "scope": "namespace",
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "configmaps"
+      ],
+      "resourceNames": [
+        "ssa-state-networking-helm-advanced-fabric-kube-system"
+      ],
+      "verbs": [
+        "get",
+        "patch"
+      ]
+    }
+  ],
+  "stateConfigMap": {
+    "apiVersion": "v1",
+    "kind": "ConfigMap",
+    "metadata": {
+      "name": "ssa-state-networking-helm-advanced-fabric-kube-system",
+      "namespace": "kube-system"
+    },
+    "data": {}
+  },
+  "platformBootstrap": [
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "namespace": "kube-system",
+      "name": "advanced-fabric-controller-lease"
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "namespace": "kube-system",
+      "name": "advanced-fabric-controller-lease"
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "namespace": null,
+      "name": "advanced-fabric-dns"
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRole",
+      "namespace": null,
+      "name": "advanced-fabric"
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "namespace": null,
+      "name": "advanced-fabric-dns"
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "ClusterRoleBinding",
+      "namespace": null,
+      "name": "advanced-fabric"
+    }
+  ]
+}
