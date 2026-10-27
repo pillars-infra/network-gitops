@@ -12,14 +12,28 @@ API='networking.advfab.org/v1alpha1'
 class TopologyParityError(ValueError):
     pass
 
-def differences(desired,live):
-    if isinstance(desired,dict):
-        if not isinstance(live,dict):return 1
-        return sum(1 if key not in live else differences(value,live[key]) for key,value in desired.items())
-    if isinstance(desired,list):
-        if not isinstance(live,list) or len(desired)!=len(live):return 1
-        return sum(differences(a,b) for a,b in zip(desired,live))
-    return int(type(desired)!=type(live) or desired!=live)
+def difference_counts(desired,live):
+    counts={'placement':0,'controllerRuntime':0,'virtualIngressRuntime':0,'networkOrOther':0}
+    def add(path):
+        if len(path)>1 and path[0] in {'controller','virtualIngress'} and path[1] in {'affinity','tolerations'}:category='placement'
+        elif path and path[0]=='controller':category='controllerRuntime'
+        elif path and path[0]=='virtualIngress':category='virtualIngressRuntime'
+        else:category='networkOrOther'
+        counts[category]+=1
+    def visit(want,actual,path):
+        if isinstance(want,dict):
+            if not isinstance(actual,dict):add(path);return
+            for key,value in want.items():
+                if key not in actual:add(path+(key,))
+                else:visit(value,actual[key],path+(key,))
+        elif isinstance(want,list):
+            if not isinstance(actual,list) or len(want)!=len(actual):add(path);return
+            for index,(a,b) in enumerate(zip(want,actual)):visit(a,b,path+(str(index),))
+        elif type(want)!=type(actual) or want!=actual:add(path)
+    visit(desired,live,())
+    return counts
+
+def differences(desired,live):return sum(difference_counts(desired,live).values())
 
 def check(objects,previous,command):
     targets=[o for o in objects if o.get('apiVersion')==API and o.get('kind')=='AdvancedFabric']
@@ -38,9 +52,10 @@ def check(objects,previous,command):
         version=targets[0]['metadata'].get('resourceVersion')
         if not version or live.get('metadata',{}).get('resourceVersion')!=version:
             raise TopologyParityError('topology changed while binding adoption precondition')
-        count=differences(targets[0]['spec'],live['spec'])
+        counts=difference_counts(targets[0]['spec'],live['spec'])
+        count=sum(counts.values())
     except TopologyParityError:raise
     except Exception:
         raise TopologyParityError('restricted topology parity could not be verified; diagnostics withheld') from None
-    if count:raise TopologyParityError('initial topology adoption differs from live state; difference count='+str(count))
+    if count:raise TopologyParityError('initial topology adoption differs from live state; difference count='+str(count)+'; categories='+json.dumps(counts,sort_keys=True))
     return {'sourcePinMatches':True,'initialAdoption':True,'differenceCount':0}

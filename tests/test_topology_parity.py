@@ -55,3 +55,11 @@ def test_topology_version_change_between_reads_rejects_adoption(monkeypatch):
     run,_=runner(monkeypatch,live)
     with pytest.raises(parity.TopologyParityError,match='changed while binding'):
         parity.check([obj()],None,run)
+
+
+def test_parity_diagnostics_classify_without_values_or_paths():
+    desired={'virtualIngress':{'tolerations':[{'key':'private-taint'}]},'controller':{'image':'private-image'},'private-topology':{'private-key':'secret-value'}}
+    actual={'virtualIngress':{'tolerations':[]},'controller':{'image':'old-image'},'private-topology':{}}
+    counts=parity.difference_counts(desired,actual)
+    assert counts=={'placement':1,'controllerRuntime':1,'virtualIngressRuntime':0,'networkOrOther':1}
+    assert 'private' not in json.dumps(counts) and 'secret' not in json.dumps(counts)
