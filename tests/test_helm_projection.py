@@ -50,3 +50,32 @@ def test_public_edge_post_renderer_and_cloud_dns_placement_are_retained():
     terms=spec['affinity']['nodeAffinity']['requiredDuringSchedulingIgnoredDuringExecution']['nodeSelectorTerms']
     assert any(e['key']=='scheduling.re8ch.com/provider' and e['operator']=='Exists' for t in terms for e in t['matchExpressions'])
     assert spec['affinity']['podAntiAffinity']['requiredDuringSchedulingIgnoredDuringExecution']
+
+
+def test_public_edge_runtime_outputs_are_not_static_ssa_authority():
+    from compile_helm import runtime_result_configmaps
+    declaration={'spec':{'targetNamespace':'regional-routing','values':{'dns':{'nameserversConfigMap':'public-edge-nameservers'},'runtime':{'configMapName':'public-edge-runtime'}}}}
+    expected={'core/ConfigMap/regional-routing/public-edge-nameservers','core/ConfigMap/regional-routing/public-edge-runtime'}
+    assert runtime_result_configmaps('public-edge-manager',declaration)==expected
+    with pytest.raises(ValueError):runtime_result_configmaps('public-edge-manager',{'spec':{'targetNamespace':'regional-routing','values':{}}})
+    ledger=json.loads((ROOT/'operations/releases/helm-authority.json').read_text())
+    release=next(r for r in ledger['releases'] if r['releaseId']=='networking-helm-public-edge-manager-regional-routing')
+    assert len(release['inventory'])==12 and not expected.intersection(release['inventory'])
+    assert {r['identity'] for r in ledger['omitted'] if r['reason']=='controller-owned-runtime-result'}==expected
+    assert 'core/ConfigMap/regional-routing/public-edge-manager-records' in release['inventory']
+    contract=yaml.safe_load((ROOT/release['contract']).read_text())
+    assert contract['spec']['lifecycle']['prune'] is False
+    assert contract['spec']['lifecycle']['deletionAllowlist']==[]
+    assert all(name not in contract['spec']['authorization']['objectNames'] for name in ['public-edge-nameservers','public-edge-runtime'])
+
+
+def test_old_fourteen_object_rollback_cannot_reenter_new_twelve_object_boundary(tmp_path):
+    from test_ssa_release_executor import executor,Runner
+    ledger=json.loads((ROOT/'operations/releases/helm-authority.json').read_text())
+    inventory=next(r['inventory'] for r in ledger['releases'] if r['releaseId']=='networking-helm-public-edge-manager-regional-routing')
+    old=inventory+['core/ConfigMap/regional-routing/public-edge-nameservers','core/ConfigMap/regional-routing/public-edge-runtime']
+    assert len(old)==14 and len(inventory)==12
+    runner=Runner();engine=executor.Executor(runner=runner)
+    with pytest.raises(executor.Rejected,match='rollback inventory exceeds current desired authority'):
+        engine.rollback({'inventory':old,'appliedDigest':'sha256:'+'a'*64},{'inventory':inventory},[],{}, {},'test',executor.Store(tmp_path,'test'),'failure')
+    assert runner.calls==[]

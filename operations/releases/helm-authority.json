@@ -595,8 +595,6 @@
         "apps/Deployment/regional-routing/public-edge-manager-hidden-primary",
         "core/ConfigMap/regional-routing/public-edge-manager",
         "core/ConfigMap/regional-routing/public-edge-manager-records",
-        "core/ConfigMap/regional-routing/public-edge-nameservers",
-        "core/ConfigMap/regional-routing/public-edge-runtime",
         "core/Service/regional-routing/public-edge-manager",
         "core/Service/regional-routing/public-edge-manager-dns",
         "core/ServiceAccount/regional-routing/public-edge-manager",
@@ -646,9 +644,7 @@
           ],
           "resourceNames": [
             "public-edge-manager",
-            "public-edge-manager-records",
-            "public-edge-nameservers",
-            "public-edge-runtime"
+            "public-edge-manager-records"
           ],
           "verbs": [
             "get",
@@ -719,7 +715,7 @@
         "path": "releases/networking-helm-public-edge-manager-regional-routing",
         "chartOCI": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:b5a9a2cd60ff53da529388f2b1d5fa65a6ccc9a705262f9dcd3d3650c6ddc351"
       },
-      "renderedSHA256": "a2d5b72a99e2824acaddfafdfa56880f3295d4a01dfc59dae1f80788484605ae"
+      "renderedSHA256": "3194996085046b6e88113c3826a05ab7edc203ae6fcb677ff51efcc3d715ab92"
     }
   ],
   "platformBootstrap": [
@@ -3711,6 +3707,14 @@
     {
       "identity": "rbac.authorization.k8s.io/RoleBinding/kube-system/cilium-operator-ztunnel",
       "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "core/ConfigMap/regional-routing/public-edge-nameservers",
+      "reason": "controller-owned-runtime-result"
+    },
+    {
+      "identity": "core/ConfigMap/regional-routing/public-edge-runtime",
+      "reason": "controller-owned-runtime-result"
     },
     {
       "identity": "rbac.authorization.k8s.io/Role/qianwen-ops/public-edge-manager-cloudflare",

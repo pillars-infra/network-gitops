@@ -39,8 +39,6 @@ spec:
     - public-edge-manager-hidden-primary
     - public-edge-manager-records
     - public-edge-manager-redirector
-    - public-edge-nameservers
-    - public-edge-runtime
     forceConflictObjects:
     - apps/DaemonSet/regional-routing/public-edge-manager
     - apps/DaemonSet/regional-routing/public-edge-manager-redirector
@@ -50,14 +48,12 @@ spec:
     - apps/Deployment/regional-routing/public-edge-manager-hidden-primary
     - core/ConfigMap/regional-routing/public-edge-manager
     - core/ConfigMap/regional-routing/public-edge-manager-records
-    - core/ConfigMap/regional-routing/public-edge-nameservers
-    - core/ConfigMap/regional-routing/public-edge-runtime
     - core/Service/regional-routing/public-edge-manager
     - core/Service/regional-routing/public-edge-manager-dns
     - core/ServiceAccount/regional-routing/public-edge-manager
     - core/ServiceAccount/regional-routing/public-edge-manager-cli
   inventory:
-    digest: sha256:033eaf206c82096b3ecc5cf80f2f5baba5ce1ed32b4b5406584234e20fbefe8c
+    digest: sha256:dd71341519e5565c23b445ae1fb825204f830ebc564dfadadaa7afb0602a2c88
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

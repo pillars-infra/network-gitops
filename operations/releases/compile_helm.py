@@ -72,6 +72,16 @@ def render(release,chart,version):
             rendered.write_bytes(output)
         return normalize([o for o in yaml.safe_load_all(output) if o],namespace)
 
+def runtime_result_configmaps(name, declaration):
+    """PublicEdge lookup-preserved runtime outputs are not static desired inputs."""
+    if name != 'public-edge-manager':return set()
+    values=declaration['spec'].get('values',{})
+    if values.get('enabled',True) is False:return set()
+    names=[values.get('dns',{}).get('nameserversConfigMap'),values.get('runtime',{}).get('configMapName')]
+    if any(not isinstance(n,str) or not re.fullmatch(r'[a-z0-9]([-a-z0-9]*[a-z0-9])?',n) for n in names) or len(set(names))!=2:
+        raise ValueError('declare two distinct PublicEdge runtime ConfigMap names')
+    return {f"core/ConfigMap/{declaration['spec']['targetNamespace']}/{n}" for n in names}
+
 def compile_all(documents,locks,cache):
     releases={o['metadata']['name']:o for o in documents if o and o.get('kind')=='HelmRelease'}
     sources={o['metadata']['name']:o for o in documents if o and o.get('kind')=='OCIRepository'}
@@ -93,15 +103,21 @@ def compile_all(documents,locks,cache):
             aggregate['omitted'].append({'identity':object_identity(declaration),'reason':'protected-render-required','chart':chart});continue
         objects=render(declaration,fetch_chart(name,lock,cache),locks['kubernetesVersion'])
         runtime=[]
+        runtime_results=runtime_result_configmaps(name,declaration)
+        omitted_runtime=set()
         for o in objects:
             identity=object_identity(o)
             if identity in seen:raise ValueError('Helm ownership overlap: '+identity)
             seen.add(identity)
+            if identity in runtime_results:
+                aggregate['omitted'].append({'identity':identity,'reason':'controller-owned-runtime-result'})
+                omitted_runtime.add(identity);continue
             if o['kind']=='Secret':aggregate['omitted'].append({'identity':identity,'reason':'preserve-existing-secret'});continue
             if 'helm.sh/hook' in (o['metadata'].get('annotations') or {}):aggregate['omitted'].append({'identity':identity,'reason':'one-shot-helm-hook'});continue
             if not o['metadata'].get('namespace'):
                 aggregate['platformBootstrap'].append(o);continue
             runtime.append(o)
+        if omitted_runtime!=runtime_results:raise ValueError('PublicEdge runtime result templates differ from declared boundary')
         projected,ledger=project(runtime,prefix='networking-helm-'+name,source_context=context)
         projected.pop('operations/releases/native-authority.json')
         files.update(projected)
