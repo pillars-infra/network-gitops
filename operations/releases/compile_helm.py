@@ -8,6 +8,8 @@ silently adopted. Restricted chart values require the protected rendering path.
 import argparse
 import hashlib
 import json
+from urllib.parse import urlsplit
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -26,7 +28,8 @@ def fetch_chart(name,lock,cache):
         if ROOT not in path.parents or sha(path)!=chart['sha256']:raise ValueError('vendored chart digest mismatch')
         return path
     ref=chart['oci']
-    if not ref.startswith('oci://ghcr.io/') or '@sha256:' not in ref or len(ref.rsplit('@sha256:',1)[1])!=64:
+    parsed=urlsplit(ref)
+    if parsed.scheme!='oci' or parsed.netloc!='ghcr.io' or not re.fullmatch(r'/[a-z0-9/_.-]+@sha256:[0-9a-f]{64}',parsed.path) or parsed.query or parsed.fragment:
         raise ValueError('chart must bind a GHCR digest')
     path=cache/f"{name}-{chart['sha256']}.tgz"
     if path.exists():
