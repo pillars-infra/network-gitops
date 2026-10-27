@@ -550,6 +550,9 @@ class Executor:
         if contract["spec"]["authorization"].get("requireExisting", False):
             selected_objects = self.with_existing_versions(selected_objects)
             by_identity.update({object_identity(item): item for item in selected_objects})
+        from topology_parity import check, TopologyParityError
+        try:check(selected_objects,previous,self.command)
+        except TopologyParityError as error:raise Rejected(str(error)) from None
         if not selected_objects and not finalize:
             raise Rejected("stage selection contains no objects")
         for stage in stages:
