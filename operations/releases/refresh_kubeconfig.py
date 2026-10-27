@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Renew the current executor credential without passing secrets in process argv."""
 import os
+import argparse
+import base64
 from pathlib import Path
 import tempfile
 
@@ -31,5 +33,26 @@ def refresh() -> None:
             os.unlink(temporary)
 
 
-if __name__ == '__main__':
+def initialize() -> None:
+    """Create the fixed cluster config privately, then use the guarded OIDC client."""
+    path = Path(os.environ['KUBECONFIG'])
+    ca = os.environ['KUBE_API_CA']
+    if not ca.strip():
+        raise Rejected('missing Kubernetes CA')
+    config = {'apiVersion':'v1','kind':'Config',
+              'clusters':[{'name':'re8ch-main','cluster':{'server':'https://kube-api.re8ch.com:6443',
+                           'certificate-authority-data':base64.b64encode(ca.encode()).decode()}}],
+              'users':[{'name':'release-executor','user':{}}],
+              'contexts':[{'name':'release-executor','context':{'cluster':'re8ch-main','user':'release-executor'}}],
+              'current-context':'release-executor'}
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, 'w') as handle:
+        yaml.safe_dump(config, handle, sort_keys=False)
     refresh()
+
+
+if __name__ == '__main__':
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--initialize',action='store_true')
+    args=parser.parse_args()
+    initialize() if args.initialize else refresh()

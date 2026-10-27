@@ -20,15 +20,32 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    environment: release-reconciler-networking
+    permissions: {contents: read, id-token: write}
+    env:
+      EXECUTOR_AUDIENCE: https://kube-api.re8ch.com/release-reconciler-networking
     outputs:
       matrix: ${{ steps.select.outputs.matrix }}
+      has-accepted: ${{ steps.select.outputs.has-accepted }}
+      invalid: ${{ steps.select.outputs.invalid }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2'
+      - uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
+        with: {version: v1.33.1}
+      - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2' 'jsonschema>=4.23'
+      - name: Prepare private read identity
+        env:
+          KUBE_API_CA: '${{ secrets.KUBE_API_CA_PEM }}'
+        run: |
+          set -euo pipefail
+          export KUBECONFIG="$RUNNER_TEMP/reconcile-select.kubeconfig"
+          python operations/releases/refresh_kubeconfig.py --initialize
+          echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
       - id: select
-        run: echo "matrix=$(python operations/releases/profile.py --replay-matrix)" >> "$GITHUB_OUTPUT"
+        run: python operations/releases/select_accepted_releases.py --github-output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY"
   reconcile:
     needs: select
+    if: needs.select.outputs.has-accepted == 'true'
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -131,3 +148,12 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with: {name: 'networking-reconcile-${{ matrix.release-id }}-${{ github.run_id }}', path: '${{ runner.temp }}/result.json', retention-days: 30, if-no-files-found: warn}
+  selection-status:
+    needs: [select, reconcile]
+    if: always() && needs.select.outputs.invalid != '' && needs.select.outputs.invalid != '0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      - run: |
+          echo "Invalid network acceptance state was excluded; see the select job summary." >&2
+          exit 1
