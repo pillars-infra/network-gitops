@@ -3,10 +3,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Publish a new bundle or reconcile the accepted immutable artifact
+        description: Publish, reuse a signed digest, or reconcile the accepted artifact
         type: choice
-        options: [publish, reconcile]
+        options: [publish, reuse, reconcile]
         default: publish
+      bundle_digest:
+        description: Previously published sha256 digest (required only for reuse)
+        type: string
+        default: ''
       contract:
         description: Reviewed networking ReleaseContract path
         type: string
@@ -47,7 +51,7 @@ jobs:
         env: {CONTRACT: '${{ inputs.contract }}'}
         run: python operations/releases/profile.py --contract "$CONTRACT" --github-output "$GITHUB_OUTPUT"
   compile-sign:
-    if: github.ref == 'refs/heads/main' && inputs.mode != 'reconcile'
+    if: github.ref == 'refs/heads/main' && inputs.mode == 'publish'
     needs: validate
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -153,7 +157,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with: {name: 'static-release-shadow-${{ github.run_id }}', path: static-release-shadow-evidence.json, retention-days: 30, if-no-files-found: error}
   runtime-dry-run:
-    if: always() && inputs.dry_run && !inputs.execute && github.ref == 'refs/heads/main' && needs.validate.result == 'success' && (needs.compile-sign.result == 'success' || (inputs.mode == 'reconcile' && needs.compile-sign.result == 'skipped'))
+    if: always() && inputs.dry_run && !inputs.execute && github.ref == 'refs/heads/main' && needs.validate.result == 'success' && (needs.compile-sign.result == 'success' || (inputs.mode != 'publish' && needs.compile-sign.result == 'skipped'))
     needs: [validate, compile-sign]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -208,6 +212,7 @@ jobs:
           SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
           OCI_REFERENCE: '${{ needs.compile-sign.outputs.reference }}'
           OCI_DIGEST: '${{ needs.compile-sign.outputs.digest }}'
+          REUSE_DIGEST: '${{ inputs.bundle_digest }}'
           RELEASE_ID: '${{ needs.validate.outputs.release-id }}'
           TARGET_NAMESPACE: '${{ needs.validate.outputs.namespace }}'
         run: |
@@ -220,6 +225,10 @@ jobs:
             python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT" > "$RUNNER_TEMP/accepted.json"
             OCI_REFERENCE="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["reference"])' "$RUNNER_TEMP/accepted.json")"
             OCI_DIGEST="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["digest"])' "$RUNNER_TEMP/accepted.json")"
+          elif [[ '${{ inputs.mode }}' == reuse ]]; then
+            [[ "$REUSE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+            OCI_REFERENCE="oci://ghcr.io/pillars-infra/network-gitops-release/$RELEASE_ID"
+            OCI_DIGEST="$REUSE_DIGEST"
           fi
           immutable="${OCI_REFERENCE#oci://}@${OCI_DIGEST}"
           cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
@@ -244,7 +253,7 @@ jobs:
         if: always()
         with: {name: 'static-release-preflight-${{ github.run_id }}', path: static-release-preflight.json, retention-days: 30, if-no-files-found: warn}
   execute:
-    if: always() && inputs.execute && github.ref == 'refs/heads/main' && needs.validate.result == 'success' && (needs.compile-sign.result == 'success' || (inputs.mode == 'reconcile' && needs.compile-sign.result == 'skipped'))
+    if: always() && inputs.execute && github.ref == 'refs/heads/main' && needs.validate.result == 'success' && (needs.compile-sign.result == 'success' || (inputs.mode != 'publish' && needs.compile-sign.result == 'skipped'))
     needs: [validate, compile-sign]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -299,6 +308,7 @@ jobs:
           SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
           OCI_REFERENCE: '${{ needs.compile-sign.outputs.reference }}'
           OCI_DIGEST: '${{ needs.compile-sign.outputs.digest }}'
+          REUSE_DIGEST: '${{ inputs.bundle_digest }}'
           RELEASE_ID: '${{ needs.validate.outputs.release-id }}'
           TARGET_NAMESPACE: '${{ needs.validate.outputs.namespace }}'
         run: |
@@ -311,6 +321,10 @@ jobs:
             python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT" > "$RUNNER_TEMP/accepted.json"
             OCI_REFERENCE="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["reference"])' "$RUNNER_TEMP/accepted.json")"
             OCI_DIGEST="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["digest"])' "$RUNNER_TEMP/accepted.json")"
+          elif [[ '${{ inputs.mode }}' == reuse ]]; then
+            [[ "$REUSE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+            OCI_REFERENCE="oci://ghcr.io/pillars-infra/network-gitops-release/$RELEASE_ID"
+            OCI_DIGEST="$REUSE_DIGEST"
           fi
           immutable="${OCI_REFERENCE#oci://}@${OCI_DIGEST}"
           cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
