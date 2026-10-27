@@ -7,8 +7,12 @@ on:
         type: choice
         options: [publish, reuse, reconcile]
         default: publish
-      bundle_digest:
+      reuse_digest:
         description: Previously published sha256 digest (required only for reuse)
+        type: string
+        default: ''
+      reuse_source_commit:
+        description: Exact certified build commit SHA for reuse
         type: string
         default: ''
       contract:
@@ -165,6 +169,7 @@ jobs:
     permissions: {contents: read, id-token: write, packages: read}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with: {fetch-depth: 0}
       - uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
         with: {version: v1.33.1}
       - uses: fluxcd/flux2/action@dede56a8fdcd1e0edca28630a979a51415bb56f8
@@ -212,7 +217,8 @@ jobs:
           SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
           OCI_REFERENCE: '${{ needs.compile-sign.outputs.reference }}'
           OCI_DIGEST: '${{ needs.compile-sign.outputs.digest }}'
-          REUSE_DIGEST: '${{ inputs.bundle_digest }}'
+          REUSE_DIGEST: '${{ inputs.reuse_digest }}'
+          REUSE_SOURCE_COMMIT: '${{ inputs.reuse_source_commit }}'
           RELEASE_ID: '${{ needs.validate.outputs.release-id }}'
           TARGET_NAMESPACE: '${{ needs.validate.outputs.namespace }}'
         run: |
@@ -221,18 +227,21 @@ jobs:
           install -d "$RUNNER_TEMP/pulled" "$root/state" "$root/results/$RELEASE_ID"
           state_name="$(python operations/releases/operation_materialize.py state-name --release-id "$RELEASE_ID")"
           kubectl get configmap "$state_name" -n "$TARGET_NAMESPACE" -o json > "$RUNNER_TEMP/state-cm.json"
+          verify_args=()
           if [[ '${{ inputs.mode }}' == reconcile ]]; then
             python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT" > "$RUNNER_TEMP/accepted.json"
             OCI_REFERENCE="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["reference"])' "$RUNNER_TEMP/accepted.json")"
             OCI_DIGEST="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["digest"])' "$RUNNER_TEMP/accepted.json")"
           elif [[ '${{ inputs.mode }}' == reuse ]]; then
             [[ "$REUSE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+            python operations/releases/verify_reuse_source.py --commit "$REUSE_SOURCE_COMMIT" --contract "$CONTRACT"
+            verify_args+=(--certificate-github-workflow-sha "$REUSE_SOURCE_COMMIT")
             OCI_REFERENCE="oci://ghcr.io/pillars-infra/network-gitops-release/$RELEASE_ID"
             OCI_DIGEST="$REUSE_DIGEST"
           fi
           immutable="${OCI_REFERENCE#oci://}@${OCI_DIGEST}"
           cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com "$immutable" >/dev/null
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com "${verify_args[@]}" "$immutable" >/dev/null
           flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
           python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
@@ -261,6 +270,7 @@ jobs:
     permissions: {contents: read, id-token: write, packages: read}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with: {fetch-depth: 0}
       - uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
         with: {version: v1.33.1}
       - uses: fluxcd/flux2/action@dede56a8fdcd1e0edca28630a979a51415bb56f8
@@ -308,7 +318,8 @@ jobs:
           SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
           OCI_REFERENCE: '${{ needs.compile-sign.outputs.reference }}'
           OCI_DIGEST: '${{ needs.compile-sign.outputs.digest }}'
-          REUSE_DIGEST: '${{ inputs.bundle_digest }}'
+          REUSE_DIGEST: '${{ inputs.reuse_digest }}'
+          REUSE_SOURCE_COMMIT: '${{ inputs.reuse_source_commit }}'
           RELEASE_ID: '${{ needs.validate.outputs.release-id }}'
           TARGET_NAMESPACE: '${{ needs.validate.outputs.namespace }}'
         run: |
@@ -317,18 +328,21 @@ jobs:
           install -d "$RUNNER_TEMP/pulled" "$root/state" "$root/results/$RELEASE_ID"
           state_name="$(python operations/releases/operation_materialize.py state-name --release-id "$RELEASE_ID")"
           kubectl get configmap "$state_name" -n "$TARGET_NAMESPACE" -o json > "$RUNNER_TEMP/state-cm.json"
+          verify_args=()
           if [[ '${{ inputs.mode }}' == reconcile ]]; then
             python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT" > "$RUNNER_TEMP/accepted.json"
             OCI_REFERENCE="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["reference"])' "$RUNNER_TEMP/accepted.json")"
             OCI_DIGEST="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["digest"])' "$RUNNER_TEMP/accepted.json")"
           elif [[ '${{ inputs.mode }}' == reuse ]]; then
             [[ "$REUSE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+            python operations/releases/verify_reuse_source.py --commit "$REUSE_SOURCE_COMMIT" --contract "$CONTRACT"
+            verify_args+=(--certificate-github-workflow-sha "$REUSE_SOURCE_COMMIT")
             OCI_REFERENCE="oci://ghcr.io/pillars-infra/network-gitops-release/$RELEASE_ID"
             OCI_DIGEST="$REUSE_DIGEST"
           fi
           immutable="${OCI_REFERENCE#oci://}@${OCI_DIGEST}"
           cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com "$immutable" >/dev/null
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com "${verify_args[@]}" "$immutable" >/dev/null
           flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
           python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
