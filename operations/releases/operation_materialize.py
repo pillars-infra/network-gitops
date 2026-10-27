@@ -2,6 +2,7 @@
 """Materialize typed release requests and durable ConfigMap state envelopes."""
 from __future__ import annotations
 
+from profile import replay_provenance
 import argparse
 import datetime as dt
 import hashlib
@@ -71,7 +72,7 @@ def hydrate(configmap: Path, state_dir: Path, release_id: str) -> None:
 
 
 def request(contract_path: Path, metadata_path: Path, state_dir: Path, reference: str,
-            oci_digest: str, output: Path, action: str = "reconcile", force_objects: list[str] | None = None) -> None:
+            oci_digest: str, output: Path, action: str = "reconcile", force_objects: list[str] | None = None, replay_only: bool = False) -> None:
     contract = yaml.safe_load(contract_path.read_text())
     validate_schema(contract, "release-contract.schema.json")
     metadata = json.loads(metadata_path.read_text())
@@ -97,6 +98,11 @@ def request(contract_path: Path, metadata_path: Path, state_dir: Path, reference
         "nonce": secrets.token_hex(16),
         "idempotencyKey": secrets.token_hex(16),
     }
+    if replay_only:
+        replay = replay_provenance(contract)
+        if replay is None or action != "reconcile" or force_objects:
+            raise ValueError("only accepted reconcile is authorized for the replay identity")
+        operation["github"].update({key: replay[key] for key in ("workflow", "environment", "audience")})
     if state:
         operation["previousApprovedDigest"] = state["appliedDigest"]
     if force_objects:
@@ -160,6 +166,7 @@ def main() -> int:
     make.add_argument("--state-dir", type=Path, required=True); make.add_argument("--reference", required=True)
     make.add_argument("--digest", required=True); make.add_argument("--output", type=Path, required=True)
     make.add_argument("--action", choices=["reconcile", "force-reconcile", "reset", "suspend", "resume", "rollback"], default="reconcile")
+    make.add_argument("--replay-only", action="store_true")
     make.add_argument("--force-object", action="append", default=[])
     save = sub.add_parser("persist")
     save.add_argument("--state-dir", type=Path, required=True); save.add_argument("--release-id", required=True)
@@ -178,7 +185,7 @@ def main() -> int:
     patch.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "hydrate": hydrate(args.configmap, args.state_dir, args.release_id)
-    elif args.command == "request": request(args.contract, args.metadata, args.state_dir, args.reference, args.digest, args.output, args.action, args.force_object)
+    elif args.command == "request": request(args.contract, args.metadata, args.state_dir, args.reference, args.digest, args.output, args.action, args.force_object, args.replay_only)
     elif args.command == "persist": persist(args.state_dir, args.release_id, args.namespace, args.result, args.output)
     elif args.command == "accepted-bundle": print(compact(accepted_bundle(args.configmap, args.contract)))
     elif args.command == "state-patch": state_patch(args.configmap, args.state_dir, args.release_id, args.result, args.output)
