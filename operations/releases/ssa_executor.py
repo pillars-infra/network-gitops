@@ -28,6 +28,7 @@ import yaml
 
 from unified_bundle import canonical, digest, object_identity, validate_schema
 from restricted_configmap import decrypt_configmap, RestrictedConfigError
+from existing_objects import bind_existing, ExistingObjectError
 
 PROTECTED_KINDS = {"Namespace", "CustomResourceDefinition", "PersistentVolume", "PersistentVolumeClaim", "StorageClass",
                    "CephCluster", "CephFilesystem", "CephBlockPool", "CephFilesystemSubVolumeGroup"}
@@ -278,6 +279,12 @@ class Executor:
             annotations["delivery.re8ch.com/operation-id"] = operation["operationId"]
         return annotated
 
+    def with_existing_versions(self, objects: list[dict]) -> list[dict]:
+        try:
+            return bind_existing(objects, self.command)
+        except ExistingObjectError as error:
+            raise Rejected(str(error)) from None
+
     def apply(self, objects: list[dict], field_manager: str, dry_run: bool,
               force_objects: set[str] | None = None) -> None:
         for item in objects:
@@ -393,6 +400,8 @@ class Executor:
                 store.cache_bundle(fetched, rollback_digest)
         _, rollback_objects = load_archive(rollback_path)
         rollback_objects = self.with_audit(rollback_objects, operation)
+        if contract["spec"]["authorization"].get("requireExisting", False):
+            rollback_objects = self.with_existing_versions(rollback_objects)
         manual = set(contract["spec"]["lifecycle"].get("manualRollbackKinds", []))
         if any(item["kind"] in manual or item["kind"] in PROTECTED_KINDS for item in attempted_objects):
             raise Rejected("manual rollback approval required for protected Ceph/schema objects")
@@ -532,6 +541,9 @@ class Executor:
                 raise Rejected(f"unknown bundle stages: {sorted(unknown)}")
             stages = [stage for stage in stages if stage["name"] in selected_stages]
         selected_objects = [by_identity[identity] for stage in stages for identity in stage["inventory"]]
+        if contract["spec"]["authorization"].get("requireExisting", False):
+            selected_objects = self.with_existing_versions(selected_objects)
+            by_identity.update({object_identity(item): item for item in selected_objects})
         if not selected_objects and not finalize:
             raise Rejected("stage selection contains no objects")
         for stage in stages:

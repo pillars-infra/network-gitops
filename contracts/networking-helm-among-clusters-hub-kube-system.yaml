@@ -1,0 +1,44 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-helm-among-clusters-hub-kube-system
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: kube-system
+  source:
+    renderer: kustomize
+    revision: helm-oci@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b
+    repository: pillars-infra/network-gitops
+    path: releases/networking-helm-among-clusters-hub-kube-system
+    chartOCI: oci://ghcr.io/re8ch/charts/among-clusters-hub@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-helm-among-clusters-hub-kube-system
+    resources:
+    - cert-manager.io/Certificate
+    objectNames:
+    - among-clusters-ingest-tls
+    forceConflictObjects:
+    - cert-manager.io/Certificate/kube-system/among-clusters-ingest-tls
+  inventory:
+    digest: sha256:1f5ea1978f3c29d35419b87e05e4e9f5e3bdbdc1c4786c4695a92ace7e86e779
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

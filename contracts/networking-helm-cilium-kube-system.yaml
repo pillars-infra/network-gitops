@@ -1,0 +1,69 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-helm-cilium-kube-system
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: kube-system
+  source:
+    renderer: kustomize
+    revision: helm-archive@sha256:5eea9d46a5afb92d5ce8b6456b8288b39159fbfd4c4b71efc8a44116105a6147
+    repository: pillars-infra/network-gitops
+    path: releases/networking-helm-cilium-kube-system
+    chart: charts/cilium-1.21.0-dev.tgz
+    chartDigest: sha256:5eea9d46a5afb92d5ce8b6456b8288b39159fbfd4c4b71efc8a44116105a6147
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-helm-cilium-kube-system
+    resources:
+    - apps/DaemonSet
+    - apps/Deployment
+    - core/ConfigMap
+    - core/Service
+    - core/ServiceAccount
+    objectNames:
+    - cilium
+    - cilium-config
+    - cilium-operator
+    - hubble-peer
+    - hubble-relay
+    - hubble-relay-config
+    - hubble-ui
+    - hubble-ui-nginx
+    forceConflictObjects:
+    - apps/DaemonSet/kube-system/cilium
+    - apps/Deployment/kube-system/cilium-operator
+    - apps/Deployment/kube-system/hubble-relay
+    - apps/Deployment/kube-system/hubble-ui
+    - core/ConfigMap/kube-system/cilium-config
+    - core/ConfigMap/kube-system/hubble-relay-config
+    - core/ConfigMap/kube-system/hubble-ui-nginx
+    - core/Service/kube-system/hubble-peer
+    - core/Service/kube-system/hubble-relay
+    - core/Service/kube-system/hubble-ui
+    - core/ServiceAccount/kube-system/cilium
+    - core/ServiceAccount/kube-system/cilium-operator
+    - core/ServiceAccount/kube-system/hubble-relay
+    - core/ServiceAccount/kube-system/hubble-ui
+  inventory:
+    digest: sha256:8f354fe91c26a5b940c47140e3fd39eb26066714a8b6d15ee3a8a160f91df9d5
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

@@ -21,21 +21,19 @@ spec:
     signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
     issuer: https://token.actions.githubusercontent.com
   authorization:
+    requireExisting: true
     fieldManager: re8ch-release/networking-native-flux-system
     resources:
-    - batch/Job
     - core/ServiceAccount
     - gateway.networking.k8s.io/HTTPRoute
     objectNames:
     - among-clusters-legacy-agent-cleanup
-    - among-clusters-legacy-agent-cleanup-v2
     - service-zone-hooks-github-flux-webhook
     forceConflictObjects:
-    - batch/Job/flux-system/among-clusters-legacy-agent-cleanup-v2
     - core/ServiceAccount/flux-system/among-clusters-legacy-agent-cleanup
     - gateway.networking.k8s.io/HTTPRoute/flux-system/service-zone-hooks-github-flux-webhook
   inventory:
-    digest: sha256:183d935692ce71546e78827dd5244f187d0bb7deb68e5572f236aa62c4b880ec
+    digest: sha256:b9b56aa964548818fc46a16ebadc59de0efa2dcb3413d3c34cb5dd7f482077d3
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

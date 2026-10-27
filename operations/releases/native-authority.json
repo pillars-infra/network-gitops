@@ -868,26 +868,10 @@
       "contract": "contracts/networking-native-flux-system.yaml",
       "namespace": "flux-system",
       "inventory": [
-        "batch/Job/flux-system/among-clusters-legacy-agent-cleanup-v2",
         "core/ServiceAccount/flux-system/among-clusters-legacy-agent-cleanup",
         "gateway.networking.k8s.io/HTTPRoute/flux-system/service-zone-hooks-github-flux-webhook"
       ],
       "rules": [
-        {
-          "apiGroups": [
-            "batch"
-          ],
-          "resources": [
-            "jobs"
-          ],
-          "resourceNames": [
-            "among-clusters-legacy-agent-cleanup-v2"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
         {
           "apiGroups": [
             ""
@@ -2517,7 +2501,11 @@
     },
     {
       "identity": "batch/Job/cert-manager/cert-manager-cloudflare-bootstrap-v2",
-      "reason": "image-digest-required"
+      "reason": "one-shot-operation"
+    },
+    {
+      "identity": "batch/Job/flux-system/among-clusters-legacy-agent-cleanup-v2",
+      "reason": "one-shot-operation"
     },
     {
       "identity": "cilium.io/CiliumPodIPPool/_/jobs-sandbox",

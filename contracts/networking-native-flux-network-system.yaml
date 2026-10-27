@@ -21,6 +21,7 @@ spec:
     signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
     issuer: https://token.actions.githubusercontent.com
   authorization:
+    requireExisting: true
     fieldManager: re8ch-release/networking-native-flux-network-system
     resources:
     - core/ConfigMap

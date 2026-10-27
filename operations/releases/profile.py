@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exact networking identity and canonical contract selection."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import yaml
@@ -18,13 +19,23 @@ def validate_contract(path):
         raise ValueError('contract must be directly under contracts')
     contract = yaml.safe_load(resolved.read_text())
     spec = contract['spec']; name = contract['metadata']['name']
-    if str(path) != f'contracts/{name}.yaml' or not name.startswith('networking-native-'):
+    if str(path) != f'contracts/{name}.yaml' or not name.startswith(('networking-native-','networking-helm-')):
         raise ValueError('use canonical networking contract path')
     expected = dict(repository=REPOSITORY, workflow=WORKFLOW, ref='refs/heads/main', environment=ENVIRONMENT, audience=AUDIENCE, signer=SIGNER, issuer='https://token.actions.githubusercontent.com')
     if spec['authorityDomain'] != 'networking' or spec['provenance'] != expected:
         raise ValueError('unexpected networking execution identity')
-    if spec['source'] != dict(renderer='kustomize', revision='github-main-reviewed', repository=REPOSITORY, path=f'releases/{name}'):
-        raise ValueError('source must be the reviewed native projection')
+    if name.startswith('networking-native-'):
+        expected_source=dict(renderer='kustomize', revision='github-main-reviewed', repository=REPOSITORY, path=f'releases/{name}')
+    else:
+        ledger=json.loads((ROOT/'operations/releases/helm-authority.json').read_text())
+        entry=next((r for r in ledger['releases'] if r['releaseId']==name),None)
+        if not entry:raise ValueError('unknown Helm projection')
+        expected_source=entry['source']
+        rendered=ROOT/f'releases/{name}/resources.yaml'
+        if hashlib.sha256(rendered.read_bytes()).hexdigest()!=entry['renderedSHA256']:
+            raise ValueError('Helm projection differs from reviewed render')
+    if spec['source'] != expected_source:
+        raise ValueError('source must be the reviewed projection')
     return {'release-id': name, 'namespace': spec['target']['namespace'], 'domain':'networking', 'environment':ENVIRONMENT, 'audience':AUDIENCE, 'kubernetes-group':'re8ch:release-executor:networking', 'signer':SIGNER}
 
 def main():

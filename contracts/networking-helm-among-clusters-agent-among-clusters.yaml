@@ -1,0 +1,53 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-helm-among-clusters-agent-among-clusters
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: among-clusters
+  source:
+    renderer: kustomize
+    revision: helm-oci@sha256:e546d8e9056a85b813488524282727a6135a0cc544f39d2dc5a8afe23bb042a3
+    repository: pillars-infra/network-gitops
+    path: releases/networking-helm-among-clusters-agent-among-clusters
+    chartOCI: oci://ghcr.io/re8ch/charts/among-clusters-agent@sha256:e546d8e9056a85b813488524282727a6135a0cc544f39d2dc5a8afe23bb042a3
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-helm-among-clusters-agent-among-clusters
+    resources:
+    - apps/Deployment
+    - core/Service
+    - core/ServiceAccount
+    - networking.k8s.io/NetworkPolicy
+    objectNames:
+    - among-clusters-agent
+    - among-clusters-gateway
+    forceConflictObjects:
+    - apps/Deployment/among-clusters/among-clusters-agent
+    - apps/Deployment/among-clusters/among-clusters-gateway
+    - core/Service/among-clusters/among-clusters-gateway
+    - core/ServiceAccount/among-clusters/among-clusters-agent
+    - networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-agent
+    - networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-gateway
+  inventory:
+    digest: sha256:7d4922bfc44d25b30f11e3b9bd383f974e360e13ca46ab35115f086936c2e446
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

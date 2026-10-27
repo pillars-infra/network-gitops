@@ -1,0 +1,313 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: among-clusters-agent
+  namespace: among-clusters
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: among-clusters-agent
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - /agent
+        env:
+        - name: CLUSTER_ID
+          value: re8ch
+        - name: TENANT
+          value: byoc-pilot
+        - name: TRUST_DOMAIN
+          value: re8ch.internal
+        - name: HUB_ENDPOINT
+          value: https://among-clusters.service.re8ch.com
+        - name: IDENTITY_SECRET
+          value: among-clusters-agent-identity
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: INVITATION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: among-clusters-invitation
+              optional: true
+        - name: INVITATION_ID
+          valueFrom:
+            secretKeyRef:
+              key: invitation-id
+              name: among-clusters-invitation
+              optional: true
+        - name: GATEWAY_ENDPOINT
+          value: quic://223.159.210.222:8443
+        - name: PEER_CONFIRMATIONS
+          value: '[{"bundleDigest":"sha256:1ca3850085419fd4cb099a0922452e1c1d2ba044396fe64f920f63fd78123357","peerRef":"re8ch-qwen"},{"bundleDigest":"sha256:72dbab1a10af9585ff65e652c0a26240275f3a7cda3206d1aead6ebf5bf71a8e","peerRef":"re8ch-artc"},{"bundleDigest":"sha256:5b7c9a2eeb10e11420d73b2000e2e7b859003570a43131c3f2f63b2876e1990f","peerRef":"re8ch-sijie"}]'
+        - name: LINK_OBSERVATIONS
+          value: '[]'
+        - name: PEER_BUNDLE_FILE
+          value: /peer-bundles/ca.crt
+        - name: KUBERNETES_TLS_SERVER_NAME
+          value: kubernetes.default.svc
+        image: ghcr.io/re8ch/among-clusters@sha256:36065d8d2335e0a447d24a0b07562c859b54cee1cfb1e824e536addfe2d6557a
+        name: agent
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 25m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kubernetes-api
+          readOnly: true
+        - mountPath: /peer-bundles
+          name: peer-bundles
+          readOnly: true
+      hostAliases:
+      - hostnames:
+        - among-clusters.re8ch.com
+        ip: 10.43.158.127
+      nodeSelector:
+        kubernetes.io/os: linux
+        scheduling.re8ch.com/service-plane: core
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: among-clusters-agent
+      volumes:
+      - name: kubernetes-api
+        projected:
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3600
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  fieldPath: metadata.namespace
+                path: namespace
+      - name: peer-bundles
+        secret:
+          secretName: among-clusters-peer-bundle
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: among-clusters-gateway
+  namespace: among-clusters
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-gateway
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: among-clusters-gateway
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - /gateway
+        env:
+        - name: LISTEN_ADDRESS
+          value: :8443
+        - name: LISTENER_ENABLED
+          value: 'true'
+        - name: EXPORTS_JSON
+          value: '[]'
+        - name: EXPORTS_FILE
+          value: /routes/exports.json
+        - name: IMPORTS_JSON
+          value: '[{"expectedSPIFFEID":"spiffe://qwen.byoc/cluster/qwen","listen":":22240","name":"qwen-k8s","port":22240,"serviceIdentity":"spiffe://qwen.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://artc.byoc/cluster/artc","listen":":23768","name":"artc-k8s","port":23768,"serviceIdentity":"spiffe://artc.byoc/ns/default/service/kubernetes","sessionOnly":true}]'
+        - name: PEER_SESSIONS_JSON
+          value: '[]'
+        - name: PEER_IDENTITIES_JSON
+          value: '{"re8ch-artc":["spiffe://artc.byoc/cluster/artc"],"re8ch-qwen":["spiffe://qwen.byoc/cluster/qwen"],"re8ch-sijie":["spiffe://sijie.byoc/cluster/sijie"]}'
+        image: ghcr.io/re8ch/among-clusters@sha256:36065d8d2335e0a447d24a0b07562c859b54cee1cfb1e824e536addfe2d6557a
+        name: gateway
+        ports:
+        - containerPort: 8443
+          hostPort: 8443
+          name: gateway
+          protocol: UDP
+        - containerPort: 8080
+          name: readiness
+          protocol: TCP
+        - containerPort: 22240
+          name: qwen-k8s
+          protocol: TCP
+        - containerPort: 23768
+          name: artc-k8s
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 25m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /identity
+          name: identity
+          readOnly: true
+        - mountPath: /routes
+          name: service-routes
+          readOnly: true
+        - mountPath: /peer-bundles
+          name: peer-bundles
+          readOnly: true
+      nodeSelector:
+        kubernetes.io/hostname: r640
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Equal
+        value: 'true'
+      volumes:
+      - name: identity
+        secret:
+          optional: true
+          secretName: among-clusters-agent-identity
+      - configMap:
+          name: among-clusters-service-routes
+          optional: true
+        name: service-routes
+      - name: peer-bundles
+        secret:
+          secretName: among-clusters-peer-bundle
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: among-clusters-gateway
+  namespace: among-clusters
+spec:
+  ports:
+  - name: gateway
+    port: 8443
+    protocol: UDP
+    targetPort: gateway
+  - name: readiness
+    port: 8080
+    protocol: TCP
+    targetPort: readiness
+  - name: qwen-k8s
+    port: 22240
+    protocol: TCP
+    targetPort: qwen-k8s
+  - name: artc-k8s
+    port: 23768
+    protocol: TCP
+    targetPort: artc-k8s
+  selector:
+    app.kubernetes.io/name: among-clusters-gateway
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: among-clusters-agent
+  namespace: among-clusters
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: among-clusters-agent
+  namespace: among-clusters
+spec:
+  ingress:
+  - ports:
+    - port: 8443
+      protocol: UDP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-agent
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: among-clusters-gateway
+  namespace: among-clusters
+spec:
+  egress:
+  - ports:
+    - port: 8443
+      protocol: UDP
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    - port: 443
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: among-clusters-agent
+    ports:
+    - port: 8080
+      protocol: TCP
+  - ports:
+    - port: 8443
+      protocol: UDP
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: credential-broker
+    ports:
+    - port: 22240
+      protocol: TCP
+    - port: 23768
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-gateway
+  policyTypes:
+  - Ingress
+  - Egress

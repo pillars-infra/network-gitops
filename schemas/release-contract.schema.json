@@ -79,6 +79,7 @@
             "fieldManager": {"type": "string", "pattern": "^re8ch-release/[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "maxLength": 128},
             "resources": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[^/]+/[^/]+$"}},
             "objectNames": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$"}},
+            "requireExisting": {"type": "boolean", "default": false},
             "allowClusterScoped": {"type": "boolean", "default": false}
             ,"forceConflictObjects": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
           }
