@@ -12,7 +12,7 @@ import subprocess
 import yaml
 from unified_bundle import api_group, canonical, compile_bundle, digest, object_identity, assert_pinned_images
 from operation_materialize import state_configmap_name
-from restricted_configmap import validate_envelope
+from restricted_configmap import validate_envelope, bind_source
 from profile import REPOSITORY, WORKFLOW, ENVIRONMENT, AUDIENCE, SIGNER
 ROOT=Path(__file__).resolve().parents[2]
 PLURALS={'NetworkPolicy':'networkpolicies','CiliumNetworkPolicy':'ciliumnetworkpolicies','PeerPolicy':'peerpolicies','Ingress':'ingresses'}
@@ -70,7 +70,12 @@ def project(documents, prefix="networking-native", source_context=None):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--check',action='store_true');args=p.parse_args()
     rendered=subprocess.check_output(['kubectl','kustomize','clusters/re8ch'],cwd=ROOT)
-    files,ledger=project(list(yaml.safe_load_all(rendered)))
+    originals={object_identity(d):d for path in (ROOT/'clusters/re8ch').glob('*.yaml') for d in yaml.safe_load_all(path.read_text()) if isinstance(d,dict) and 'sops' in d}
+    documents=list(yaml.safe_load_all(rendered))
+    for index,d in enumerate(documents):
+        if d and 'sops' in d and d.get('kind')=='ConfigMap':
+            documents[index]=bind_source(d, originals[object_identity(d)])
+    files,ledger=project(documents)
     stale=[]
     for name,content in files.items():
         path=ROOT/name
