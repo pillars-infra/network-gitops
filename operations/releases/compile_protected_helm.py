@@ -32,9 +32,15 @@ def merge(base,overlay):
     return result
 
 def hydrate(current,plain):
-    if isinstance(current,str) and current.startswith('ENC[AES256_GCM,'):return plain
-    if isinstance(current,dict):return {key:hydrate(value,plain.get(key)) for key,value in current.items()}
-    if isinstance(current,list):return [hydrate(value,plain[index]) for index,value in enumerate(current)]
+    if isinstance(current,str) and current.startswith('ENC[AES256_GCM,'):
+        if plain is None:raise ValueError('encrypted overlay leaf has no authenticated source')
+        return plain
+    if isinstance(current,dict):
+        original=plain if isinstance(plain,dict) else {}
+        return {key:hydrate(value,original.get(key)) for key,value in current.items()}
+    if isinstance(current,list):
+        original=plain if isinstance(plain,list) else []
+        return [hydrate(value,original[index] if index<len(original) else None) for index,value in enumerate(current)]
     return current
 
 def compile_fixed():
@@ -47,6 +53,7 @@ def compile_fixed():
     original_plain=json.loads(command(['sops','--decrypt','--input-type','json','--output-type','json','/dev/stdin'],json.dumps(original)).stdout)
     STAGE='inventory-values-decryption'
     plain_inventory=decrypt_configmap(bind_source(inventory),command)
+    STAGE='reviewed-overlay'
     root=command(['kubectl','kustomize','clusters/re8ch']).stdout
     release=next(d for d in yaml.safe_load_all(root) if d and d.get('kind')=='HelmRelease' and d['metadata']['name']=='advanced-fabric')
     # Only reviewed Kustomize overlays are retained; encrypted leaves come from MAC-verified source.

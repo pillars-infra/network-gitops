@@ -39,3 +39,12 @@ def test_protected_compiler_never_forwards_child_diagnostics(monkeypatch):
     monkeypatch.setattr(subprocess,'run',lambda *a,**kw:subprocess.CompletedProcess([],1,'private-spec','private-stderr'))
     with pytest.raises(ValueError) as error:command(['helm'],None)
     assert 'private' not in str(error.value)
+
+
+def test_protected_overlay_preserves_new_list_entries_and_nested_maps():
+    current={'secret':'ENC[AES256_GCM,fixture]','tolerations':[{'key':'old'},{'key':'new','effect':'NoSchedule'}],'newAffinity':{'terms':[{'key':'provider'}]}}
+    original={'secret':'decoded','tolerations':[{'key':'old'}]}
+    expected=copy.deepcopy(current);expected['secret']='decoded'
+    assert hydrate(current,original)==expected
+    with pytest.raises(ValueError,match='no authenticated source'):
+        hydrate({'new':'ENC[AES256_GCM,fixture]'},original)
