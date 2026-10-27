@@ -6,6 +6,7 @@ from pathlib import Path
 import yaml
 from ssa_executor import Executor, Store, Rejected, PROTECTED_KINDS
 from unified_bundle import object_identity
+from topology_parity import check, TopologyParityError
 
 def preflight(executor,contract,operation,bundle,state_dir):
     _,objects,_=executor.validate(contract,operation,bundle,Store(state_dir,operation['releaseId']))
@@ -18,8 +19,10 @@ def preflight(executor,contract,operation,bundle,state_dir):
         raise Rejected('protected objects cannot use force-conflicts')
     audited=executor.with_audit(objects,operation)
     if contract["spec"]["authorization"].get("requireExisting",False):audited=executor.with_existing_versions(audited)
+    try:parity=check(audited,Store(state_dir,operation['releaseId']).state(),executor.command)
+    except TopologyParityError as error:raise Rejected(str(error)) from None
     executor.apply(audited,contract['spec']['authorization']['fieldManager'],dry_run=True,force_objects=requested)
-    return {'releaseId':operation['releaseId'],'preflight':'accepted','inventory':[object_identity(o) for o in objects]}
+    return {'releaseId':operation['releaseId'],'preflight':'accepted','topologyParity':parity,'inventory':[object_identity(o) for o in objects]}
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--contract',type=Path,required=True);p.add_argument('--operation',type=Path,required=True);p.add_argument('--bundle',type=Path,required=True);p.add_argument('--state-dir',type=Path,required=True);a=p.parse_args()
