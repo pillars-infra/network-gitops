@@ -20,7 +20,7 @@ def classify(document):
     if 'sops' in document:return 'restricted-sops'
     if document['kind']=='Secret':return 'secret'
     if document['kind'] in {'HelmRelease','HelmChart'}:return 'cloud-helm-render'
-    if document['apiVersion'].split('/')[0].endswith('toolkit.fluxcd.io'):return 'flux-source-metadata'
+    if document['apiVersion'].split('/')[0] in {'source.toolkit.fluxcd.io','kustomize.toolkit.fluxcd.io','helm.toolkit.fluxcd.io','notification.toolkit.fluxcd.io','image.toolkit.fluxcd.io'}:return 'flux-source-metadata'
     if not document['metadata'].get('namespace'):return 'cluster-network-authority'
     try:assert_pinned_images(document)
     except ValueError:return 'image-digest-required'
