@@ -1,0 +1,47 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-llm-gateway
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: llm-gateway
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-llm-gateway
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-llm-gateway
+    resources:
+    - gateway.networking.k8s.io/HTTPRoute
+    - networking.k8s.io/Ingress
+    objectNames:
+    - litellm-dns-authority
+    - litellm-public
+    - litellm-service-public
+    forceConflictObjects:
+    - gateway.networking.k8s.io/HTTPRoute/llm-gateway/litellm-public
+    - gateway.networking.k8s.io/HTTPRoute/llm-gateway/litellm-service-public
+    - networking.k8s.io/Ingress/llm-gateway/litellm-dns-authority
+  inventory:
+    digest: sha256:ed68ec89f3196e0cf5fad615460e7a058450ae8b2afd2331ebbfc86117bd3489
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://re8ch.com/schemas/release-contract.schema.json",
+  "title": "ReleaseContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {"const": "delivery.re8ch.com/v1alpha1"},
+    "kind": {"const": "ReleaseContract"},
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {"name": {"type": "string", "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "maxLength": 63}}
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "source", "provenance", "authorization", "inventory", "lifecycle"],
+      "properties": {
+        "authorityDomain": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+          "maxLength": 63
+        },
+        "target": {
+          "type": "object", "additionalProperties": false,
+          "required": ["cluster", "namespace"],
+          "properties": {
+            "cluster": {"type": "string", "minLength": 1},
+            "namespace": {"type": "string", "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "maxLength": 63}
+          }
+        },
+        "source": {
+          "type": "object", "additionalProperties": false,
+          "required": ["renderer", "revision"],
+          "properties": {
+            "renderer": {"enum": ["helm", "kustomize"]},
+            "revision": {"type": "string", "minLength": 1},
+            "repository": {"type": "string", "minLength": 1},
+            "path": {"type": "string", "minLength": 1},
+            "chart": {"type": "string", "minLength": 1},
+            "version": {"type": "string", "minLength": 1},
+            "releaseName": {"type": "string", "minLength": 1},
+            "chartURL": {"type": "string", "format": "uri"},
+            "chartDigest": {"$ref": "#/$defs/digest"},
+            "chartOCI": {"type": "string", "pattern": "^oci://.+@sha256:[0-9a-f]{64}$"},
+            "values": {
+              "type": "array", "uniqueItems": true,
+              "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["path", "digest"],
+                "properties": {
+                  "path": {"type": "string", "pattern": "^(?!/)(?!.*\\.\\.).+$"},
+                  "digest": {"$ref": "#/$defs/digest"}
+                }
+              }
+            }
+          }
+        },
+        "provenance": {
+          "type": "object", "additionalProperties": false,
+          "required": ["repository", "workflow", "ref", "environment", "audience", "signer", "issuer"],
+          "properties": {
+            "repository": {"type": "string", "pattern": "^[^/]+/[^/]+$"},
+            "workflow": {"type": "string", "pattern": "^\\.github/workflows/[^/]+\\.ya?ml$"},
+            "ref": {"type": "string", "pattern": "^refs/heads/[A-Za-z0-9._/-]+$"},
+            "environment": {"type": "string", "minLength": 1},
+            "audience": {"type": "string", "format": "uri"},
+            "signer": {"type": "string", "minLength": 1},
+            "issuer": {"type": "string", "minLength": 1}
+          }
+        },
+        "authorization": {
+          "type": "object", "additionalProperties": false,
+          "required": ["fieldManager", "resources", "objectNames"],
+          "properties": {
+            "fieldManager": {"type": "string", "pattern": "^re8ch-release/[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "maxLength": 128},
+            "resources": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[^/]+/[^/]+$"}},
+            "objectNames": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$"}},
+            "allowClusterScoped": {"type": "boolean", "default": false}
+            ,"forceConflictObjects": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+          }
+        },
+        "inventory": {"type": "object", "additionalProperties": false, "required": ["digest"], "properties": {"digest": {"$ref": "#/$defs/digest"}}},
+        "lifecycle": {
+          "type": "object", "additionalProperties": false,
+          "required": ["prune", "healthTimeoutSeconds", "protectedKinds"],
+          "properties": {
+            "prune": {"type": "boolean"},
+            "healthTimeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 3600},
+            "protectedKinds": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+            "deletionAllowlist": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+            "healthChecks": {
+              "type": "array", "uniqueItems": true,
+              "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["apiVersion", "kind", "name", "jsonPointer", "equals"],
+                "properties": {
+                  "apiVersion": {"type": "string", "minLength": 1},
+                  "kind": {"type": "string", "minLength": 1},
+                  "namespace": {"type": "string", "minLength": 1},
+                  "name": {"type": "string", "minLength": 1},
+                  "jsonPointer": {"type": "string", "pattern": "^/"},
+                  "equals": {}
+                }
+              }
+            },
+            "rollbackDigest": {"$ref": "#/$defs/digest"}
+            ,"dependencies": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+            ,"stages": {
+              "type": "array", "minItems": 1,
+              "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["name", "kinds"],
+                "properties": {
+                  "name": {"enum": ["crd-schema", "cluster-rbac", "runtime", "custom-resources", "storage-class", "health-acceptance"]},
+                  "kinds": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+                  "automaticRollback": {"type": "boolean"}
+                }
+              }
+            }
+            ,"manualRollbackKinds": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}

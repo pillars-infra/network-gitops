@@ -1,0 +1,298 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: operate-tools-public
+  namespace: toolhive-system
+spec:
+  hostnames:
+  - operate.tools.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: tools-wildcard-https
+  rules:
+  - backendRefs:
+    - name: re8ch-operate-vmcp-session-router
+      port: 4483
+    matches:
+    - path:
+        type: PathPrefix
+        value: /mcp
+    - path:
+        type: PathPrefix
+        value: /.well-known
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-zone-admin-admin-tools-public
+  namespace: toolhive-system
+spec:
+  hostnames:
+  - admin.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: re8ch-admin-vmcp-session-router
+      port: 4483
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /mcp
+    - path:
+        type: PathPrefix
+        value: /oauth
+    - path:
+        type: PathPrefix
+        value: /.well-known
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-zone-admin-admin-tools-re8ch-com-advfab
+  namespace: toolhive-system
+spec:
+  hostnames:
+  - admin.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: re8ch-admin-vmcp-session-router
+      port: 4483
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /mcp
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: re8ch-admin-vmcp-session-router
+      port: 4483
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /.well-known
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: re8ch-admin-vmcp-session-router
+      port: 4483
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /oauth
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-zone-admin-vmcp-r640-backends-public
+  namespace: toolhive-system
+spec:
+  hostnames:
+  - admin.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: mcp-ops-admin-external
+      port: 8088
+      weight: 1
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          replacePrefixMatch: /
+          type: ReplacePrefixMatch
+    matches:
+    - path:
+        type: PathPrefix
+        value: /backend/admin
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: mcp-ops-observe-external
+      port: 8088
+      weight: 1
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          replacePrefixMatch: /
+          type: ReplacePrefixMatch
+    matches:
+    - path:
+        type: PathPrefix
+        value: /backend/observe
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: mcp-ops-operate-external
+      port: 8088
+      weight: 1
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          replacePrefixMatch: /
+          type: ReplacePrefixMatch
+    matches:
+    - path:
+        type: PathPrefix
+        value: /backend/operate
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tools-service-cloud-mcp
+  namespace: toolhive-system
+spec:
+  hostnames:
+  - tools.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - name: vmcp-re8ch-tools-vmcp
+      port: 4483
+    matches:
+    - path:
+        type: PathPrefix
+        value: /cloud
+  - backendRefs:
+    - name: vmcp-re8ch-tools-vmcp
+      port: 4483
+    matches:
+    - path:
+        type: PathPrefix
+        value: /.well-known/oauth-protected-resource/cloud
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tools-service-tenant-mcp
+  namespace: toolhive-system
+spec:
+  hostnames:
+  - tools.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - name: vmcp-tenant-vmcp
+      port: 4483
+    matches:
+    - path:
+        type: PathPrefix
+        value: /tenant
+  - backendRefs:
+    - name: vmcp-tenant-vmcp
+      port: 4483
+    matches:
+    - path:
+        type: PathPrefix
+        value: /.well-known/oauth-protected-resource/tenant
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tools-service-ui
+  namespace: toolhive-system
+spec:
+  hostnames:
+  - tools.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - name: toolhive-cloud-ui
+      port: 80
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tools-service-vmcp
+  namespace: toolhive-system
+spec:
+  hostnames:
+  - tools.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - name: vmcp-re8ch-tools-vmcp
+      port: 4483
+    matches:
+    - path:
+        type: PathPrefix
+        value: /mcp
+  - backendRefs:
+    - name: vmcp-re8ch-tools-vmcp
+      port: 4483
+    matches:
+    - path:
+        type: PathPrefix
+        value: /.well-known
+  - backendRefs:
+    - name: vmcp-re8ch-tools-vmcp
+      port: 4483
+    matches:
+    - path:
+        type: PathPrefix
+        value: /oauth
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
+    external-dns.alpha.kubernetes.io/hostname: operate.tools.re8ch.com
+    external-dns.alpha.kubernetes.io/target: 223.159.210.222
+    external-dns.alpha.kubernetes.io/ttl: '60'
+    networking.re8ch.com/provider: public-edge-manager
+  labels:
+    networking.re8ch.com/dns-authority: public-edge
+  name: operate-tools-public-dns
+  namespace: toolhive-system
+spec:
+  ingressClassName: external-dns-only
+  rules:
+  - host: operate.tools.re8ch.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: re8ch-operate-vmcp-session-router
+            port:
+              number: 4483
+        path: /
+        pathType: Prefix

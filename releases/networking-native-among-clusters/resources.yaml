@@ -1,0 +1,143 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/component: mihomos-pilot
+    app.kubernetes.io/part-of: among-clusters
+  name: among-clusters-gateway-mihomos-host-egress
+  namespace: among-clusters
+spec:
+  egress:
+  - toEntities:
+    - host
+    - remote-node
+    toPorts:
+    - ports:
+      - port: '17891'
+        protocol: TCP
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: artc-kubernetes-import
+  namespace: among-clusters
+spec:
+  ports:
+  - name: kubernetes
+    port: 6443
+    protocol: TCP
+    targetPort: artc-k8s
+  selector:
+    app.kubernetes.io/name: among-clusters-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen-kubernetes-import
+  namespace: among-clusters
+spec:
+  ports:
+  - name: kubernetes
+    port: 6443
+    protocol: TCP
+    targetPort: qwen-k8s
+  selector:
+    app.kubernetes.io/name: among-clusters-gateway
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: service-zone-among-clusters-among-clusters-ingest
+  namespace: among-clusters
+spec:
+  hostnames:
+  - among-clusters.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: among-clusters-credential-broker
+      namespace: credential-broker
+      port: 80
+      weight: 1
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          replacePrefixMatch: /
+          type: ReplacePrefixMatch
+    matches:
+    - path:
+        type: PathPrefix
+        value: /broker
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: among-clusters-credential-broker
+      namespace: credential-broker
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: among-clusters-hub
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /v1
+  - backendRefs:
+    - group: ''
+      kind: Service
+      name: among-clusters-hub
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: Exact
+        value: /healthz
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    re8ch.com/network-authority: public-mesh/inventory.json#r640.publicAuthority
+    re8ch.com/r640-dummy-purpose: internal-host-endpoint-only-not-public
+  labels:
+    app.kubernetes.io/component: mihomos-pilot
+    app.kubernetes.io/part-of: among-clusters
+  name: among-clusters-gateway-mihomos-egress
+  namespace: among-clusters
+spec:
+  egress:
+  - ports:
+    - port: 17891
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: egress-fabric
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: mihomos-node-cn
+    - ipBlock:
+        cidr: 10.181.22.128/32
+    - ipBlock:
+        cidr: 10.43.252.214/32
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-gateway
+  policyTypes:
+  - Egress

@@ -1,0 +1,53 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-among-clusters
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: among-clusters
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-among-clusters
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-among-clusters
+    resources:
+    - cilium.io/CiliumNetworkPolicy
+    - core/Service
+    - gateway.networking.k8s.io/HTTPRoute
+    - networking.k8s.io/NetworkPolicy
+    objectNames:
+    - among-clusters-gateway-mihomos-egress
+    - among-clusters-gateway-mihomos-host-egress
+    - artc-kubernetes-import
+    - qwen-kubernetes-import
+    - service-zone-among-clusters-among-clusters-ingest
+    forceConflictObjects:
+    - cilium.io/CiliumNetworkPolicy/among-clusters/among-clusters-gateway-mihomos-host-egress
+    - core/Service/among-clusters/artc-kubernetes-import
+    - core/Service/among-clusters/qwen-kubernetes-import
+    - gateway.networking.k8s.io/HTTPRoute/among-clusters/service-zone-among-clusters-among-clusters-ingest
+    - networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-gateway-mihomos-egress
+  inventory:
+    digest: sha256:ab53f27f41c04376263b9407fbb153e3457d23925f1424713901c8f587e587bf
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

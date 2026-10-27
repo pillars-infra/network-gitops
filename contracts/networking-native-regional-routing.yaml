@@ -1,0 +1,68 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-regional-routing
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: regional-routing
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-regional-routing
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-regional-routing
+    resources:
+    - apps/DaemonSet
+    - cert-manager.io/Certificate
+    - cert-manager.io/Issuer
+    - core/ConfigMap
+    - networking.k8s.io/Ingress
+    objectNames:
+    - catalog-edgeone-dns-authority
+    - powerdns-cloud-authorities
+    - public-edge-bootstrap
+    - public-edge-domain-ex
+    - public-edge-hidden-primary
+    - public-edge-muaya-lightweight
+    - public-edge-overseas-la
+    - public-edge-route-snapshot-public-key
+    - public-edge-suxunji
+    - public-edge-transfer-ca
+    - public-edge-zan
+    forceConflictObjects:
+    - apps/DaemonSet/regional-routing/powerdns-cloud-authorities
+    - cert-manager.io/Certificate/regional-routing/public-edge-domain-ex
+    - cert-manager.io/Certificate/regional-routing/public-edge-hidden-primary
+    - cert-manager.io/Certificate/regional-routing/public-edge-muaya-lightweight
+    - cert-manager.io/Certificate/regional-routing/public-edge-overseas-la
+    - cert-manager.io/Certificate/regional-routing/public-edge-suxunji
+    - cert-manager.io/Certificate/regional-routing/public-edge-transfer-ca
+    - cert-manager.io/Certificate/regional-routing/public-edge-zan
+    - cert-manager.io/Issuer/regional-routing/public-edge-bootstrap
+    - cert-manager.io/Issuer/regional-routing/public-edge-transfer-ca
+    - core/ConfigMap/regional-routing/powerdns-cloud-authorities
+    - core/ConfigMap/regional-routing/public-edge-route-snapshot-public-key
+    - networking.k8s.io/Ingress/regional-routing/catalog-edgeone-dns-authority
+  inventory:
+    digest: sha256:aa3d53239ffed98a56c8ebf63659623a255c3369a1a3ed76e1f6881e734c6e58
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

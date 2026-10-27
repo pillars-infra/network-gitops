@@ -1,0 +1,199 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana-edge-origin
+  namespace: observability-system
+spec:
+  hostnames:
+  - grafana.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: http
+  rules:
+  - backendRefs:
+    - name: re8ch-grafana
+      port: 3000
+    filters:
+    - responseHeaderModifier:
+        set:
+        - name: X-Re8ch-Gateway
+          value: cilium
+      type: ResponseHeaderModifier
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana-http-redirect
+  namespace: observability-system
+spec:
+  hostnames:
+  - grafana.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: http
+  rules:
+  - filters:
+    - requestRedirect:
+        port: 443
+        scheme: https
+        statusCode: 308
+      type: RequestRedirect
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  annotations:
+    networking.re8ch.com/dns-authority: observability-system/grafana-dns-authority
+  name: grafana-public
+  namespace: observability-system
+spec:
+  hostnames:
+  - grafana.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: grafana-https
+  rules:
+  - filters:
+    - requestRedirect:
+        path:
+          replaceFullPath: /grafana/
+          type: ReplaceFullPath
+        statusCode: 302
+      type: RequestRedirect
+    matches:
+    - path:
+        type: Exact
+        value: /
+  - backendRefs:
+    - name: re8ch-grafana
+      port: 3000
+    filters:
+    - responseHeaderModifier:
+        set:
+        - name: X-Re8ch-Gateway
+          value: cilium
+      type: ResponseHeaderModifier
+    matches:
+    - path:
+        type: PathPrefix
+        value: /grafana
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana-service-public
+  namespace: observability-system
+spec:
+  hostnames:
+  - grafana.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - filters:
+    - requestRedirect:
+        path:
+          replaceFullPath: /grafana/
+          type: ReplaceFullPath
+        statusCode: 302
+      type: RequestRedirect
+    matches:
+    - path:
+        type: Exact
+        value: /
+  - backendRefs:
+    - name: re8ch-grafana
+      port: 3000
+    matches:
+    - path:
+        type: PathPrefix
+        value: /grafana
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
+    external-dns.alpha.kubernetes.io/hostname: grafana.re8ch.com
+    external-dns.alpha.kubernetes.io/target: 223.159.210.222
+    external-dns.alpha.kubernetes.io/ttl: '60'
+    networking.re8ch.com/provider: public-edge-manager
+  labels:
+    networking.re8ch.com/dns-authority: migrated-to-service-zone
+  name: grafana-dns-authority
+  namespace: observability-system
+spec:
+  ingressClassName: external-dns-only
+  rules:
+  - host: grafana.re8ch.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: re8ch-grafana
+            port:
+              number: 3000
+        path: /
+        pathType: Prefix
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  labels:
+    observability.re8ch.com/managed: 'true'
+  name: control-dns-reachability
+  namespace: observability-system
+spec:
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  podMetricsEndpoints:
+  - interval: 15s
+    port: metrics
+    relabelConfigs:
+    - sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+    - replacement: control-dns-reachability
+      targetLabel: service
+    - replacement: network
+      targetLabel: signal_domain
+    scrapeTimeout: 5s
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: control-dns-reachability
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  labels:
+    observability.re8ch.com/managed: 'true'
+  name: control-dns-reachability
+  namespace: observability-system
+spec:
+  groups:
+  - name: control-dns-reachability
+    rules:
+    - alert: Re8chDnsReadyEndpointUnreachable
+      annotations:
+        summary: DNS endpoint is Ready but unreachable from a control node
+      expr: min_over_time(re8ch_dns_peer_query_success{endpoint_ready="true"}[2m])
+        == 0
+      for: 1m
+      labels:
+        severity: critical
+    - alert: Re8chDnsEndpointDiscoveryFailed
+      annotations:
+        summary: Control node cannot discover DNS endpoints
+      expr: re8ch_dns_probe_discovery_up == 0
+      for: 2m
+      labels:
+        severity: warning

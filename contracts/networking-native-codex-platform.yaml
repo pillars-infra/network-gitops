@@ -1,0 +1,46 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-codex-platform
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: codex-platform
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-codex-platform
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-codex-platform
+    resources:
+    - gateway.networking.k8s.io/HTTPRoute
+    objectNames:
+    - codex-app-server-console-public
+    - codex-session-web-public
+    - service-zone-codex-codex-session-web-advfab
+    forceConflictObjects:
+    - gateway.networking.k8s.io/HTTPRoute/codex-platform/codex-app-server-console-public
+    - gateway.networking.k8s.io/HTTPRoute/codex-platform/codex-session-web-public
+    - gateway.networking.k8s.io/HTTPRoute/codex-platform/service-zone-codex-codex-session-web-advfab
+  inventory:
+    digest: sha256:e5801bbf0bf46a15a5fa6981cbafa23b4c42c4cbad30760d12261bd08f7dc2fc
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

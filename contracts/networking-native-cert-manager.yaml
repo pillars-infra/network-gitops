@@ -1,0 +1,48 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-cert-manager
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: cert-manager
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-cert-manager
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-cert-manager
+    resources:
+    - core/ServiceAccount
+    - rbac.authorization.k8s.io/Role
+    - rbac.authorization.k8s.io/RoleBinding
+    objectNames:
+    - cert-manager-cloudflare-bootstrap
+    - cert-manager-write-cloudflare-dns-token
+    - write-cloudflare-dns-token
+    forceConflictObjects:
+    - core/ServiceAccount/cert-manager/cert-manager-cloudflare-bootstrap
+    - rbac.authorization.k8s.io/Role/cert-manager/write-cloudflare-dns-token
+    - rbac.authorization.k8s.io/RoleBinding/cert-manager/cert-manager-write-cloudflare-dns-token
+  inventory:
+    digest: sha256:d9dc2ada8fa249b49722afd3016e5434a671d6e3536a38f9dab78493f2e24394
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

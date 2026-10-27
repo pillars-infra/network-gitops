@@ -1,0 +1,67 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-byoc-pilot
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: byoc-pilot
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-byoc-pilot
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-byoc-pilot
+    resources:
+    - core/Service
+    - peering.re8ch.com/AuthenticatedLink
+    - peering.re8ch.com/ManagedAccessGrant
+    - peering.re8ch.com/Peer
+    - peering.re8ch.com/PeerPolicy
+    objectNames:
+    - artc-default-kubernetes-re8ch-artc
+    - artc-headlamp-admin
+    - artc-kubernetes-api
+    - qwen-default-kubernetes-re8ch-qwen
+    - qwen-headlamp-admin
+    - qwen-kubernetes-api
+    - re8ch-artc
+    - re8ch-mihomos-egress
+    - re8ch-qwen
+    - re8ch-sijie
+    forceConflictObjects:
+    - core/Service/byoc-pilot/artc-default-kubernetes-re8ch-artc
+    - core/Service/byoc-pilot/qwen-default-kubernetes-re8ch-qwen
+    - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-artc
+    - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-qwen
+    - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-sijie
+    - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/artc-headlamp-admin
+    - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/qwen-headlamp-admin
+    - peering.re8ch.com/Peer/byoc-pilot/re8ch-artc
+    - peering.re8ch.com/Peer/byoc-pilot/re8ch-qwen
+    - peering.re8ch.com/Peer/byoc-pilot/re8ch-sijie
+    - peering.re8ch.com/PeerPolicy/byoc-pilot/artc-kubernetes-api
+    - peering.re8ch.com/PeerPolicy/byoc-pilot/qwen-kubernetes-api
+    - peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-mihomos-egress
+  inventory:
+    digest: sha256:c24837f76d568df3d4b336036c7bf4aa2246069444e9fc9b86a8030ab36938e4
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

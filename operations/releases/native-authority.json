@@ -1,0 +1,2422 @@
+{
+  "version": 1,
+  "source": "clusters/re8ch",
+  "executionGroup": "re8ch:release-executor:networking",
+  "verbsNote": "Existing-object adoption uses get/patch only; create/delete, Secret reads, impersonation and token minting are not granted. RBAC objects may additionally require reviewed bind/escalate authority.",
+  "releases": [
+    {
+      "releaseId": "networking-native-advfab-system",
+      "contract": "contracts/networking-native-advfab-system.yaml",
+      "namespace": "advfab-system",
+      "inventory": [
+        "apps/Deployment/advfab-system/external-dns-advfab",
+        "core/ServiceAccount/advfab-system/external-dns-advfab"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "external-dns-advfab"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "external-dns-advfab"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-advfab-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-advfab-system",
+          "namespace": "advfab-system"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-ai-operations",
+      "contract": "contracts/networking-native-ai-operations.yaml",
+      "namespace": "ai-operations",
+      "inventory": [
+        "networking.k8s.io/Ingress/ai-operations/steel-browser"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "steel-browser"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-ai-operations"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-ai-operations",
+          "namespace": "ai-operations"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-among-clusters",
+      "contract": "contracts/networking-native-among-clusters.yaml",
+      "namespace": "among-clusters",
+      "inventory": [
+        "cilium.io/CiliumNetworkPolicy/among-clusters/among-clusters-gateway-mihomos-host-egress",
+        "core/Service/among-clusters/artc-kubernetes-import",
+        "core/Service/among-clusters/qwen-kubernetes-import",
+        "gateway.networking.k8s.io/HTTPRoute/among-clusters/service-zone-among-clusters-among-clusters-ingest",
+        "networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-gateway-mihomos-egress"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnetworkpolicies"
+          ],
+          "resourceNames": [
+            "among-clusters-gateway-mihomos-host-egress"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "artc-kubernetes-import",
+            "qwen-kubernetes-import"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "service-zone-among-clusters-among-clusters-ingest"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "networkpolicies"
+          ],
+          "resourceNames": [
+            "among-clusters-gateway-mihomos-egress"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-among-clusters"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-among-clusters",
+          "namespace": "among-clusters"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-artchais",
+      "contract": "contracts/networking-native-artchais.yaml",
+      "namespace": "artchais",
+      "inventory": [
+        "peering.re8ch.com/AuthenticatedLink/artchais/re8ch-artc",
+        "peering.re8ch.com/ManagedAccessGrant/artchais/artc-codex-admin",
+        "peering.re8ch.com/ManagedAccessGrant/artchais/artc-codex-operator",
+        "peering.re8ch.com/ManagedAccessGrant/artchais/artc-codex-viewer",
+        "peering.re8ch.com/Peer/artchais/re8ch-artc",
+        "peering.re8ch.com/PeerPolicy/artchais/artc-kubernetes-api"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "authenticatedlinks"
+          ],
+          "resourceNames": [
+            "re8ch-artc"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "managedaccessgrants"
+          ],
+          "resourceNames": [
+            "artc-codex-admin",
+            "artc-codex-operator",
+            "artc-codex-viewer"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "peerpolicies"
+          ],
+          "resourceNames": [
+            "artc-kubernetes-api"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "peers"
+          ],
+          "resourceNames": [
+            "re8ch-artc"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-artchais"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-artchais",
+          "namespace": "artchais"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-byoc-pilot",
+      "contract": "contracts/networking-native-byoc-pilot.yaml",
+      "namespace": "byoc-pilot",
+      "inventory": [
+        "core/Service/byoc-pilot/artc-default-kubernetes-re8ch-artc",
+        "core/Service/byoc-pilot/qwen-default-kubernetes-re8ch-qwen",
+        "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-artc",
+        "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-qwen",
+        "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-sijie",
+        "peering.re8ch.com/ManagedAccessGrant/byoc-pilot/artc-headlamp-admin",
+        "peering.re8ch.com/ManagedAccessGrant/byoc-pilot/qwen-headlamp-admin",
+        "peering.re8ch.com/Peer/byoc-pilot/re8ch-artc",
+        "peering.re8ch.com/Peer/byoc-pilot/re8ch-qwen",
+        "peering.re8ch.com/Peer/byoc-pilot/re8ch-sijie",
+        "peering.re8ch.com/PeerPolicy/byoc-pilot/artc-kubernetes-api",
+        "peering.re8ch.com/PeerPolicy/byoc-pilot/qwen-kubernetes-api",
+        "peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-mihomos-egress"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "artc-default-kubernetes-re8ch-artc",
+            "qwen-default-kubernetes-re8ch-qwen"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "authenticatedlinks"
+          ],
+          "resourceNames": [
+            "re8ch-artc",
+            "re8ch-qwen",
+            "re8ch-sijie"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "managedaccessgrants"
+          ],
+          "resourceNames": [
+            "artc-headlamp-admin",
+            "qwen-headlamp-admin"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "peerpolicies"
+          ],
+          "resourceNames": [
+            "artc-kubernetes-api",
+            "qwen-kubernetes-api",
+            "re8ch-mihomos-egress"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resources": [
+            "peers"
+          ],
+          "resourceNames": [
+            "re8ch-artc",
+            "re8ch-qwen",
+            "re8ch-sijie"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-byoc-pilot"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-byoc-pilot",
+          "namespace": "byoc-pilot"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-cert-manager",
+      "contract": "contracts/networking-native-cert-manager.yaml",
+      "namespace": "cert-manager",
+      "inventory": [
+        "core/ServiceAccount/cert-manager/cert-manager-cloudflare-bootstrap",
+        "rbac.authorization.k8s.io/Role/cert-manager/write-cloudflare-dns-token",
+        "rbac.authorization.k8s.io/RoleBinding/cert-manager/cert-manager-write-cloudflare-dns-token"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "cert-manager-cloudflare-bootstrap"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "rolebindings"
+          ],
+          "resourceNames": [
+            "cert-manager-write-cloudflare-dns-token"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "roles"
+          ],
+          "resourceNames": [
+            "write-cloudflare-dns-token"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-cert-manager"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-cert-manager",
+          "namespace": "cert-manager"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-codex-platform",
+      "contract": "contracts/networking-native-codex-platform.yaml",
+      "namespace": "codex-platform",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/codex-platform/codex-app-server-console-public",
+        "gateway.networking.k8s.io/HTTPRoute/codex-platform/codex-session-web-public",
+        "gateway.networking.k8s.io/HTTPRoute/codex-platform/service-zone-codex-codex-session-web-advfab"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "codex-app-server-console-public",
+            "codex-session-web-public",
+            "service-zone-codex-codex-session-web-advfab"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-codex-platform"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-codex-platform",
+          "namespace": "codex-platform"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-credential-broker",
+      "contract": "contracts/networking-native-credential-broker.yaml",
+      "namespace": "credential-broker",
+      "inventory": [
+        "cilium.io/CiliumNetworkPolicy/credential-broker/among-clusters-broker-hub",
+        "cilium.io/CiliumNetworkPolicy/credential-broker/among-clusters-broker-imports",
+        "cilium.io/CiliumNetworkPolicy/credential-broker/among-clusters-broker-kube-apiserver"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnetworkpolicies"
+          ],
+          "resourceNames": [
+            "among-clusters-broker-hub",
+            "among-clusters-broker-imports",
+            "among-clusters-broker-kube-apiserver"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-credential-broker"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-credential-broker",
+          "namespace": "credential-broker"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-dataspace",
+      "contract": "contracts/networking-native-dataspace.yaml",
+      "namespace": "dataspace",
+      "inventory": [
+        "networking.k8s.io/Ingress/dataspace/storage-collaborator"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "storage-collaborator"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-dataspace"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-dataspace",
+          "namespace": "dataspace"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-egress-fabric",
+      "contract": "contracts/networking-native-egress-fabric.yaml",
+      "namespace": "egress-fabric",
+      "inventory": [
+        "apps/Deployment/egress-fabric/mihomo-node-labeler",
+        "core/ConfigMap/egress-fabric/identity-egress-config",
+        "core/ConfigMap/egress-fabric/mihomo-node-labeler-code-k4fm8c7g7t",
+        "core/ConfigMap/egress-fabric/re8ch-geodb-snapshot",
+        "core/ConfigMap/egress-fabric/route-path-controller-code",
+        "core/Service/egress-fabric/identity-egress",
+        "core/Service/egress-fabric/identity-egress-control-plane",
+        "core/Service/egress-fabric/identity-egress-gitops",
+        "core/Service/egress-fabric/mihomos-byoc-egress",
+        "core/Service/egress-fabric/path-controller",
+        "core/ServiceAccount/egress-fabric/mihomo-node-labeler",
+        "core/ServiceAccount/egress-fabric/path-controller",
+        "gateway.networking.k8s.io/HTTPRoute/egress-fabric/service-zone-agent-mobile-egress-mobile-egress-control",
+        "gateway.networking.k8s.io/HTTPRoute/egress-fabric/service-zone-agent-network-policy-public",
+        "networking.k8s.io/NetworkPolicy/egress-fabric/identity-egress",
+        "policy/PodDisruptionBudget/egress-fabric/identity-egress",
+        "rbac.authorization.k8s.io/Role/egress-fabric/path-controller",
+        "rbac.authorization.k8s.io/RoleBinding/egress-fabric/path-controller"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "mihomo-node-labeler"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "identity-egress-config",
+            "mihomo-node-labeler-code-k4fm8c7g7t",
+            "re8ch-geodb-snapshot",
+            "route-path-controller-code"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "mihomo-node-labeler",
+            "path-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "identity-egress",
+            "identity-egress-control-plane",
+            "identity-egress-gitops",
+            "mihomos-byoc-egress",
+            "path-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "service-zone-agent-mobile-egress-mobile-egress-control",
+            "service-zone-agent-network-policy-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "networkpolicies"
+          ],
+          "resourceNames": [
+            "identity-egress"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "policy"
+          ],
+          "resources": [
+            "poddisruptionbudgets"
+          ],
+          "resourceNames": [
+            "identity-egress"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "rolebindings"
+          ],
+          "resourceNames": [
+            "path-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "roles"
+          ],
+          "resourceNames": [
+            "path-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-egress-fabric"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-egress-fabric",
+          "namespace": "egress-fabric"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-flux-system",
+      "contract": "contracts/networking-native-flux-system.yaml",
+      "namespace": "flux-system",
+      "inventory": [
+        "batch/Job/flux-system/among-clusters-legacy-agent-cleanup-v2",
+        "core/ServiceAccount/flux-system/among-clusters-legacy-agent-cleanup",
+        "gateway.networking.k8s.io/HTTPRoute/flux-system/service-zone-hooks-github-flux-webhook",
+        "rbac.authorization.k8s.io/Role/flux-system/among-clusters-legacy-agent-cleanup",
+        "rbac.authorization.k8s.io/Role/flux-system/mihomo-node-labeler-inventory",
+        "rbac.authorization.k8s.io/RoleBinding/flux-system/among-clusters-legacy-agent-cleanup",
+        "rbac.authorization.k8s.io/RoleBinding/flux-system/mihomo-node-labeler-inventory"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "batch"
+          ],
+          "resources": [
+            "jobs"
+          ],
+          "resourceNames": [
+            "among-clusters-legacy-agent-cleanup-v2"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "among-clusters-legacy-agent-cleanup"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "service-zone-hooks-github-flux-webhook"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "rolebindings"
+          ],
+          "resourceNames": [
+            "among-clusters-legacy-agent-cleanup",
+            "mihomo-node-labeler-inventory"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "roles"
+          ],
+          "resourceNames": [
+            "among-clusters-legacy-agent-cleanup",
+            "mihomo-node-labeler-inventory"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-flux-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-flux-system",
+          "namespace": "flux-system"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-headlamp",
+      "contract": "contracts/networking-native-headlamp.yaml",
+      "namespace": "headlamp",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/headlamp/headlamp-edge-origin",
+        "gateway.networking.k8s.io/HTTPRoute/headlamp/headlamp-http-redirect",
+        "gateway.networking.k8s.io/HTTPRoute/headlamp/headlamp-public",
+        "gateway.networking.k8s.io/HTTPRoute/headlamp/headlamp-service-public"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "headlamp-edge-origin",
+            "headlamp-http-redirect",
+            "headlamp-public",
+            "headlamp-service-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-headlamp"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-headlamp",
+          "namespace": "headlamp"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-kube-system",
+      "contract": "contracts/networking-native-kube-system.yaml",
+      "namespace": "kube-system",
+      "inventory": [
+        "apps/DaemonSet/kube-system/control-api-source",
+        "apps/DaemonSet/kube-system/control-dns-reachability",
+        "apps/DaemonSet/kube-system/control-transit-controller",
+        "apps/DaemonSet/kube-system/host-network-controller",
+        "apps/DaemonSet/kube-system/podcidr-fabric-reconciler",
+        "apps/DaemonSet/kube-system/public-mesh-podcidr-reconciler",
+        "apps/Deployment/kube-system/kube-api-observer-proxy",
+        "apps/Deployment/kube-system/kube-api-overseas-relay",
+        "apps/Deployment/kube-system/zerotier-planet",
+        "cert-manager.io/Certificate/kube-system/access-subdomains",
+        "cert-manager.io/Certificate/kube-system/headlamp-service-pilot",
+        "cert-manager.io/Certificate/kube-system/re8ch-apps-public-gateway",
+        "cert-manager.io/Certificate/kube-system/re8ch-service-public-gateway",
+        "cilium.io/CiliumGatewayClassConfig/kube-system/re8ch-service-vip",
+        "cilium.io/CiliumNodeConfig/kube-system/advfab-worker-node-ips",
+        "cilium.io/CiliumNodeConfig/kube-system/domain-api-bootstrap",
+        "cilium.io/CiliumNodeConfig/kube-system/native-routing-canary",
+        "cilium.io/CiliumNodeConfig/kube-system/native-routing-mubao-wsl",
+        "cilium.io/CiliumNodeConfig/kube-system/native-routing-wsl-control-plane",
+        "cilium.io/CiliumNodeConfig/kube-system/overseas-flk-public-service-device",
+        "cilium.io/CiliumNodeConfig/kube-system/r640-policy-update-budget",
+        "cilium.io/CiliumNodeConfig/kube-system/r640-xdp-native",
+        "core/ConfigMap/kube-system/cilium-multi-pool-cutover",
+        "core/ConfigMap/kube-system/control-api-source",
+        "core/ConfigMap/kube-system/control-dns-reachability",
+        "core/ConfigMap/kube-system/kube-api-observer-proxy",
+        "core/ConfigMap/kube-system/kube-api-overseas-relay",
+        "core/ConfigMap/kube-system/native-routing-rollout-order",
+        "core/Service/kube-system/kube-api-observer-proxy",
+        "core/Service/kube-system/kube-api-overseas-relay",
+        "core/Service/kube-system/kube-dns",
+        "core/ServiceAccount/kube-system/control-dns-reachability",
+        "core/ServiceAccount/kube-system/host-network-controller",
+        "gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary",
+        "gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public",
+        "rbac.authorization.k8s.io/Role/kube-system/control-dns-reachability",
+        "rbac.authorization.k8s.io/Role/kube-system/host-network-controller",
+        "rbac.authorization.k8s.io/RoleBinding/kube-system/control-dns-reachability",
+        "rbac.authorization.k8s.io/RoleBinding/kube-system/host-network-controller"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "daemonsets"
+          ],
+          "resourceNames": [
+            "control-api-source",
+            "control-dns-reachability",
+            "control-transit-controller",
+            "host-network-controller",
+            "podcidr-fabric-reconciler",
+            "public-mesh-podcidr-reconciler"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "kube-api-observer-proxy",
+            "kube-api-overseas-relay",
+            "zerotier-planet"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cert-manager.io"
+          ],
+          "resources": [
+            "certificates"
+          ],
+          "resourceNames": [
+            "access-subdomains",
+            "headlamp-service-pilot",
+            "re8ch-apps-public-gateway",
+            "re8ch-service-public-gateway"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumgatewayclassconfigs"
+          ],
+          "resourceNames": [
+            "re8ch-service-vip"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cilium.io"
+          ],
+          "resources": [
+            "ciliumnodeconfigs"
+          ],
+          "resourceNames": [
+            "advfab-worker-node-ips",
+            "domain-api-bootstrap",
+            "native-routing-canary",
+            "native-routing-mubao-wsl",
+            "native-routing-wsl-control-plane",
+            "overseas-flk-public-service-device",
+            "r640-policy-update-budget",
+            "r640-xdp-native"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "cilium-multi-pool-cutover",
+            "control-api-source",
+            "control-dns-reachability",
+            "kube-api-observer-proxy",
+            "kube-api-overseas-relay",
+            "native-routing-rollout-order"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "control-dns-reachability",
+            "host-network-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "kube-api-observer-proxy",
+            "kube-api-overseas-relay",
+            "kube-dns"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "gateways"
+          ],
+          "resourceNames": [
+            "re8ch-gateway-canary"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "tcproutes"
+          ],
+          "resourceNames": [
+            "kube-api-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "rolebindings"
+          ],
+          "resourceNames": [
+            "control-dns-reachability",
+            "host-network-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "roles"
+          ],
+          "resourceNames": [
+            "control-dns-reachability",
+            "host-network-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-kube-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-kube-system",
+          "namespace": "kube-system"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-llm-gateway",
+      "contract": "contracts/networking-native-llm-gateway.yaml",
+      "namespace": "llm-gateway",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/llm-gateway/litellm-public",
+        "gateway.networking.k8s.io/HTTPRoute/llm-gateway/litellm-service-public",
+        "networking.k8s.io/Ingress/llm-gateway/litellm-dns-authority"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "litellm-public",
+            "litellm-service-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "litellm-dns-authority"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-llm-gateway"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-llm-gateway",
+          "namespace": "llm-gateway"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-mail-system",
+      "contract": "contracts/networking-native-mail-system.yaml",
+      "namespace": "mail-system",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/mail-system/service-zone-mail-stalwart-webmail-public",
+        "gateway.networking.k8s.io/HTTPRoute/mail-system/service-zone-mail-stalwart-webmail-redirect"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "service-zone-mail-stalwart-webmail-public",
+            "service-zone-mail-stalwart-webmail-redirect"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-mail-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-mail-system",
+          "namespace": "mail-system"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-nuclio",
+      "contract": "contracts/networking-native-nuclio.yaml",
+      "namespace": "nuclio",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/nuclio/ledger-accounting-public",
+        "gateway.networking.k8s.io/HTTPRoute/nuclio/ledger-accounting-r640-public",
+        "gateway.networking.k8s.io/HTTPRoute/nuclio/ledger-decision-public",
+        "gateway.networking.k8s.io/HTTPRoute/nuclio/ledger-decision-r640-public",
+        "gateway.networking.k8s.io/HTTPRoute/nuclio/service-zone-ledger-decisions-ledger-decisions-static-advfab",
+        "gateway.networking.k8s.io/HTTPRoute/nuclio/service-zone-ledger-static-http-advfab"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "ledger-accounting-public",
+            "ledger-accounting-r640-public",
+            "ledger-decision-public",
+            "ledger-decision-r640-public",
+            "service-zone-ledger-decisions-ledger-decisions-static-advfab",
+            "service-zone-ledger-static-http-advfab"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-nuclio"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-nuclio",
+          "namespace": "nuclio"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-observability-system",
+      "contract": "contracts/networking-native-observability-system.yaml",
+      "namespace": "observability-system",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/observability-system/grafana-edge-origin",
+        "gateway.networking.k8s.io/HTTPRoute/observability-system/grafana-http-redirect",
+        "gateway.networking.k8s.io/HTTPRoute/observability-system/grafana-public",
+        "gateway.networking.k8s.io/HTTPRoute/observability-system/grafana-service-public",
+        "networking.k8s.io/Ingress/observability-system/grafana-dns-authority",
+        "operator.victoriametrics.com/VMPodScrape/observability-system/control-dns-reachability",
+        "operator.victoriametrics.com/VMRule/observability-system/control-dns-reachability"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "grafana-edge-origin",
+            "grafana-http-redirect",
+            "grafana-public",
+            "grafana-service-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "grafana-dns-authority"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "operator.victoriametrics.com"
+          ],
+          "resources": [
+            "vmpodscrapes"
+          ],
+          "resourceNames": [
+            "control-dns-reachability"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "operator.victoriametrics.com"
+          ],
+          "resources": [
+            "vmrules"
+          ],
+          "resourceNames": [
+            "control-dns-reachability"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-observability-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-observability-system",
+          "namespace": "observability-system"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-opensandbox-system",
+      "contract": "contracts/networking-native-opensandbox-system.yaml",
+      "namespace": "opensandbox-system",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/opensandbox-system/opensandbox-service-public",
+        "networking.k8s.io/Ingress/opensandbox-system/opensandbox-server"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "opensandbox-service-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "opensandbox-server"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-opensandbox-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-opensandbox-system",
+          "namespace": "opensandbox-system"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-ops",
+      "contract": "contracts/networking-native-ops.yaml",
+      "namespace": "ops",
+      "inventory": [
+        "apps/Deployment/ops/routeros-public-forward-controller",
+        "apps/Deployment/ops/routeros-transit-controller",
+        "core/ConfigMap/ops/routeros-public-forward-controller",
+        "gateway.networking.k8s.io/HTTPRoute/ops/dbgui-service-public"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "routeros-public-forward-controller",
+            "routeros-transit-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "routeros-public-forward-controller"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "dbgui-service-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-ops"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-ops",
+          "namespace": "ops"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-payments",
+      "contract": "contracts/networking-native-payments.yaml",
+      "namespace": "payments",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/payments/service-zone-pay-hyperswitch-control-center-public"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "service-zone-pay-hyperswitch-control-center-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-payments"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-payments",
+          "namespace": "payments"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-qianwen-ops",
+      "contract": "contracts/networking-native-qianwen-ops.yaml",
+      "namespace": "qianwen-ops",
+      "inventory": [
+        "apps/Deployment/qianwen-ops/external-dns-cloudflare",
+        "core/Service/qianwen-ops/tenant-apps-dns-placeholder",
+        "core/ServiceAccount/qianwen-ops/external-dns-cloudflare",
+        "networking.k8s.io/Ingress/qianwen-ops/tenant-apps-wildcard-dns-authority",
+        "rbac.authorization.k8s.io/Role/qianwen-ops/read-cloudflare-dns-token",
+        "rbac.authorization.k8s.io/RoleBinding/qianwen-ops/cert-manager-read-cloudflare-dns-token"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "external-dns-cloudflare"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "serviceaccounts"
+          ],
+          "resourceNames": [
+            "external-dns-cloudflare"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "tenant-apps-dns-placeholder"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "tenant-apps-wildcard-dns-authority"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "rolebindings"
+          ],
+          "resourceNames": [
+            "cert-manager-read-cloudflare-dns-token"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "roles"
+          ],
+          "resourceNames": [
+            "read-cloudflare-dns-token"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-qianwen-ops"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-qianwen-ops",
+          "namespace": "qianwen-ops"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-re8ch-secretary",
+      "contract": "contracts/networking-native-re8ch-secretary.yaml",
+      "namespace": "re8ch-secretary",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/re8ch-secretary/tools-service-secretary-webhooks"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "tools-service-secretary-webhooks"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-re8ch-secretary"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-re8ch-secretary",
+          "namespace": "re8ch-secretary"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-regional-routing",
+      "contract": "contracts/networking-native-regional-routing.yaml",
+      "namespace": "regional-routing",
+      "inventory": [
+        "apps/DaemonSet/regional-routing/powerdns-cloud-authorities",
+        "cert-manager.io/Certificate/regional-routing/public-edge-domain-ex",
+        "cert-manager.io/Certificate/regional-routing/public-edge-hidden-primary",
+        "cert-manager.io/Certificate/regional-routing/public-edge-muaya-lightweight",
+        "cert-manager.io/Certificate/regional-routing/public-edge-overseas-la",
+        "cert-manager.io/Certificate/regional-routing/public-edge-suxunji",
+        "cert-manager.io/Certificate/regional-routing/public-edge-transfer-ca",
+        "cert-manager.io/Certificate/regional-routing/public-edge-zan",
+        "cert-manager.io/Issuer/regional-routing/public-edge-bootstrap",
+        "cert-manager.io/Issuer/regional-routing/public-edge-transfer-ca",
+        "core/ConfigMap/regional-routing/powerdns-cloud-authorities",
+        "core/ConfigMap/regional-routing/public-edge-route-snapshot-public-key",
+        "networking.k8s.io/Ingress/regional-routing/catalog-edgeone-dns-authority"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "daemonsets"
+          ],
+          "resourceNames": [
+            "powerdns-cloud-authorities"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cert-manager.io"
+          ],
+          "resources": [
+            "certificates"
+          ],
+          "resourceNames": [
+            "public-edge-domain-ex",
+            "public-edge-hidden-primary",
+            "public-edge-muaya-lightweight",
+            "public-edge-overseas-la",
+            "public-edge-suxunji",
+            "public-edge-transfer-ca",
+            "public-edge-zan"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "cert-manager.io"
+          ],
+          "resources": [
+            "issuers"
+          ],
+          "resourceNames": [
+            "public-edge-bootstrap",
+            "public-edge-transfer-ca"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "powerdns-cloud-authorities",
+            "public-edge-route-snapshot-public-key"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "catalog-edgeone-dns-authority"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-regional-routing"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-regional-routing",
+          "namespace": "regional-routing"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-supabase-pg-re8ch",
+      "contract": "contracts/networking-native-supabase-pg-re8ch.yaml",
+      "namespace": "supabase-pg-re8ch",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/supabase-pg-re8ch/supabase-service-public"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "supabase-service-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-supabase-pg-re8ch"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-supabase-pg-re8ch",
+          "namespace": "supabase-pg-re8ch"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-toolhive-system",
+      "contract": "contracts/networking-native-toolhive-system.yaml",
+      "namespace": "toolhive-system",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/toolhive-system/operate-tools-public",
+        "gateway.networking.k8s.io/HTTPRoute/toolhive-system/service-zone-admin-admin-tools-public",
+        "gateway.networking.k8s.io/HTTPRoute/toolhive-system/service-zone-admin-admin-tools-re8ch-com-advfab",
+        "gateway.networking.k8s.io/HTTPRoute/toolhive-system/service-zone-admin-vmcp-r640-backends-public",
+        "gateway.networking.k8s.io/HTTPRoute/toolhive-system/tools-service-cloud-mcp",
+        "gateway.networking.k8s.io/HTTPRoute/toolhive-system/tools-service-tenant-mcp",
+        "gateway.networking.k8s.io/HTTPRoute/toolhive-system/tools-service-ui",
+        "gateway.networking.k8s.io/HTTPRoute/toolhive-system/tools-service-vmcp",
+        "networking.k8s.io/Ingress/toolhive-system/operate-tools-public-dns"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "operate-tools-public",
+            "service-zone-admin-admin-tools-public",
+            "service-zone-admin-admin-tools-re8ch-com-advfab",
+            "service-zone-admin-vmcp-r640-backends-public",
+            "tools-service-cloud-mcp",
+            "tools-service-tenant-mcp",
+            "tools-service-ui",
+            "tools-service-vmcp"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "ingresses"
+          ],
+          "resourceNames": [
+            "operate-tools-public-dns"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-toolhive-system"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-toolhive-system",
+          "namespace": "toolhive-system"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-voice-observability",
+      "contract": "contracts/networking-native-voice-observability.yaml",
+      "namespace": "voice-observability",
+      "inventory": [
+        "gateway.networking.k8s.io/HTTPRoute/voice-observability/phonycenter-public",
+        "gateway.networking.k8s.io/HTTPRoute/voice-observability/phonycenter-service-public"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "phonycenter-public",
+            "phonycenter-service-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-voice-observability"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-voice-observability",
+          "namespace": "voice-observability"
+        },
+        "data": {}
+      }
+    }
+  ],
+  "omitted": [
+    {
+      "identity": "apps/Deployment/egress-fabric/identity-egress",
+      "reason": "image-digest-required"
+    },
+    {
+      "identity": "apps/Deployment/egress-fabric/path-controller",
+      "reason": "image-digest-required"
+    },
+    {
+      "identity": "batch/Job/cert-manager/cert-manager-cloudflare-bootstrap-v2",
+      "reason": "image-digest-required"
+    },
+    {
+      "identity": "cilium.io/CiliumPodIPPool/_/jobs-sandbox",
+      "reason": "cluster-network-authority"
+    },
+    {
+      "identity": "cilium.io/CiliumPodIPPool/_/platform-system",
+      "reason": "cluster-network-authority"
+    },
+    {
+      "identity": "cilium.io/CiliumPodIPPool/_/regulated-egress",
+      "reason": "cluster-network-authority"
+    },
+    {
+      "identity": "cilium.io/CiliumPodIPPool/_/tenant-apps",
+      "reason": "cluster-network-authority"
+    },
+    {
+      "identity": "core/ConfigMap/flux-network-system/cluster-node-inventory",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/ConfigMap/kube-system/control-transit-controller-98df2kft25",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/ConfigMap/kube-system/host-network-contract",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/ConfigMap/kube-system/host-network-controller-679588ggt2",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/ConfigMap/kube-system/podcidr-fabric-inventory",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/ConfigMap/kube-system/podcidr-fabric-reconciler",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/ConfigMap/kube-system/public-mesh-podcidr",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/ConfigMap/ops/routeros-transit-controller-m4d4tm44fd",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/Secret/advfab-system/cloudflare-advfab-dns-token",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/Secret/among-clusters/among-clusters-hub-admin",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/Secret/kube-system/kube-api-overseas-relay-upstream",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/Secret/kube-system/zerotier-planet-env",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/Secret/regional-routing/public-edge-route-snapshot-signing",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/Secret/regional-routing/routeros-authority-bundle-key",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "helm.cattle.io/HelmChart/kube-system/cert-manager",
+      "reason": "cloud-helm-render"
+    },
+    {
+      "identity": "helm.toolkit.fluxcd.io/HelmRelease/flux-network-system/advanced-fabric",
+      "reason": "restricted-sops"
+    },
+    {
+      "identity": "helm.toolkit.fluxcd.io/HelmRelease/flux-network-system/among-clusters-agent",
+      "reason": "cloud-helm-render"
+    },
+    {
+      "identity": "helm.toolkit.fluxcd.io/HelmRelease/flux-network-system/among-clusters-hub",
+      "reason": "cloud-helm-render"
+    },
+    {
+      "identity": "helm.toolkit.fluxcd.io/HelmRelease/flux-network-system/cilium",
+      "reason": "cloud-helm-render"
+    },
+    {
+      "identity": "helm.toolkit.fluxcd.io/HelmRelease/flux-network-system/public-edge-manager",
+      "reason": "cloud-helm-render"
+    },
+    {
+      "identity": "source.toolkit.fluxcd.io/OCIRepository/flux-network-system/advanced-fabric",
+      "reason": "flux-source-metadata"
+    },
+    {
+      "identity": "source.toolkit.fluxcd.io/OCIRepository/flux-network-system/among-clusters-agent",
+      "reason": "flux-source-metadata"
+    },
+    {
+      "identity": "source.toolkit.fluxcd.io/OCIRepository/flux-network-system/among-clusters-hub",
+      "reason": "flux-source-metadata"
+    },
+    {
+      "identity": "source.toolkit.fluxcd.io/OCIRepository/flux-network-system/public-edge-manager",
+      "reason": "flux-source-metadata"
+    }
+  ]
+}

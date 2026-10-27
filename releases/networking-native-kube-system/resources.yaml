@@ -1,0 +1,1946 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: control-api-source
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: control-api-source
+  template:
+    metadata:
+      annotations:
+        networking.re8ch.com/config-revision: control-api-cross-fabric-v4
+      labels:
+        app.kubernetes.io/name: control-api-source
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - overseas-kl
+                - overseas-la
+                - suxunji
+                - muaya-lightweight
+                - muaya-ecs
+                - zan
+                - domain-ex
+      containers:
+      - command:
+        - /usr/bin/sh
+        - /config/reconcile.sh
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+        imagePullPolicy: IfNotPresent
+        name: reconciler
+        readinessProbe:
+          exec:
+            command:
+            - /usr/bin/test
+            - -f
+            - /run/control-api-source-ready
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /host
+          name: host-root
+          readOnly: true
+      hostNetwork: true
+      hostPID: true
+      priorityClassName: system-node-critical
+      tolerations:
+      - operator: Exists
+      volumes:
+      - name: config
+        projected:
+          sources:
+          - configMap:
+              items:
+              - key: reconcile.sh
+                path: reconcile.sh
+              name: control-api-source
+          - configMap:
+              items:
+              - key: inventory.json
+                path: inventory.json
+              name: podcidr-fabric-inventory
+      - hostPath:
+          path: /
+          type: Directory
+        name: host-root
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 2
+    type: RollingUpdate
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: control-dns-reachability
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: control-dns-reachability
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: control-dns-reachability
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - r640
+                - a1-wsl-zt
+                - b1-wsl-zt
+                - mubao-wsl
+      containers:
+      - command:
+        - python3
+        - /runtime/probe.py
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+        name: probe
+        ports:
+        - containerPort: 9838
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 150m
+            memory: 96Mi
+          requests:
+            cpu: 20m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+        volumeMounts:
+        - mountPath: /runtime
+          name: runtime
+          readOnly: true
+      hostNetwork: true
+      serviceAccountName: control-dns-reachability
+      tolerations:
+      - operator: Exists
+      volumes:
+      - configMap:
+          name: control-dns-reachability
+        name: runtime
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: control-transit-controller
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: control-transit-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: control-transit-controller
+    spec:
+      containers:
+      - command:
+        - /usr/bin/sh
+        - /config/deliver.sh
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+        name: delivery
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 32Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /host
+          name: host-root
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/hostname: mubao-wsl
+      serviceAccountName: host-network-controller
+      tolerations:
+      - operator: Exists
+      volumes:
+      - configMap:
+          name: control-transit-controller-98df2kft25
+        name: config
+      - hostPath:
+          path: /
+          type: Directory
+        name: host-root
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: host-network-controller
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: host-network-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: host-network-controller
+    spec:
+      containers:
+      - command:
+        - /usr/bin/sh
+        - /config/deliver.sh
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+        name: delivery
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 20m
+            memory: 32Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /host
+          name: host-root
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/hostname: overseas-flk
+      serviceAccountName: host-network-controller
+      tolerations:
+      - operator: Exists
+      volumes:
+      - configMap:
+          name: host-network-controller-679588ggt2
+        name: config
+      - hostPath:
+          path: /
+          type: Directory
+        name: host-root
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/name: podcidr-fabric-reconciler
+  name: podcidr-fabric-reconciler
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: podcidr-fabric-reconciler
+  template:
+    metadata:
+      annotations:
+        networking.re8ch.com/config-revision: multipool-relay-v17
+      labels:
+        app.kubernetes.io/name: podcidr-fabric-reconciler
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - a1-wsl-zt
+                - b1-wsl-zt
+                - mubao-wsl
+                - r640
+                - amdwsl-zt
+                - overseas-edge-50
+                - overseas-flk
+                - overseas-kl
+                - overseas-la
+                - overseas-la-2
+                - suxunji
+                - muaya-lightweight
+                - muaya-ecs
+                - zan
+                - domain-ex
+                - qwen-1
+                - qwen-2
+                - qwen-3
+                - vm-20-12-ubuntu
+      containers:
+      - command:
+        - /usr/bin/sh
+        - /config/reconcile.sh
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+        imagePullPolicy: IfNotPresent
+        name: reconciler
+        readinessProbe:
+          exec:
+            command:
+            - /usr/bin/test
+            - -f
+            - /run/podcidr-fabric-ready
+          initialDelaySeconds: 2
+          periodSeconds: 10
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /host
+          name: host-root
+          readOnly: false
+      hostNetwork: true
+      hostPID: true
+      priorityClassName: system-node-critical
+      serviceAccountName: podcidr-fabric-reconciler
+      tolerations:
+      - operator: Exists
+      volumes:
+      - name: config
+        projected:
+          sources:
+          - configMap:
+              items:
+              - key: reconcile.sh
+                path: reconcile.sh
+              name: podcidr-fabric-reconciler
+          - configMap:
+              items:
+              - key: inventory.json
+                path: inventory.json
+              name: podcidr-fabric-inventory
+      - hostPath:
+          path: /
+          type: Directory
+        name: host-root
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 25%
+    type: RollingUpdate
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: public-mesh-podcidr-reconciler
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: public-mesh-podcidr-reconciler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: public-mesh-podcidr-reconciler
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - r640
+                - overseas-flk
+                - overseas-la
+                - mubao-wsl
+      containers:
+      - command:
+        - /bin/sh
+        - /config/reconcile.sh
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+        imagePullPolicy: IfNotPresent
+        name: reconciler
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /host
+          name: host-root
+          readOnly: false
+      hostNetwork: true
+      hostPID: true
+      priorityClassName: system-node-critical
+      tolerations:
+      - operator: Exists
+      volumes:
+      - name: config
+        projected:
+          sources:
+          - configMap:
+              items:
+              - key: public-mesh-podcidr-reconcile.sh
+                path: reconcile.sh
+              - key: inventory.json
+                path: public-mesh.json
+              name: public-mesh-podcidr
+      - hostPath:
+          path: /
+          type: Directory
+        name: host-root
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-api-observer-proxy
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-api-observer-proxy
+  template:
+    metadata:
+      annotations:
+        networking.re8ch.com/config-revision: observer-proxy-v2
+      labels:
+        app.kubernetes.io/name: kube-api-observer-proxy
+        operations.re8ch.com/credential-contract: node-observer
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - python3
+        - /config/proxy.py
+        image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+        livenessProbe:
+          exec:
+            command:
+            - python3
+            - -c
+            - import socket; socket.create_connection(('10.43.0.1', 443), 3).close()
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+        name: proxy
+        ports:
+        - containerPort: 6443
+          name: kube-api
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - python3
+            - -c
+            - import socket; socket.create_connection(('10.43.0.1', 443), 3).close()
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 5m
+            memory: 16Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      nodeSelector:
+        kubernetes.io/hostname: r640
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - configMap:
+          name: kube-api-observer-proxy
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-api-overseas-relay
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-api-overseas-relay
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-api-overseas-relay
+        operations.re8ch.com/credential-contract: node-observer
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - python3
+        - /config/relay.py
+        env:
+        - name: PRIVATE_API_HOST
+          valueFrom:
+            secretKeyRef:
+              key: host
+              name: kube-api-overseas-relay-upstream
+        image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+        livenessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          tcpSocket:
+            port: kube-api
+          timeoutSeconds: 5
+        name: relay
+        ports:
+        - containerPort: 6443
+          hostPort: 6443
+          name: kube-api
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          tcpSocket:
+            port: kube-api
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 16Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: overseas-flk
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+      - effect: NoSchedule
+        key: dedicated
+        operator: Equal
+        value: overseas-edge
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+      volumes:
+      - configMap:
+          name: kube-api-overseas-relay
+        name: config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: zerotier-planet
+    app.kubernetes.io/part-of: re8ch-network
+  name: zerotier-planet
+  namespace: kube-system
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zerotier-planet
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zerotier-planet
+        app.kubernetes.io/part-of: re8ch-network
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: zerotier-planet-env
+        image: xubiaolin/zerotier-planet@sha256:55611f7107fb48c33ecffa132a694b6c3f23cdb61f2317def309447d24d34fdb
+        imagePullPolicy: IfNotPresent
+        name: planet
+        ports:
+        - containerPort: 9994
+          name: planet-udp
+          protocol: UDP
+        - containerPort: 9994
+          name: planet-tcp
+          protocol: TCP
+        - containerPort: 3000
+          name: file-http
+          protocol: TCP
+        - containerPort: 3443
+          name: admin-http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: admin-http
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+        startupProbe:
+          failureThreshold: 60
+          periodSeconds: 2
+          tcpSocket:
+            port: admin-http
+        volumeMounts:
+        - mountPath: /app/dist
+          name: dist
+        - mountPath: /app/ztncui
+          name: ztncui
+        - mountPath: /var/lib/zerotier-one
+          name: one
+        - mountPath: /app/config
+          name: config
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeName: vm-20-12-ubuntu
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - hostPath:
+          path: /home/ubuntu/docker-zerotier-planet-master/data/zerotier/dist
+          type: Directory
+        name: dist
+      - hostPath:
+          path: /home/ubuntu/docker-zerotier-planet-master/data/zerotier/ztncui
+          type: Directory
+        name: ztncui
+      - hostPath:
+          path: /home/ubuntu/docker-zerotier-planet-master/data/zerotier/one
+          type: Directory
+        name: one
+      - hostPath:
+          path: /home/ubuntu/docker-zerotier-planet-master/data/zerotier/config
+          type: Directory
+        name: config
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: access-subdomains
+  namespace: kube-system
+spec:
+  dnsNames:
+  - sub.access.re8ch.com
+  - dns.access.re8ch.com
+  issuerRef:
+    kind: ClusterIssuer
+    name: re8ch-cloudflare-dns01
+  secretName: access-subdomains-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: headlamp-service-pilot
+  namespace: kube-system
+spec:
+  dnsNames:
+  - headlamp.service.re8ch.com
+  duration: 2160h
+  issuerRef:
+    kind: ClusterIssuer
+    name: re8ch-service-http01
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: headlamp-service-pilot-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: re8ch-apps-public-gateway
+  namespace: kube-system
+spec:
+  dnsNames:
+  - '*.apps.re8ch.com'
+  duration: 2160h
+  issuerRef:
+    kind: ClusterIssuer
+    name: re8ch-cloudflare-dns01
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: re8ch-apps-wildcard-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: re8ch-service-public-gateway
+  namespace: kube-system
+spec:
+  dnsNames:
+  - '*.service.re8ch.com'
+  duration: 2160h
+  issuerRef:
+    kind: ClusterIssuer
+    name: re8ch-service-dns01
+  privateKey:
+    algorithm: ECDSA
+    rotationPolicy: Always
+    size: 256
+  renewBefore: 360h
+  secretName: re8ch-service-wildcard-tls
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumGatewayClassConfig
+metadata:
+  name: re8ch-service-vip
+  namespace: kube-system
+spec:
+  description: RE8CH Cilium-FRR service VIP gateway
+  service:
+    allocateLoadBalancerNodePorts: true
+    externalTrafficPolicy: Cluster
+    loadBalancerClass: io.cilium/bgp-control-plane
+    type: LoadBalancer
+---
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: advfab-worker-node-ips
+  namespace: kube-system
+spec:
+  defaults:
+    auto-direct-node-routes: 'false'
+    devices: wg-pt-a1,wg-pt-b1
+    direct-routing-device: wg-pt-a1
+    direct-routing-skip-unreachable: 'false'
+  nodeSelector:
+    matchExpressions:
+    - key: kubernetes.io/hostname
+      operator: In
+      values:
+      - vm-20-12-ubuntu
+      - suxunji
+      - muaya-lightweight
+      - muaya-ecs
+      - zan
+      - overseas-flk
+      - overseas-la-2
+---
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: domain-api-bootstrap
+  namespace: kube-system
+spec:
+  defaults:
+    k8s-api-server: https://10.181.22.147:6443
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: domain-ex
+---
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: native-routing-canary
+  namespace: kube-system
+spec:
+  defaults:
+    auto-direct-node-routes: 'false'
+    direct-routing-skip-unreachable: 'false'
+    ipv4-native-routing-cidr: 10.0.0.0/8
+    routing-mode: native
+  nodeSelector:
+    matchExpressions:
+    - key: kubernetes.io/hostname
+      operator: NotIn
+      values:
+      - a1-wsl-zt
+      - b1-wsl-zt
+    matchLabels:
+      networking.re8ch.com/native-routing-canary: enabled
+---
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: native-routing-mubao-wsl
+  namespace: kube-system
+spec:
+  defaults:
+    auto-direct-node-routes: 'false'
+    direct-routing-device: wg-pt-mubao
+    direct-routing-skip-unreachable: 'false'
+    ipv4-native-routing-cidr: 10.0.0.0/8
+    routing-mode: native
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: mubao-wsl
+---
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: native-routing-wsl-control-plane
+  namespace: kube-system
+spec:
+  defaults:
+    auto-direct-node-routes: 'false'
+    direct-routing-device: zto5uhdriy
+    direct-routing-skip-unreachable: 'false'
+    ipv4-native-routing-cidr: 10.0.0.0/8
+    routing-mode: native
+  nodeSelector:
+    matchExpressions:
+    - key: kubernetes.io/hostname
+      operator: In
+      values:
+      - a1-wsl-zt
+      - b1-wsl-zt
+---
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: overseas-flk-public-service-device
+  namespace: kube-system
+spec:
+  defaults:
+    auto-direct-node-routes: 'false'
+    devices: eth0,wg-pt-a1,wg-pt-b1
+    direct-routing-device: wg-pt-a1
+    direct-routing-skip-unreachable: 'false'
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: overseas-flk
+---
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: r640-policy-update-budget
+  namespace: kube-system
+spec:
+  defaults:
+    endpoint-policy-update-timeout: 60s
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: r640
+---
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  labels:
+    app.kubernetes.io/name: cilium
+    app.kubernetes.io/part-of: advanced-fabric
+  name: r640-xdp-native
+  namespace: kube-system
+spec:
+  defaults:
+    auto-direct-node-routes: 'false'
+    bpf-lb-acceleration: native
+    devices: eno2np1
+    direct-routing-device: eno2np1
+    direct-routing-skip-unreachable: 'false'
+    egress-masquerade-interfaces: ''
+    enable-bpf-masquerade: 'true'
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: r640
+---
+apiVersion: v1
+data:
+  allocation-mask-size: '24'
+  cilium-image-digest: sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+  default-pool: tenant-apps
+  desired-ipam-mode: multi-pool
+  hard-rollback-minutes: '60'
+  maintenance-window-minutes: '120'
+  migration-native-routing-cidr: 10.0.0.0/8
+  native-routing-cidr: 10.64.0.0/12
+  operator-image-digest: sha256:b6390ca03f3cba10d8ab963a9735ec1657e62bce254de45ffb101d1d4d528315
+  previous-ipam-mode: kubernetes
+  state: migrating
+kind: ConfigMap
+metadata:
+  labels:
+    networking.re8ch.com/address-plan: multi-pool-v1
+  name: cilium-multi-pool-cutover
+  namespace: kube-system
+---
+apiVersion: v1
+data:
+  reconcile.sh: "#!/bin/sh\nset -eu\nnode=\"$(jq -c --arg name \"${NODE_NAME}\" '.nodes[]\
+    \ | select(.name == $name and .peerMode == \"transport\")' /config/inventory.json)\"\
+    \ntest -n \"${node}\"\nlast=\"$(printf '%s' \"${node}\" | jq -r '.internalIp |\
+    \ split(\".\")[3]')\"\nidentity=\"$(printf '%s' \"${node}\" | jq -r '.acceleratedIp')\"\
+    \nhost() { nsenter -t 1 -n chroot /host \"$@\"; }\nwhile :; do\n  rm -f /run/control-api-source-ready\n\
+    \  host ip -4 addr show | grep -Fq \"${identity}/32\" || { sleep 15; continue;\
+    \ }\n  host nft list table ip re8ch_control_api_snat >/dev/null 2>&1 ||\n    host\
+    \ nft add table ip re8ch_control_api_snat\n  host nft list chain ip re8ch_control_api_snat\
+    \ postrouting >/dev/null 2>&1 ||\n    host nft 'add chain ip re8ch_control_api_snat\
+    \ postrouting { type nat hook postrouting priority srcnat; policy accept; }'\n\
+    \  active=0\n  for fabric in 93 94; do\n    if [ \"${fabric}\" = 93 ]; then iface=wg-pt-a1;\
+    \ else iface=wg-pt-b1; fi\n    host ip link show \"${iface}\" >/dev/null 2>&1\
+    \ || continue\n    active=1\n    peer=\"$(host wg show \"${iface}\" peers | awk\
+    \ 'NR == 1 {print; exit}')\"\n    if [ -n \"${peer}\" ]; then\n      allowed=\"\
+    $(host wg show \"${iface}\" allowed-ips | awk -v key=\"${peer}\" '$1 == key {for\
+    \ (i=2; i<=NF; i++) printf \"%s%s\", (i==2 ? \"\" : \",\"), $i; print \"\"; exit}')\"\
+    \n      original=\"${allowed}\"\n      for prefix in 10.250.0.1/32 $(jq -r '.relayNodes[]?\
+    \ | (.acceleratedIp + \"/32\"), (.podCIDR // empty)' /config/inventory.json);\
+    \ do\n        case \",${allowed},\" in *\",${prefix},\"*) : ;; *) allowed=\"${allowed},${prefix}\"\
+    \ ;; esac\n      done\n      [ \"${allowed}\" = \"${original}\" ] || host wg set\
+    \ \"${iface}\" peer \"${peer}\" allowed-ips \"${allowed}\"\n    fi\n    # ECMP\
+    \ can send a socket sourced from either tunnel across this iface.\n    for source_fabric\
+    \ in 93 94; do\n      for api_ip in 10.250.0.1 $(jq -r '.routeServers[], .relayNodes[]?\
+    \ | .acceleratedIp' /config/inventory.json); do\n        rule=\"ip saddr 172.31.${source_fabric}.${last}\
+    \ ip daddr ${api_ip} tcp dport 6443 oifname \\\"${iface}\\\" snat to ${identity}\"\
+    \n        host nft list chain ip re8ch_control_api_snat postrouting | grep -Fq\
+    \ \"${rule}\" ||\n          host nft add rule ip re8ch_control_api_snat postrouting\
+    \ ip saddr \"172.31.${source_fabric}.${last}/32\" ip daddr \"${api_ip}/32\" tcp\
+    \ dport 6443 oifname \"${iface}\" snat to \"${identity}\"\n      done\n    done\n\
+    \  done\n  [ \"${active}\" = 1 ] && touch /run/control-api-source-ready\n  sleep\
+    \ 60\ndone\n"
+kind: ConfigMap
+metadata:
+  name: control-api-source
+  namespace: kube-system
+---
+apiVersion: v1
+data:
+  probe.py: "\"\"\"Measure real DNS reachability from each control node to every DNS\
+    \ EndpointSlice IP.\"\"\"\n\nimport concurrent.futures\nimport http.server\nimport\
+    \ json\nimport os\nimport random\nimport socket\nimport ssl\nimport struct\nimport\
+    \ threading\nimport time\nimport urllib.parse\nimport urllib.request\n\nNODE =\
+    \ os.environ[\"NODE_NAME\"]\nAPI = \"https://%s:%s\" % (os.environ[\"KUBERNETES_SERVICE_HOST\"\
+    ], os.environ[\"KUBERNETES_SERVICE_PORT\"])\nTOKEN = open(\"/var/run/secrets/kubernetes.io/serviceaccount/token\"\
+    , encoding=\"utf-8\").read().strip()\nCA = \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\"\
+    \nNAME = \"kubernetes.default.svc.cluster.local\"\nQUESTION = b\"\".join(bytes([len(part)])\
+    \ + part.encode() for part in NAME.split(\".\")) + b\"\\x00\\x00\\x01\\x00\\x01\"\
+    \nmetrics = []\nlock = threading.Lock()\n\n\ndef endpoints():\n    selector =\
+    \ urllib.parse.quote(\"kubernetes.io/service-name=advanced-fabric-dns\")\n   \
+    \ url = API + \"/apis/discovery.k8s.io/v1/namespaces/kube-system/endpointslices?labelSelector=\"\
+    \ + selector\n    request = urllib.request.Request(url, headers={\"Authorization\"\
+    : \"Bearer \" + TOKEN})\n    with urllib.request.urlopen(request, context=ssl.create_default_context(cafile=CA),\
+    \ timeout=3) as response:\n        items = json.load(response)[\"items\"]\n  \
+    \  return [(ip, endpoint.get(\"nodeName\", \"unknown\"), endpoint.get(\"conditions\"\
+    , {}).get(\"ready\") is True)\n            for item in items for endpoint in item.get(\"\
+    endpoints\", []) for ip in endpoint.get(\"addresses\", [])]\n\n\ndef query(ip,\
+    \ protocol):\n    transaction = random.randrange(65536)\n    packet = struct.pack(\"\
+    !HHHHHH\", transaction, 0x0100, 1, 0, 0, 0) + QUESTION\n    kind = socket.SOCK_DGRAM\
+    \ if protocol == \"udp\" else socket.SOCK_STREAM\n    with socket.socket(socket.AF_INET,\
+    \ kind) as connection:\n        connection.settimeout(2)\n        connection.connect((ip,\
+    \ 53))\n        source = connection.getsockname()[0]\n        if protocol == \"\
+    udp\":\n            connection.send(packet)\n            response = connection.recv(4096)\n\
+    \        else:\n            connection.sendall(struct.pack(\"!H\", len(packet))\
+    \ + packet)\n            length = connection.recv(2)\n            if len(length)\
+    \ != 2:\n                return 0, source\n            remaining = struct.unpack(\"\
+    !H\", length)[0]\n            response = b\"\"\n            while len(response)\
+    \ < remaining:\n                chunk = connection.recv(remaining - len(response))\n\
+    \                if not chunk:\n                    return 0, source\n       \
+    \         response += chunk\n    good = (len(response) >= 12 and struct.unpack(\"\
+    !H\", response[:2])[0] == transaction\n            and response[2] & 0x80 and\
+    \ response[3] & 0x0f == 0)\n    return int(bool(good)), source\n\n\ndef sample(target):\n\
+    \    ip, node, ready = target\n    result = []\n    for protocol in (\"udp\",\
+    \ \"tcp\"):\n        try:\n            success, source = query(ip, protocol)\n\
+    \        except (OSError, ValueError):\n            success, source = 0, \"unknown\"\
+    \n        result.append((ip, node, ready, protocol, success, source))\n    return\
+    \ result\n\n\ndef loop():\n    global metrics\n    while True:\n        now =\
+    \ int(time.time())\n        try:\n            targets = endpoints()\n        \
+    \    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:\n    \
+    \            rows = [row for group in pool.map(sample, targets) for row in group]\n\
+    \            lines = ['re8ch_dns_probe_discovery_up{source_node=\"%s\"} 1' % NODE]\n\
+    \            for ip, node, ready, protocol, success, source in rows:\n       \
+    \         labels = ('source_node=\"%s\",target_node=\"%s\",target_ip=\"%s\",endpoint_ready=\"\
+    %s\",'\n                          'protocol=\"%s\",source_ip=\"%s\"') % (NODE,\
+    \ node, ip, str(ready).lower(), protocol, source)\n                lines.append(\"\
+    re8ch_dns_peer_query_success{%s} %d\" % (labels, success))\n            lines.append('re8ch_dns_probe_last_run_seconds{source_node=\"\
+    %s\"} %d' % (NODE, now))\n        except (OSError, ValueError, KeyError, TimeoutError)\
+    \ as exc:\n            print(\"DNS endpoint discovery failed: %s\" % exc, flush=True)\n\
+    \            lines = ['re8ch_dns_probe_discovery_up{source_node=\"%s\"} 0' % NODE]\n\
+    \        with lock:\n            metrics = lines\n        time.sleep(15)\n\n\n\
+    class Handler(http.server.BaseHTTPRequestHandler):\n    def do_GET(self):\n  \
+    \      if self.path != \"/metrics\":\n            self.send_error(404)\n     \
+    \       return\n        with lock:\n            body = (\"\\n\".join(metrics)\
+    \ + \"\\n\").encode()\n        self.send_response(200)\n        self.send_header(\"\
+    Content-Type\", \"text/plain; version=0.0.4\")\n        self.send_header(\"Content-Length\"\
+    , str(len(body)))\n        self.end_headers()\n        self.wfile.write(body)\n\
+    \n    def log_message(self, *_args):\n        pass\n\n\nthreading.Thread(target=loop,\
+    \ daemon=True).start()\nhttp.server.ThreadingHTTPServer((\"0.0.0.0\", 9838), Handler).serve_forever()\n"
+kind: ConfigMap
+metadata:
+  name: control-dns-reachability
+  namespace: kube-system
+---
+apiVersion: v1
+data:
+  proxy.py: "#!/usr/bin/env python3\n\"\"\"Credential-free TCP bridge from the public\
+    \ Gateway to the internal API.\"\"\"\nimport asyncio\n\n\nUPSTREAM_HOST = \"10.43.0.1\"\
+    \nUPSTREAM_PORT = 443\n\n\nasync def pump(reader, writer):\n    try:\n       \
+    \ while data := await reader.read(65536):\n            writer.write(data)\n  \
+    \          await writer.drain()\n    finally:\n        try:\n            writer.write_eof()\n\
+    \            await writer.drain()\n        except (AttributeError, OSError):\n\
+    \            writer.close()\n\n\nasync def handle(client_reader, client_writer):\n\
+    \    try:\n        upstream_reader, upstream_writer = await asyncio.wait_for(\n\
+    \            asyncio.open_connection(UPSTREAM_HOST, UPSTREAM_PORT), timeout=5\n\
+    \        )\n    except (OSError, TimeoutError):\n        client_writer.close()\n\
+    \        return\n    await asyncio.gather(\n        pump(client_reader, upstream_writer),\n\
+    \        pump(upstream_reader, client_writer),\n        return_exceptions=True,\n\
+    \    )\n    upstream_writer.close()\n    client_writer.close()\n    await asyncio.gather(\n\
+    \        upstream_writer.wait_closed(), client_writer.wait_closed(), return_exceptions=True\n\
+    \    )\n\n\nasync def main():\n    server = await asyncio.start_server(handle,\
+    \ \"0.0.0.0\", 6443, backlog=64)\n    async with server:\n        await server.serve_forever()\n\
+    \n\nasyncio.run(main())\n"
+kind: ConfigMap
+metadata:
+  name: kube-api-observer-proxy
+  namespace: kube-system
+---
+apiVersion: v1
+data:
+  relay.py: "#!/usr/bin/env python3\n\"\"\"Credential-free public relay to reviewed\
+    \ Kubernetes API upstreams.\"\"\"\nimport asyncio\nimport os\n\n\nUPSTREAMS =\
+    \ (\n    (os.environ[\"PRIVATE_API_HOST\"], 6443),\n    (\"10.43.0.1\", 443),\n\
+    \    (\"10.251.0.4\", 6443),\n)\nMAX_CONNECTIONS = 64\nFIRST_BYTE_TIMEOUT = 5\n\
+    IDLE_TIMEOUT = 30\nactive_connections = 0\n\n\nasync def pump(reader, writer):\n\
+    \    try:\n        while data := await asyncio.wait_for(reader.read(65536), IDLE_TIMEOUT):\n\
+    \            writer.write(data)\n            await writer.drain()\n    except\
+    \ TimeoutError:\n        pass\n    finally:\n        writer.close()\n\n\nasync\
+    \ def handle(client_reader, client_writer):\n    global active_connections\n \
+    \   if active_connections >= MAX_CONNECTIONS:\n        client_writer.close()\n\
+    \        return\n    active_connections += 1\n    upstream = None\n    try:\n\
+    \        try:\n            first = await asyncio.wait_for(\n                client_reader.read(65536),\
+    \ FIRST_BYTE_TIMEOUT\n            )\n        except TimeoutError:\n          \
+    \  return\n        if not first:\n            return\n        for host, port in\
+    \ UPSTREAMS:\n            try:\n                upstream = await asyncio.wait_for(\n\
+    \                    asyncio.open_connection(host, port), timeout=3\n        \
+    \        )\n                break\n            except (OSError, TimeoutError):\n\
+    \                continue\n        if upstream is None:\n            return\n\
+    \        gateway_reader, gateway_writer = upstream\n        gateway_writer.write(first)\n\
+    \        await gateway_writer.drain()\n        pumps = {\n            asyncio.create_task(pump(client_reader,\
+    \ gateway_writer)),\n            asyncio.create_task(pump(gateway_reader, client_writer)),\n\
+    \        }\n        _, pending = await asyncio.wait(pumps, return_when=asyncio.FIRST_COMPLETED)\n\
+    \        for task in pending:\n            task.cancel()\n        await asyncio.gather(*pumps,\
+    \ return_exceptions=True)\n    finally:\n        active_connections -= 1\n   \
+    \     client_writer.close()\n        if upstream is not None:\n            upstream[1].close()\n\
+    \n\nasync def main():\n    server = await asyncio.start_server(handle, \"0.0.0.0\"\
+    , 6443, backlog=64)\n    async with server:\n        await server.serve_forever()\n\
+    \nif __name__ == \"__main__\":\n    asyncio.run(main())\n"
+kind: ConfigMap
+metadata:
+  name: kube-api-overseas-relay
+  namespace: kube-system
+---
+apiVersion: v1
+data:
+  forbidden-advertisement: 10.181.22.0/24
+  order: dual-FRR/full-RIB -> workers -> r640 -> a1-wsl-zt,b1-wsl-zt
+  pod-cidr: 10.42.0.0/16
+kind: ConfigMap
+metadata:
+  name: native-routing-rollout-order
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+  name: kube-api-observer-proxy
+  namespace: kube-system
+spec:
+  ports:
+  - name: kube-api
+    port: 6443
+    protocol: TCP
+    targetPort: kube-api
+  selector:
+    app.kubernetes.io/name: kube-api-observer-proxy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
+    external-dns.alpha.kubernetes.io/endpoints-type: NodeExternalIP
+    external-dns.alpha.kubernetes.io/hostname: kube-api.re8ch.com
+    external-dns.alpha.kubernetes.io/ttl: '60'
+    networking.re8ch.com/public-authority: kubernetes://node/overseas-flk#status.addresses[ExternalIP]
+  labels:
+    networking.re8ch.com/dns-authority: public-edge
+    operations.re8ch.com/credential-contract: node-observer
+  name: kube-api-overseas-relay
+  namespace: kube-system
+spec:
+  clusterIP: None
+  ports:
+  - name: kube-api
+    port: 6443
+    protocol: TCP
+    targetPort: kube-api
+  selector:
+    app.kubernetes.io/name: kube-api-overseas-relay
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: '9153'
+    prometheus.io/scrape: 'true'
+  labels:
+    k8s-app: kube-dns
+    kubernetes.io/cluster-service: 'true'
+    kubernetes.io/name: AdvancedFabricDNS
+  name: kube-dns
+  namespace: kube-system
+spec:
+  clusterIP: 10.43.0.10
+  clusterIPs:
+  - 10.43.0.10
+  internalTrafficPolicy: Cluster
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+    targetPort: 53
+  - name: metrics
+    port: 9153
+    protocol: TCP
+    targetPort: 9153
+  selector:
+    app.kubernetes.io/name: advanced-fabric-doh
+  trafficDistribution: PreferSameNode
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: control-dns-reachability
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: host-network-controller
+  namespace: kube-system
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  labels:
+    networking.re8ch.com/public-edge-gateway: 'true'
+  name: re8ch-gateway-canary
+  namespace: kube-system
+spec:
+  gatewayClassName: cilium-re8ch
+  infrastructure:
+    annotations:
+      lbipam.cilium.io/ips: 10.251.0.4
+    labels:
+      networking.re8ch.com/bgp-advertise: enabled
+      networking.re8ch.com/lb-pool: service-vip
+  listeners:
+  - allowedRoutes:
+      namespaces:
+        from: All
+    name: http
+    port: 80
+    protocol: HTTP
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            kubernetes.io/metadata.name: mail-system
+    name: mail-smtp
+    port: 25
+    protocol: TCP
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            kubernetes.io/metadata.name: mail-system
+    name: mail-smtps
+    port: 465
+    protocol: TCP
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            kubernetes.io/metadata.name: mail-system
+    name: mail-submission
+    port: 587
+    protocol: TCP
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            kubernetes.io/metadata.name: mail-system
+    name: mail-imaps
+    port: 993
+    protocol: TCP
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            kubernetes.io/metadata.name: mail-system
+    name: mail-sieve
+    port: 4190
+    protocol: TCP
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchExpressions:
+          - key: saas.re8ch.com/tenant
+            operator: Exists
+    hostname: '*.apps.re8ch.com'
+    name: apps-wildcard-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-apps-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: browser.re8ch.com
+    name: browser-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: storage.re8ch.com
+    name: storage-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: agent.re8ch.com
+    name: agent-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: among-clusters.re8ch.com
+    name: among-clusters-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: among-clusters-ingest-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: access.re8ch.com
+    name: access-tls
+    port: 443
+    protocol: TLS
+    tls:
+      mode: Passthrough
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: us-ca.access.re8ch.com
+    name: access-us-ca-tls
+    port: 443
+    protocol: TLS
+    tls:
+      mode: Passthrough
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: my-kul.access.re8ch.com
+    name: access-my-kul-tls
+    port: 443
+    protocol: TLS
+    tls:
+      mode: Passthrough
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: route-la.access.re8ch.com
+    name: access-us-la-tls
+    port: 443
+    protocol: TLS
+    tls:
+      mode: Passthrough
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: sub.access.re8ch.com
+    name: access-sub-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: access-subdomains-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: dns.access.re8ch.com
+    name: access-dns-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: access-subdomains-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: opensandbox.re8ch.com
+    name: opensandbox-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: admin.re8ch.com
+    name: admin-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: hooks.re8ch.com
+    name: hooks-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: mail.re8ch.com
+    name: mail-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: id.re8ch.com
+    name: id-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: '*.tools.re8ch.com'
+    name: tools-wildcard-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-tools-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: tools.re8ch.com
+    name: tools-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: headlamp.re8ch.com
+    name: headlamp-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: '*.service.re8ch.com'
+    name: service-wildcard-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-service-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: dex.re8ch.com
+    name: dex-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: grafana.re8ch.com
+    name: grafana-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: litellm.re8ch.com
+    name: litellm-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: supabase.re8ch.com
+    name: supabase-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: billing-supabase.re8ch.com
+    name: billing-supabase-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: billing-studio.re8ch.com
+    name: billing-studio-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: auth.re8ch.com
+    name: auth-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: auth-origin.re8ch.com
+    name: auth-origin-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: codex.re8ch.com
+    name: codex-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: decision.re8ch.com
+    name: decision-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: feishu-agent.re8ch.com
+    name: feishu-agent-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: image.re8ch.com
+    name: image-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: ledger-decisions.re8ch.com
+    name: ledger-decisions-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: neo4j.re8ch.com
+    name: neo4j-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: phonycenter.re8ch.com
+    name: phonycenter-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: api-cand1.re8ch.com
+    name: api-cand1-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: api-cand3.re8ch.com
+    name: api-cand3-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: api-guangzhou24.re8ch.com
+    name: api-gz24-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: api-hangzhou95.re8ch.com
+    name: api-hz95-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: api-shanghai217.re8ch.com
+    name: api-sh217-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: api-shanghai77.re8ch.com
+    name: api-sh77-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: api-shanghai79.re8ch.com
+    name: api-sh79-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: cube.re8ch.com
+    name: cube-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: dbgui.re8ch.com
+    name: dbgui-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: api.re8ch.com
+    name: api-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: pay.service.re8ch.com
+    name: pay-ui-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-service-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: pay-api.service.re8ch.com
+    name: pay-api-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-service-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: db-ro.re8ch.com
+    name: db-ro-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: db-rw.re8ch.com
+    name: db-rw-https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - kind: Secret
+        name: re8ch-wildcard-tls
+      mode: Terminate
+  - allowedRoutes:
+      namespaces:
+        from: All
+    hostname: registry.re8ch.com
+    name: harbor-tls
+    port: 443
+    protocol: TLS
+    tls:
+      mode: Passthrough
+  - allowedRoutes:
+      namespaces:
+        from: Same
+    name: kube-api
+    port: 6443
+    protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+  name: kube-api-public
+  namespace: kube-system
+spec:
+  parentRefs:
+  - name: re8ch-gateway-canary
+    sectionName: kube-api
+  rules:
+  - backendRefs:
+    - name: kube-api-observer-proxy
+      port: 6443
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: control-dns-reachability
+  namespace: kube-system
+rules:
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: host-network-controller
+  namespace: kube-system
+rules:
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: control-dns-reachability
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: control-dns-reachability
+subjects:
+- kind: ServiceAccount
+  name: control-dns-reachability
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: host-network-controller
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: host-network-controller
+subjects:
+- kind: ServiceAccount
+  name: host-network-controller
+  namespace: kube-system

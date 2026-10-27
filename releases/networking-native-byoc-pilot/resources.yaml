@@ -1,0 +1,215 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: artc-default-kubernetes-re8ch-artc
+  namespace: byoc-pilot
+spec:
+  externalName: artc-kubernetes-import.among-clusters.svc.cluster.local
+  ports:
+  - name: kubernetes
+    port: 6443
+    protocol: TCP
+  type: ExternalName
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen-default-kubernetes-re8ch-qwen
+  namespace: byoc-pilot
+spec:
+  externalName: qwen-kubernetes-import.among-clusters.svc.cluster.local
+  ports:
+  - name: kubernetes
+    port: 6443
+    protocol: TCP
+  type: ExternalName
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: AuthenticatedLink
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-artc
+  namespace: byoc-pilot
+spec:
+  localGateway: quic://223.159.210.222:8443
+  peerRef: re8ch-artc
+  sessionIdentity: spiffe://re8ch.internal/cluster/re8ch
+  transport: quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: AuthenticatedLink
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-qwen
+  namespace: byoc-pilot
+spec:
+  localGateway: quic://223.159.210.222:8443
+  peerRef: re8ch-qwen
+  sessionIdentity: spiffe://re8ch.internal/cluster/re8ch
+  transport: quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: AuthenticatedLink
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-sijie
+  namespace: byoc-pilot
+spec:
+  localGateway: quic://223.159.210.222:8443
+  peerRef: re8ch-sijie
+  sessionIdentity: spiffe://re8ch.internal/cluster/re8ch
+  transport: quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: ManagedAccessGrant
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: artc-headlamp-admin
+  namespace: byoc-pilot
+spec:
+  advertisementRef: artc-default-kubernetes
+  approved: true
+  expiresAt: '2026-10-02T23:59:59Z'
+  peerRef: re8ch-artc
+  revoked: false
+  rules:
+  - apiGroups:
+    - '*'
+    resources:
+    - '*'
+    verbs:
+    - '*'
+  scope: Cluster
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: ManagedAccessGrant
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: qwen-headlamp-admin
+  namespace: byoc-pilot
+spec:
+  advertisementRef: qwen-default-kubernetes
+  approved: true
+  expiresAt: '2026-10-02T23:59:59Z'
+  peerRef: re8ch-qwen
+  revoked: false
+  rules:
+  - apiGroups:
+    - '*'
+    resources:
+    - '*'
+    verbs:
+    - '*'
+  scope: Cluster
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: Peer
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-artc
+  namespace: byoc-pilot
+spec:
+  invitationRef: re8ch-artc-pilot
+  localIdentityRef: re8ch
+  remoteIdentityRef: artc
+  suspended: false
+  transports:
+  - quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: Peer
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-qwen
+  namespace: byoc-pilot
+spec:
+  invitationRef: re8ch-qwen-pilot
+  localIdentityRef: re8ch
+  remoteIdentityRef: qwen
+  suspended: false
+  transports:
+  - quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: Peer
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-sijie
+  namespace: byoc-pilot
+spec:
+  invitationRef: re8ch-sijie-onboarding
+  localIdentityRef: re8ch
+  remoteIdentityRef: sijie
+  suspended: false
+  transports:
+  - quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: PeerPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: artc-kubernetes-api
+  namespace: byoc-pilot
+spec:
+  directions:
+  - export
+  maxAdvertisements: 1
+  peerSelector:
+    matchNames:
+    - re8ch-artc
+  ports:
+  - 443
+  protocols:
+  - kubernetes-api
+  serviceClasses:
+  - kubernetes.control-plane
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: PeerPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: qwen-kubernetes-api
+  namespace: byoc-pilot
+spec:
+  directions:
+  - export
+  maxAdvertisements: 1
+  peerSelector:
+    matchNames:
+    - re8ch-qwen
+  ports:
+  - 443
+  protocols:
+  - kubernetes-api
+  serviceClasses:
+  - kubernetes.control-plane
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: PeerPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-mihomos-egress
+  namespace: byoc-pilot
+spec:
+  directions:
+  - export
+  maxAdvertisements: 1
+  peerSelector:
+    matchAllReady: true
+  ports:
+  - 17891
+  protocols:
+  - tcp
+  serviceClasses:
+  - network.egress.mihomo

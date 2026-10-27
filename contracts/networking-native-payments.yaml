@@ -1,0 +1,42 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-payments
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: payments
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-payments
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    fieldManager: re8ch-release/networking-native-payments
+    resources:
+    - gateway.networking.k8s.io/HTTPRoute
+    objectNames:
+    - service-zone-pay-hyperswitch-control-center-public
+    forceConflictObjects:
+    - gateway.networking.k8s.io/HTTPRoute/payments/service-zone-pay-hyperswitch-control-center-public
+  inventory:
+    digest: sha256:e267b1978dd76e130ab12825adc909e1e821860418f124b97a5192a6b7b83d8d
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

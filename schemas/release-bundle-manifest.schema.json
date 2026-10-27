@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://re8ch.com/schemas/release-bundle-manifest.schema.json",
+  "title": "Immutable release bundle manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "releaseId", "renderer", "revision", "contractDigest", "renderedDigest", "inventoryDigest", "inventory", "stages", "objectsFile"],
+  "properties": {
+    "schemaVersion": {"const": "delivery.re8ch.com/release-bundle/v1alpha1"},
+    "releaseId": {"type": "string", "minLength": 1},
+    "renderer": {"enum": ["helm", "kustomize"]},
+    "revision": {"type": "string", "minLength": 1},
+    "contractDigest": {"$ref": "#/$defs/digest"},
+    "renderedDigest": {"$ref": "#/$defs/digest"},
+    "inventoryDigest": {"$ref": "#/$defs/digest"},
+    "inventory": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "stages": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["name", "inventory"], "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "inventory": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "objectsFile": {"const": "objects.json"}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://re8ch.com/schemas/release-operation-result.schema.json",
+  "title": "Redacted release operation result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "operationId", "releaseId", "requestDigest", "approvedDigest", "observedDigest", "inventoryDigest", "startedAt", "finishedAt", "outcome", "health"],
+  "properties": {
+    "apiVersion": {"const": "delivery.re8ch.com/release-result/v1alpha1"},
+    "operationId": {"type": "string", "format": "uuid"},
+    "releaseId": {"type": "string", "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "maxLength": 63},
+    "requestDigest": {"$ref": "#/$defs/digest"},
+    "approvedDigest": {"$ref": "#/$defs/digest"},
+    "observedDigest": {"$ref": "#/$defs/digest"},
+    "inventoryDigest": {"$ref": "#/$defs/digest"},
+    "startedAt": {"type": "string", "format": "date-time"},
+    "finishedAt": {"type": "string", "format": "date-time"},
+    "outcome": {"enum": ["healthy", "rejected", "rolled-back", "rollback-failed"]},
+    "health": {"type": "object", "additionalProperties": false, "required": ["status"], "properties": {"status": {"enum": ["healthy", "unhealthy", "unknown"]}, "reason": {"type": "string", "maxLength": 512}}},
+    "rollbackDigest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}

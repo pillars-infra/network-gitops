@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: advfab-public-edge
+    app.kubernetes.io/name: external-dns
+  name: external-dns-advfab
+  namespace: advfab-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: advfab-public-edge
+      app.kubernetes.io/name: external-dns
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: advfab-public-edge
+        app.kubernetes.io/name: external-dns
+    spec:
+      containers:
+      - args:
+        - --source=service
+        - --source=ingress
+        - --provider=cloudflare
+        - --domain-filter=advfab.org
+        - --zone-id-filter=3f2022acc23ec9fa69c5d7acd99c34d9
+        - --label-filter=networking.advfab.org/dns-authority=public-edge
+        - --exclude-target-net=10.0.0.0/8
+        - --exclude-target-net=172.16.0.0/12
+        - --exclude-target-net=192.168.0.0/16
+        - --policy=upsert-only
+        - --registry=txt
+        - --txt-owner-id=advanced-fabrics-public-edge
+        - --txt-prefix=_advfab-external-dns.
+        - --interval=1m
+        - --events
+        - --log-format=json
+        env:
+        - name: CF_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: CF_API_TOKEN
+              name: cloudflare-advfab-dns-token
+        image: registry.k8s.io/external-dns/external-dns:v0.21.0@sha256:f53faaf71cb270d1ca9dce6ea0c94bfebf1a18696263487f0fbc74b9bf2bd7ff
+        name: external-dns
+        resources:
+          limits:
+            cpu: 150m
+            memory: 192Mi
+          requests:
+            cpu: 10m
+            memory: 48Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+      nodeSelector:
+        scheduling.re8ch.com/provider: tencent
+        scheduling.re8ch.com/reliability-class: stable
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: external-dns-advfab
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-dns-advfab
+  namespace: advfab-system

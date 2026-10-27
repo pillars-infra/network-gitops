@@ -1,0 +1,27 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tools-service-secretary-webhooks
+  namespace: re8ch-secretary
+spec:
+  hostnames:
+  - tools.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - name: secretary-api
+      port: 80
+    matches:
+    - path:
+        type: PathPrefix
+        value: /v1/channels/
+  - backendRefs:
+    - name: secretary-api
+      port: 80
+    matches:
+    - path:
+        type: Exact
+        value: /v1/event-stream
