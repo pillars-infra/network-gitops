@@ -44,6 +44,8 @@ def test_matrix_and_workflow_have_no_publishing_inputs(monkeypatch):
     assert triggers['workflow_dispatch'] is None
     assert triggers['schedule']
     assert '--replay-only' in text and 'accepted-bundle' in text
-    assert 'networking-static-release-${{ matrix.contract }}' in text
+    publisher=yaml.safe_load((ROOT/'.github/workflows/static-release.yml').read_text())
+    assert publisher['concurrency']['group']=='networking-static-release-${{ inputs.contract }}'
+    assert publisher['jobs']['execute']['concurrency']==workflow['jobs']['reconcile']['concurrency']=={'group':'networking-runtime-write','queue':'max','cancel-in-progress':False}
     assert 'packages: write' not in text
     assert 'flux push' not in text and 'cosign sign' not in text and 'compile_' not in text
