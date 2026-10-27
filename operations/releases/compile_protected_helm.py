@@ -43,6 +43,10 @@ def hydrate(current,plain):
         return [hydrate(value,original[index] if index<len(original) else None) for index,value in enumerate(current)]
     return current
 
+def runtime_objects(objects):
+    excluded={'Role','RoleBinding','ClusterRole','ClusterRoleBinding','CustomResourceDefinition'}
+    return {object_identity(o):o for o in objects if o['kind'] not in excluded and 'helm.sh/hook' not in (o['metadata'].get('annotations') or {})}
+
 def compile_fixed():
     global STAGE
     if not os.environ.get('SOPS_AGE_KEY'):raise ValueError('protected compiler identity is not provisioned')
@@ -77,7 +81,7 @@ def compile_fixed():
     STAGE='inventory-validation'
     observed=json.loads((ROOT/'operations/releases/advanced-fabric-inventory.json').read_text())['objects']
     selected={object_identity({'apiVersion':o['apiVersion'],'kind':o['kind'],'metadata':{'name':o['name'],**({'namespace':o['namespace']} if o['namespace'] else {})}}) for o in observed if o['kind'] not in {'Role','RoleBinding','ClusterRole','ClusterRoleBinding'}}
-    rendered={object_identity(o):o for o in objects if o['kind'] not in {'Role','RoleBinding','ClusterRole','ClusterRoleBinding','CustomResourceDefinition'}}
+    rendered=runtime_objects(objects)
     if set(rendered)!=selected:raise ValueError('render inventory differs from reviewed live adoption set')
     STAGE='output-encryption'
     encrypted=[seal(rendered[key],RECIPIENT,command) for key in sorted(selected)]

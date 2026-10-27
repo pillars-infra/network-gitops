@@ -48,3 +48,11 @@ def test_protected_overlay_preserves_new_list_entries_and_nested_maps():
     assert hydrate(current,original)==expected
     with pytest.raises(ValueError,match='no authenticated source'):
         hydrate({'new':'ENC[AES256_GCM,fixture]'},original)
+
+
+def test_helm_test_hooks_are_never_adopted_into_runtime():
+    from compile_protected_helm import runtime_objects
+    hook={'apiVersion':'v1','kind':'Pod','metadata':{'name':'test-only','namespace':'kube-system','annotations':{'helm.sh/hook':'test'}}}
+    role={'apiVersion':'rbac.authorization.k8s.io/v1','kind':'Role','metadata':{'name':'platform','namespace':'kube-system'}}
+    service={'apiVersion':'v1','kind':'Service','metadata':{'name':'runtime','namespace':'kube-system'}}
+    assert list(runtime_objects([hook,role,service]))==['core/Service/kube-system/runtime']
