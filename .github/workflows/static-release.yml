@@ -262,6 +262,10 @@ jobs:
         if: always()
         with: {name: 'static-release-preflight-${{ github.run_id }}', path: static-release-preflight.json, retention-days: 30, if-no-files-found: warn}
   execute:
+    concurrency:
+      group: networking-runtime-write
+      queue: max
+      cancel-in-progress: false
     if: always() && inputs.execute && github.ref == 'refs/heads/main' && needs.validate.result == 'success' && (needs.compile-sign.result == 'success' || (inputs.mode != 'publish' && needs.compile-sign.result == 'skipped'))
     needs: [validate, compile-sign]
     runs-on: ubuntu-24.04
