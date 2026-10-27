@@ -674,24 +674,6 @@ metadata:
   namespace: regional-routing
 ---
 apiVersion: v1
-data:
-  nameservers.json: '{"nameservers":["ns-bootstrap.re8ch.com."]}'
-kind: ConfigMap
-metadata:
-  name: public-edge-nameservers
-  namespace: regional-routing
----
-apiVersion: v1
-data:
-  runtime.json: '{"model":{},"routes":{},"services":{}}'
-kind: ConfigMap
-metadata:
-  annotations:
-    helm.sh/resource-policy: keep
-  name: public-edge-runtime
-  namespace: regional-routing
----
-apiVersion: v1
 kind: Service
 metadata:
   name: public-edge-manager

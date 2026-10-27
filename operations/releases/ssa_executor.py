@@ -417,6 +417,8 @@ class Executor:
 
     def rollback(self, previous: dict, attempted_manifest: dict, attempted_objects: list[dict],
                  contract: dict, operation: dict, manager: str, store: Store, reason: str) -> tuple[str, str]:
+        if not set(previous["inventory"]).issubset(set(attempted_manifest["inventory"])):
+            raise Rejected("rollback inventory exceeds current desired authority; manual recovery required")
         rollback_digest = previous["appliedDigest"]
         rollback_path = store.cached_bundle(rollback_digest)
         if not rollback_path.exists():
