@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: kube-api-public
+  namespace: kube-system
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+spec:
+  parentRefs:
+    - name: re8ch-gateway-canary
+      sectionName: kube-api
+  rules:
+    - backendRefs:
+        - name: kube-api-observer-proxy
+          port: 6443

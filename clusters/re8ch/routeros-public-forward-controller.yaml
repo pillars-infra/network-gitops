@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: routeros-public-forward-controller
+  namespace: ops
+data:
+  desired.json: |
+    {
+      "managementIp": "192.168.88.1",
+      "publicEndpoint": "223.159.210.222",
+      "gatewayVip": "10.251.0.4",
+      "anchorComment": "RE8CH default WAN TCP same-port DNAT to R640",
+      "returnAnchorComment": "defconf: masquerade after symmetric rules",
+      "commentPrefix": "RE8CH GITOPS PUBLIC FORWARD",
+      "forwards": [
+        {"protocol": "tcp", "port": "6443", "toPort": "6443"}
+      ]
+    }
+  reconcile.py: |
+    #!/usr/bin/env python3
+    """Reconcile explicitly owned public RouterOS forwards before the fallback rule."""
+    import base64
+    import ipaddress
+    import json
+    from pathlib import Path
+    import time
+    import urllib.request
+
+
+    def validate(spec):
+        if spec["managementIp"] != "192.168.88.1":
+            raise ValueError("RouterOS management authority differs")
+        if spec["publicEndpoint"] != "223.159.210.222":
+            raise ValueError("public endpoint authority differs")
+        if spec["gatewayVip"] != "10.251.0.4":
+            raise ValueError("Gateway VIP authority differs")
+        if spec["anchorComment"] != "RE8CH default WAN TCP same-port DNAT to R640":
+            raise ValueError("fallback anchor differs")
+        if spec["returnAnchorComment"] != "defconf: masquerade after symmetric rules":
+            raise ValueError("return anchor differs")
+        if spec["commentPrefix"] != "RE8CH GITOPS PUBLIC FORWARD":
+            raise ValueError("ownership prefix differs")
+        if spec["forwards"] != [{"protocol": "tcp", "port": "6443", "toPort": "6443"}]:
+            raise ValueError("unexpected public forwards")
+        ipaddress.ip_address(spec["managementIp"])
+        ipaddress.ip_address(spec["publicEndpoint"])
+        ipaddress.ip_address(spec["gatewayVip"])
+
+
+    class Router:
+        def __init__(self, address):
+            user = Path("/credential/username").read_bytes().strip()
+            password = Path("/credential/password").read_bytes()
+            auth = base64.b64encode(user + b":" + password).decode()
+            self.base = "http://" + address + "/rest"
+            self.headers = {"Authorization": "Basic " + auth, "Content-Type": "application/json"}
+            self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+        def request(self, path, method="GET", body=None):
+            request = urllib.request.Request(
+                self.base + path,
+                method=method,
+                headers=self.headers,
+                data=json.dumps(body).encode() if body is not None else None,
+            )
+            with self.opener.open(request, timeout=10) as response:
+                raw = response.read()
+            return json.loads(raw) if raw else {}
+
+
+    def reconcile(router, spec):
+        validate(spec)
+        rows = router.request("/ip/firewall/nat")
+        anchors = [row for row in rows if row.get("comment") == spec["anchorComment"]]
+        if len(anchors) != 1:
+            raise ValueError("fallback anchor missing or ambiguous")
+        anchor = anchors[0]
+        return_anchors = [row for row in rows if row.get("comment") == spec["returnAnchorComment"]]
+        if len(return_anchors) != 1:
+            raise ValueError("return anchor missing or ambiguous")
+        return_anchor = return_anchors[0]
+        wanted = set()
+        changes = 0
+        for forward in spec["forwards"]:
+            comment = f'{spec["commentPrefix"]} {forward["protocol"]} {forward["port"]}'
+            wanted.add(comment)
+            body = {
+                "comment": comment,
+                "chain": "dstnat",
+                "protocol": forward["protocol"],
+                "dst-port": forward["port"],
+                "dst-address": spec["publicEndpoint"],
+                "action": "dst-nat",
+                "to-addresses": spec["gatewayVip"],
+                "to-ports": forward["toPort"],
+                "disabled": "false",
+            }
+            prior = [row for row in rows if row.get("comment") == comment]
+            if len(prior) > 1:
+                raise ValueError("duplicate owned public forward")
+            if prior:
+                row = prior[0]
+                if any(row.get(key) != value for key, value in body.items()):
+                    router.request("/ip/firewall/nat/" + row[".id"], "PATCH", body)
+                    changes += 1
+            else:
+                row = router.request("/ip/firewall/nat", "PUT", body)
+                changes += 1
+            router.request(
+                "/ip/firewall/nat/move",
+                "POST",
+                {"numbers": row[".id"], "destination": anchor[".id"]},
+            )
+            return_comment = f'{spec["commentPrefix"]} RETURN {forward["protocol"]} {forward["port"]}'
+            wanted.add(return_comment)
+            return_body = {
+                "comment": return_comment,
+                "chain": "srcnat",
+                "protocol": forward["protocol"],
+                "dst-port": forward["toPort"],
+                "dst-address": spec["gatewayVip"],
+                "action": "masquerade",
+                "disabled": "false",
+            }
+            return_prior = [row for row in rows if row.get("comment") == return_comment]
+            if len(return_prior) > 1:
+                raise ValueError("duplicate owned public return rule")
+            if return_prior:
+                return_row = return_prior[0]
+                if any(return_row.get(key) != value for key, value in return_body.items()):
+                    router.request("/ip/firewall/nat/" + return_row[".id"], "PATCH", return_body)
+                    changes += 1
+            else:
+                return_row = router.request("/ip/firewall/nat", "PUT", return_body)
+                changes += 1
+            router.request(
+                "/ip/firewall/nat/move",
+                "POST",
+                {"numbers": return_row[".id"], "destination": return_anchor[".id"]},
+            )
+        for row in rows:
+            comment = row.get("comment", "")
+            if comment.startswith(spec["commentPrefix"] + " ") and comment not in wanted:
+                router.request("/ip/firewall/nat/" + row[".id"], "DELETE")
+                changes += 1
+        return {"changes": changes, "forwards": len(spec["forwards"])}
+
+
+    def main():
+        while True:
+            try:
+                spec = json.loads(Path("/config/desired.json").read_text())
+                result = reconcile(Router(spec["managementIp"]), spec)
+                Path("/tmp/routeros-public-forward-ready").touch()
+                print(json.dumps({"state": "reconciled", **result}), flush=True)
+            except Exception as exc:
+                Path("/tmp/routeros-public-forward-ready").unlink(missing_ok=True)
+                print(json.dumps({"state": "failed", "errorType": type(exc).__name__}), flush=True)
+            time.sleep(30)
+
+
+    if __name__ == "__main__":
+        main()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: routeros-public-forward-controller
+  namespace: ops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: routeros-public-forward-controller
+  template:
+    metadata:
+      annotations:
+        networking.re8ch.com/config-revision: kube-api-return-v2
+      labels:
+        app.kubernetes.io/name: routeros-public-forward-controller
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: r640
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: reconciler
+          image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+          command: ["python3", "/config/reconcile.py"]
+          readinessProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - import pathlib,time; assert time.time()-pathlib.Path('/tmp/routeros-public-forward-ready').stat().st_mtime < 90
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 24Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: credential
+              mountPath: /credential
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: routeros-public-forward-controller
+        - name: credential
+          secret:
+            secretName: mikrotik-routeros-admin
+        - name: tmp
+          emptyDir: {}

@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-api-overseas-relay
+  namespace: kube-system
+data:
+  relay.py: |
+    #!/usr/bin/env python3
+    """Credential-free public relay to reviewed Kubernetes API upstreams."""
+    import asyncio
+    import os
+
+
+    UPSTREAMS = (
+        (os.environ["PRIVATE_API_HOST"], 6443),
+        ("10.43.0.1", 443),
+        ("10.251.0.4", 6443),
+    )
+    MAX_CONNECTIONS = 64
+    FIRST_BYTE_TIMEOUT = 5
+    IDLE_TIMEOUT = 30
+    active_connections = 0
+
+
+    async def pump(reader, writer):
+        try:
+            while data := await asyncio.wait_for(reader.read(65536), IDLE_TIMEOUT):
+                writer.write(data)
+                await writer.drain()
+        except TimeoutError:
+            pass
+        finally:
+            writer.close()
+
+
+    async def handle(client_reader, client_writer):
+        global active_connections
+        if active_connections >= MAX_CONNECTIONS:
+            client_writer.close()
+            return
+        active_connections += 1
+        upstream = None
+        try:
+            try:
+                first = await asyncio.wait_for(
+                    client_reader.read(65536), FIRST_BYTE_TIMEOUT
+                )
+            except TimeoutError:
+                return
+            if not first:
+                return
+            for host, port in UPSTREAMS:
+                try:
+                    upstream = await asyncio.wait_for(
+                        asyncio.open_connection(host, port), timeout=3
+                    )
+                    break
+                except (OSError, TimeoutError):
+                    continue
+            if upstream is None:
+                return
+            gateway_reader, gateway_writer = upstream
+            gateway_writer.write(first)
+            await gateway_writer.drain()
+            pumps = {
+                asyncio.create_task(pump(client_reader, gateway_writer)),
+                asyncio.create_task(pump(gateway_reader, client_writer)),
+            }
+            _, pending = await asyncio.wait(pumps, return_when=asyncio.FIRST_COMPLETED)
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pumps, return_exceptions=True)
+        finally:
+            active_connections -= 1
+            client_writer.close()
+            if upstream is not None:
+                upstream[1].close()
+
+
+    async def main():
+        server = await asyncio.start_server(handle, "0.0.0.0", 6443, backlog=64)
+        async with server:
+            await server.serve_forever()
+
+    if __name__ == "__main__":
+        asyncio.run(main())
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-api-overseas-relay
+  namespace: kube-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-api-overseas-relay
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-api-overseas-relay
+        operations.re8ch.com/credential-contract: node-observer
+    spec:
+      automountServiceAccountToken: false
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        kubernetes.io/hostname: overseas-flk
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: overseas-edge
+          effect: NoSchedule
+        - key: scheduling.re8ch.com/capacity-window
+          operator: Equal
+          value: closed
+          effect: NoSchedule
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: relay
+          image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+          command: ["python3", "/config/relay.py"]
+          env:
+            - name: PRIVATE_API_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: kube-api-overseas-relay-upstream
+                  key: host
+          ports:
+            - name: kube-api
+              containerPort: 6443
+              hostPort: 6443
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: kube-api
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: kube-api
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: kube-api-overseas-relay
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-api-overseas-relay
+  namespace: kube-system
+  labels:
+    networking.re8ch.com/dns-authority: public-edge
+    operations.re8ch.com/credential-contract: node-observer
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: kube-api.re8ch.com
+    external-dns.alpha.kubernetes.io/endpoints-type: NodeExternalIP
+    external-dns.alpha.kubernetes.io/ttl: "60"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+    networking.re8ch.com/public-authority: kubernetes://node/overseas-flk#status.addresses[ExternalIP]
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: kube-api-overseas-relay
+  ports:
+    - name: kube-api
+      port: 6443
+      targetPort: kube-api
+      protocol: TCP

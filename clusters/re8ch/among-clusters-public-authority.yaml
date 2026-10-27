@@ -1,0 +1,19 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: among-clusters-agent
+  namespace: flux-network-system
+spec:
+  values:
+    gateway:
+      publicAuthority:
+        requiredForwardPorts:
+          - 25
+          - 53
+          - 80
+          - 443
+          - 465
+          - 587
+          - 993
+          - 4190
+          - 6443

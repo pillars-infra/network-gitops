@@ -1,0 +1,6 @@
+sourceServiceBackendRevision: 1480c2519770ddf54a76d30565be84db88b6b7f4
+domain: networking
+cutoverState: cilium-root-fix-complete
+ciliumChartSha256: 5eea9d46a5afb92d5ce8b6456b8288b39159fbfd4c4b71efc8a44116105a6147
+ciliumOperatorCommit: b790b432054017f157d678d9f6f1619ae0dc046c
+ciliumOperatorDigest: sha256:5a003fb797d490c2f9557cbd0ef4129a7d6ef20cb803f66e668a4cd8d2a894fb

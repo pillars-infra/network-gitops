@@ -1,0 +1,189 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+  namespace: flux-network-system
+  labels:
+    app.kubernetes.io/name: cilium
+    app.kubernetes.io/part-of: advanced-fabric
+  annotations:
+    networking.re8ch.com/gateway-ordering-fix: b790b432054017f157d678d9f6f1619ae0dc046c
+spec:
+  interval: 30m
+  timeout: 15m
+  releaseName: cilium
+  targetNamespace: kube-system
+  storageNamespace: kube-system
+  chart:
+    spec:
+      chart: ./charts/cilium-1.21.0-dev.tgz
+      sourceRef:
+        kind: GitRepository
+        name: domain
+        namespace: flux-network-system
+      interval: 30m
+      # The vendored chart is immutable at a given Chart.yaml version. Using
+      # Revision here turns every unrelated network-gitops commit into a Cilium
+      # chart upgrade.
+      reconcileStrategy: ChartVersion
+  install:
+    crds: Skip
+    remediation:
+      retries: 0
+  upgrade:
+    crds: Skip
+    cleanupOnFail: true
+    # Cilium is a node-level control plane. A deliberately offline worker must
+    # not fail or roll back a cluster-wide release after the API objects and
+    # healthy nodes have already converged; per-node readiness is monitored
+    # independently.
+    disableWait: true
+    remediation:
+      retries: 0
+  rollback:
+    cleanupOnFail: true
+  driftDetection:
+    mode: enabled
+  values:
+    autoDirectNodeRoutes: false
+    bandwidthManager:
+      bbr: false
+      enabled: true
+    bgpControlPlane:
+      enabled: true
+    bpf:
+      distributedLRU:
+        enabled: true
+      masquerade: false
+    cni:
+      customConf: false
+      exclusive: true
+      install: true
+      uninstall: false
+    directRoutingSkipUnreachable: false
+    egressMasqueradeInterfaces: eth0
+    envoy:
+      enabled: false
+      nodeSelector:
+        kubernetes.io/os: linux
+        re8ch.com/cilium-migrate: "true"
+    extraConfig:
+      ipam-default-ip-pool: tenant-apps
+    gatewayAPI:
+      enableAlpn: true
+      enableAppProtocol: true
+      enabled: true
+      externalTrafficPolicy: Cluster
+      gatewayClass:
+        create: true
+      hostNetwork:
+        enabled: false
+      secretsNamespace:
+        create: true
+        name: cilium-secrets
+        sync: true
+    hubble:
+      enabled: true
+      relay:
+        enabled: true
+        image:
+          digest: sha256:424b1228033d34fae4f204a418fc66b5b6826b389ba03c4b08d9a6021e4d7285
+          pullPolicy: IfNotPresent
+          repository: quay.io/cilium/hubble-relay-ci
+          tag: latest
+          useDigest: true
+        nodeSelector:
+          kubernetes.io/hostname: artchais-nuclio-1
+        replicas: 1
+        resources:
+          limits: {cpu: 500m, memory: 256Mi}
+          requests: {cpu: 50m, memory: 64Mi}
+        tolerations:
+          - {effect: NoSchedule, key: dedicated, operator: Equal, value: observability}
+      ui:
+        backend:
+          image:
+            digest: sha256:fac0c300ae119274edca11fd89b1ad23c788792d8bc4ea2ba631c709e8d3c688
+            pullPolicy: IfNotPresent
+            repository: quay.io/cilium/hubble-ui-backend
+            tag: v0.13.5
+            useDigest: true
+          resources:
+            limits: {cpu: 200m, memory: 128Mi}
+            requests: {cpu: 20m, memory: 32Mi}
+        enabled: true
+        frontend:
+          image:
+            digest: sha256:f7d514fc54d784ed6df9d58cf0e97648b143f92b766dd1780ed3fc845bd4c516
+            pullPolicy: IfNotPresent
+            repository: quay.io/cilium/hubble-ui
+            tag: v0.13.5
+            useDigest: true
+          resources:
+            limits: {cpu: 100m, memory: 64Mi}
+            requests: {cpu: 10m, memory: 16Mi}
+        nodeSelector:
+          kubernetes.io/hostname: vm-20-12-ubuntu
+        replicas: 1
+        service:
+          type: ClusterIP
+        tolerations:
+          - {effect: NoSchedule, key: anchor, operator: Equal, value: "true"}
+    image:
+      digest: sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+      pullPolicy: IfNotPresent
+      repository: quay.io/cilium/cilium-ci
+      tag: latest
+      useDigest: true
+    ipam:
+      mode: multi-pool
+      multiPoolPreAllocation: tenant-apps=8
+    ipv4NativeRoutingCIDR: 10.0.0.0/8
+    k8s:
+      requireIPv4PodCIDR: false
+    k8sServiceHost: 127.0.0.1
+    k8sServicePort: 6444
+    kubeProxyReplacement: "true"
+    localRedirectPolicy: true
+    nodeSelector:
+      kubernetes.io/os: linux
+      re8ch.com/cilium-migrate: "true"
+    operator:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [a1-wsl-zt, b1-wsl-zt, r640]
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  io.cilium/app: operator
+                  name: cilium-operator
+              topologyKey: kubernetes.io/hostname
+      image:
+        genericDigest: sha256:5a003fb797d490c2f9557cbd0ef4129a7d6ef20cb803f66e668a4cd8d2a894fb
+        pullPolicy: IfNotPresent
+        repository: quay.io/cilium/operator
+        suffix: -ci
+        tag: b790b432054017f157d678d9f6f1619ae0dc046c
+        useDigest: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      replicas: 3
+      skipCRDCreation: true
+      tolerations:
+        - {key: node-role.kubernetes.io/control-plane, operator: Exists}
+        - {key: node-role.kubernetes.io/master, operator: Exists}
+        - {key: node.kubernetes.io/not-ready, operator: Exists}
+      unmanagedPodWatcher:
+        restart: false
+    # Agent rollouts must follow an actual pod-template change, not every Helm
+    # reconciliation of cluster-scoped networking resources.
+    rollOutCiliumPods: false
+    routingMode: native
+    tunnelPort: 8473
+    tunnelProtocol: vxlan

@@ -1,0 +1,39 @@
+apiVersion: cilium.io/v2alpha1
+kind: CiliumPodIPPool
+metadata:
+  name: platform-system
+  labels: {networking.re8ch.com/address-plan: multi-pool-v1}
+spec:
+  ipv4: {cidrs: [10.64.0.0/14], maskSize: 24}
+  namespaceSelector:
+    matchLabels: {networking.re8ch.com/ip-pool: platform-system}
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumPodIPPool
+metadata:
+  name: tenant-apps
+  labels: {networking.re8ch.com/address-plan: multi-pool-v1}
+spec:
+  ipv4: {cidrs: [10.68.0.0/14], maskSize: 24}
+  namespaceSelector:
+    matchLabels: {networking.re8ch.com/ip-pool: tenant-apps}
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumPodIPPool
+metadata:
+  name: jobs-sandbox
+  labels: {networking.re8ch.com/address-plan: multi-pool-v1}
+spec:
+  ipv4: {cidrs: [10.72.0.0/15], maskSize: 24}
+  namespaceSelector:
+    matchLabels: {networking.re8ch.com/ip-pool: jobs-sandbox}
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumPodIPPool
+metadata:
+  name: regulated-egress
+  labels: {networking.re8ch.com/address-plan: multi-pool-v1}
+spec:
+  ipv4: {cidrs: [10.74.0.0/15], maskSize: 24}
+  namespaceSelector:
+    matchLabels: {networking.re8ch.com/ip-pool: regulated-egress}

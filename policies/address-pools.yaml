@@ -1,0 +1,17 @@
+apiVersion: networking.re8ch.com/v1alpha1
+kind: PodAddressPlan
+metadata:
+  name: re8ch-multi-pool
+spec:
+  aggregate: 10.64.0.0/12
+  allocationMaskSize: 24
+  compatibilityCIDRs: [10.42.0.0/16]
+  pools:
+    - {name: platform-system, cidr: 10.64.0.0/14}
+    - {name: tenant-apps, cidr: 10.68.0.0/14, default: true}
+    - {name: jobs-sandbox, cidr: 10.72.0.0/15}
+    - {name: regulated-egress, cidr: 10.74.0.0/15}
+  cutover:
+    state: compatibility
+    hardRollbackMinutes: 60
+    maintenanceWindowMinutes: 120

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: kube-api-overseas-relay-upstream
+    namespace: kube-system
+type: Opaque
+stringData:
+    host: ENC[AES256_GCM,data:ZIQ07NDcm/a9Q76S,iv:tm6zxfidQbzHLWmGivdxg4rOOk6noIdRxFgHry+QH1I=,tag:waPVFsDC3PONXPTJHW3+MA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBHQ3A4b3FTNUF6czJ2WUNB
+            TmJtSWlBRU9zSWNMRU5TRmxZUXNVaDF4aXpNCkUzRlNaeGZ5TGpuaW9UT21nb1RF
+            Q3FPWFQwdGU3djNrTUJkUzJXUE9DSzQKLS0tIE5ydDJFS2hWQTFvdzdWTVpQVWQ5
+            ektyR0tSTlRNc3pmZmkxNVVTOEwvVDgKPAhHkO/UkhjCJim695QWWVJqOCT9m9dh
+            D7PezHnCxy/wW4u9RRtsSjDLCAGtJeRYlZeDAzmpixgH/ZPiv96ZwA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1c7camhc8ql85t5u4hrjmsmkurfa0n0v7lg05espasa9fqapjz5vqql8lfj
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-22T21:07:30Z"
+    mac: ENC[AES256_GCM,data:yBZGMT/rxLxgt1uNRVNOKMy0yHTV4BlFKcBldIpbIeFIuc21JouJfGP75qZUrUNLuZUg62arccHlJm67Y4HpnizAzqpFhbn/wQhdu4HGZwVbhv11O6XIb1WA8weKPcDl1cf4trtIREW8G4RQuiMKUZk9GDLBsQnCDgwmdPBw0m4=,iv:txLF+69DOmartxj5Jm0CF95FaGA4z+wEgUE6FuJo9rw=,tag:3ZohOFDeWPjrIJ/f+j0T/Q==,type:str]
+    version: 3.13.3

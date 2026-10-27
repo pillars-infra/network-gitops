@@ -1,0 +1,20 @@
+name: validate
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  render:
+    runs-on: ${{ github.event.repository.private && fromJSON('["self-hosted","Linux","X64","r640","untrusted-build"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
+      - run: python -m pip install 'PyYAML>=6.0.2'
+      - run: kubectl kustomize clusters/re8ch >/dev/null
+      - run: python3 policies/validate.py

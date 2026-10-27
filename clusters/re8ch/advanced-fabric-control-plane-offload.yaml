@@ -1,0 +1,46 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: advanced-fabric
+  namespace: flux-network-system
+spec:
+  values:
+    advancedFabric:
+      controller:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values: [b1-wsl-zt, r640]
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: advanced-fabric-controller
+                topologyKey: kubernetes.io/hostname
+        tolerations:
+          - {key: node-role.kubernetes.io/control-plane, operator: Equal, value: "true", effect: NoSchedule}
+          - {key: scheduling.re8ch.com/capacity-window, operator: Equal, value: closed, effect: NoSchedule}
+          - {key: storage.re8ch.com/coordinator, operator: Equal, value: "true", effect: NoSchedule}
+      virtualIngress:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values: [b1-wsl-zt, r640]
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: advanced-fabric-virtual-ingress
+                topologyKey: kubernetes.io/hostname
+        tolerations:
+          - {key: node-role.kubernetes.io/control-plane, operator: Equal, value: "true", effect: NoSchedule}
+          - {key: scheduling.re8ch.com/capacity-window, operator: Equal, value: closed, effect: NoSchedule}
+          - {key: storage.re8ch.com/coordinator, operator: Equal, value: "true", effect: NoSchedule}

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns-cloudflare
+  namespace: qianwen-ops
+spec:
+  template:
+    spec:
+      tolerations:
+        - key: storage.re8ch.com/coordinator
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+        - key: scheduling.re8ch.com/capacity-window
+          operator: Equal
+          value: closed
+          effect: NoSchedule
+      containers:
+        - name: external-dns
+          args:
+            - --source=ingress
+            - --source=service
+            - --provider=cloudflare
+            - --domain-filter=re8ch.com
+            - --label-filter=networking.re8ch.com/dns-authority=public-edge
+            - --exclude-target-net=10.0.0.0/8
+            - --exclude-target-net=172.16.0.0/12
+            - --exclude-target-net=192.168.0.0/16
+            - --policy=upsert-only
+            - --registry=noop
+            - --interval=1m
+            - --events
+            - --log-format=json
+            - --log-level=info
+          env:
+            - name: KUBERNETES_SERVICE_HOST
+              value: "10.250.0.1"
+            - name: KUBERNETES_SERVICE_PORT
+              value: "6443"
