@@ -201,6 +201,10 @@ class Executor:
                 effective.insert(1, "--token=" + token)
         try:
             result = self.runner(effective, input=stdin, text=True, capture_output=True, timeout=timeout, check=False)
+        except subprocess.TimeoutExpired as error:
+            # Dynamic OIDC credentials can be present in effective argv. Keep the
+            # timeout type for durable unknown-result handling without its payload.
+            raise subprocess.TimeoutExpired([effective[0]] if effective else [], error.timeout) from None
         except (OSError, subprocess.SubprocessError):
             if redact:
                 raise Rejected("restricted command failed; diagnostics withheld") from None
