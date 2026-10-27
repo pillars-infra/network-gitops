@@ -128,8 +128,18 @@ jobs:
           oci_digest="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["digest"])' "$RUNNER_TEMP/oci-result.json")"
           immutable="${reference#oci://}@${oci_digest}"
           cosign sign --yes "$immutable"
-          cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com "$immutable" >/dev/null
+          # GHCR may briefly lag a just-pushed signature. Verify the same digest;
+          # never rebuild or accept an unsigned artifact on publication lag.
+          verified=false
+          for attempt in 1 2 3 4 5; do
+            if cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com "$immutable" >/dev/null; then
+              verified=true
+              break
+            fi
+            sleep 2
+          done
+          [[ "$verified" == true ]]
           {
             echo "digest=$oci_digest"
             echo "reference=$reference"
