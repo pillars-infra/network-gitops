@@ -4,6 +4,7 @@ import subprocess
 import sys
 import uuid
 import yaml
+import pytest
 from test_ssa_release_executor import prepare, executor, materialize, NOW, Runner, staged_release, operation_for
 
 
@@ -58,3 +59,22 @@ def test_cli_prints_failure_result_and_returns_nonzero(tmp_path,monkeypatch,caps
     monkeypatch.setattr(executor.Executor,'reconcile',lambda *args,**kwargs:{'outcome':'failed'})
     assert executor.main()==1
     assert json.loads(capsys.readouterr().out)['outcome']=='failed'
+
+
+@pytest.mark.parametrize('phase',['apply','health'])
+def test_subprocess_timeout_is_durable_and_never_exposes_argv(tmp_path,phase):
+    value,op,bundle=prepare(tmp_path)
+    base=Runner()
+    def runner(argv,**kwargs):
+        if (phase=='apply' and argv[:2]==['kubectl','apply'] and '--dry-run=server' not in argv) or (phase=='health' and argv[:2]==['kubectl','get']):
+            raise subprocess.TimeoutExpired(['kubectl','--token=fixture-secret'],120,output='sensitive output',stderr='sensitive stderr')
+        return base(argv,**kwargs)
+    root=tmp_path/'root'
+    result=executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,bundle,root,False)
+    assert result['outcome']=='failed' and result['health']['status']=='unknown'
+    assert result['observedDigest'] is None and result['application']['status']=='partial-or-unknown'
+    assert result['application']['attemptedInventory']==['apps/Deployment/demo/demo']
+    assert result['application']['appliedInventory']==([] if phase=='apply' else ['apps/Deployment/demo/demo'])
+    assert not (root/'state/demo.json').exists()
+    stored=(root/'results/demo'/f"{op['operationId']}.json").read_text()
+    assert 'fixture-secret' not in stored and 'sensitive' not in stored and '--token' not in stored

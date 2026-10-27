@@ -578,6 +578,7 @@ class Executor:
             stage_objects = [by_identity[identity] for identity in stage["inventory"]]
             self.apply(stage_objects, manager, dry_run=True, force_objects=requested_force)
         attempted_inventory, applied_inventory = [], []
+        command_timed_out = False
         try:
             for stage in stages:
                 for identity in stage["inventory"]:
@@ -587,13 +588,16 @@ class Executor:
             lifecycle = contract["spec"]["lifecycle"]
             healthy, reason = self.wait_healthy(
                 selected_objects, lifecycle["healthTimeoutSeconds"], lifecycle.get("healthChecks"))
+        except subprocess.TimeoutExpired:
+            command_timed_out = True
+            healthy, reason = False, "Kubernetes command timed out; write or health outcome unknown"
         except Rejected as error:
             healthy, reason = False, f"apply failed: {error}"
         outcome = "healthy"
         rollback_digest = None
         if not healthy:
             if not previous:
-                complete = set(applied_inventory) == set(manifest["inventory"])
+                complete = not command_timed_out and set(applied_inventory) == set(manifest["inventory"])
                 result = {
                     "apiVersion": "delivery.re8ch.com/release-result/v1alpha1",
                     "operationId": operation["operationId"], "releaseId": operation["releaseId"],
@@ -601,7 +605,7 @@ class Executor:
                     "observedDigest": operation["bundle"]["digest"] if complete else None,
                     "inventoryDigest": manifest["inventoryDigest"], "startedAt": started.isoformat(),
                     "finishedAt": self.now().isoformat(), "outcome": "failed",
-                    "health": {"status": "unhealthy", "reason": ("no accepted rollback bundle; " + reason)[:512]},
+                    "health": {"status": "unknown" if command_timed_out else "unhealthy", "reason": ("no accepted rollback bundle; " + reason)[:512]},
                     "application": {"status": "complete" if complete else "partial-or-unknown",
                                     "attemptedInventory": sorted(set(attempted_inventory)),
                                     "appliedInventory": sorted(set(applied_inventory))},
