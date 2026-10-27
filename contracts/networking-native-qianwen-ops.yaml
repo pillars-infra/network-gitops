@@ -27,12 +27,8 @@ spec:
     - core/Service
     - core/ServiceAccount
     - networking.k8s.io/Ingress
-    - rbac.authorization.k8s.io/Role
-    - rbac.authorization.k8s.io/RoleBinding
     objectNames:
-    - cert-manager-read-cloudflare-dns-token
     - external-dns-cloudflare
-    - read-cloudflare-dns-token
     - tenant-apps-dns-placeholder
     - tenant-apps-wildcard-dns-authority
     forceConflictObjects:
@@ -40,10 +36,8 @@ spec:
     - core/Service/qianwen-ops/tenant-apps-dns-placeholder
     - core/ServiceAccount/qianwen-ops/external-dns-cloudflare
     - networking.k8s.io/Ingress/qianwen-ops/tenant-apps-wildcard-dns-authority
-    - rbac.authorization.k8s.io/Role/qianwen-ops/read-cloudflare-dns-token
-    - rbac.authorization.k8s.io/RoleBinding/qianwen-ops/cert-manager-read-cloudflare-dns-token
   inventory:
-    digest: sha256:92bdad3e145894010ea57703232a81fb2615995be7f58a8cb03ed1acf4459f3c
+    digest: sha256:32b825715f424a486a737c3e565aa7eded889bb882e281041498d61ffb58ea48
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

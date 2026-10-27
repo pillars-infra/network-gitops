@@ -12,7 +12,7 @@ from profile import validate_contract
 def obj(kind='ConfigMap',namespace='demo'):
     return {'apiVersion':'v1','kind':kind,'metadata':{'name':'sample',**({'namespace':namespace} if namespace else {})},'data':{'value':'public'}}
 
-@pytest.mark.parametrize('kind',['Secret','HelmRelease','HelmChart'])
+@pytest.mark.parametrize('kind',['Secret','HelmRelease','HelmChart','Role','RoleBinding'])
 def test_sensitive_or_controller_inputs_never_become_public_native_bundles(kind):
     _,ledger=project([obj(kind)])
     assert ledger['releases']==[]
@@ -42,3 +42,10 @@ def test_every_checked_in_contract_is_canonical_and_profile_bound():
         result=validate_contract(Path('contracts')/p.name)
         assert result['audience'].endswith('/release-executor-networking')
         with pytest.raises(ValueError):validate_contract(p)
+
+
+def test_rbac_is_platform_owned_without_executor_inventory():
+    role=obj('Role');binding=obj('RoleBinding')
+    _,ledger=project([role,binding,obj()])
+    assert len(ledger['platformBootstrap'])==2
+    assert all('/Role/' not in x and '/RoleBinding/' not in x for release in ledger['releases'] for x in release['inventory'])

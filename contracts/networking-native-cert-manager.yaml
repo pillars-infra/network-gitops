@@ -24,18 +24,12 @@ spec:
     fieldManager: re8ch-release/networking-native-cert-manager
     resources:
     - core/ServiceAccount
-    - rbac.authorization.k8s.io/Role
-    - rbac.authorization.k8s.io/RoleBinding
     objectNames:
     - cert-manager-cloudflare-bootstrap
-    - cert-manager-write-cloudflare-dns-token
-    - write-cloudflare-dns-token
     forceConflictObjects:
     - core/ServiceAccount/cert-manager/cert-manager-cloudflare-bootstrap
-    - rbac.authorization.k8s.io/Role/cert-manager/write-cloudflare-dns-token
-    - rbac.authorization.k8s.io/RoleBinding/cert-manager/cert-manager-write-cloudflare-dns-token
   inventory:
-    digest: sha256:d9dc2ada8fa249b49722afd3016e5434a671d6e3536a38f9dab78493f2e24394
+    digest: sha256:c26c664015b63120ed67ff27fe7e3f57003e11c18bf86b7454819b0f84befaf1
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

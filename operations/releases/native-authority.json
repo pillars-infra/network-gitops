@@ -2,7 +2,7 @@
   "version": 1,
   "source": "clusters/re8ch",
   "executionGroup": "re8ch:release-executor:networking",
-  "verbsNote": "Existing-object adoption uses get/patch only; create/delete, Secret reads, impersonation and token minting are not granted. RBAC objects may additionally require reviewed bind/escalate authority.",
+  "verbsNote": "Existing-object adoption uses get/patch only; create/delete, Secret reads, impersonation and token minting are not granted. Role/RoleBinding objects remain platform-owned and are listed under platformBootstrap; no bind/escalate authority is requested.",
   "releases": [
     {
       "releaseId": "networking-native-advfab-system",
@@ -452,9 +452,7 @@
       "contract": "contracts/networking-native-cert-manager.yaml",
       "namespace": "cert-manager",
       "inventory": [
-        "core/ServiceAccount/cert-manager/cert-manager-cloudflare-bootstrap",
-        "rbac.authorization.k8s.io/Role/cert-manager/write-cloudflare-dns-token",
-        "rbac.authorization.k8s.io/RoleBinding/cert-manager/cert-manager-write-cloudflare-dns-token"
+        "core/ServiceAccount/cert-manager/cert-manager-cloudflare-bootstrap"
       ],
       "rules": [
         {
@@ -466,36 +464,6 @@
           ],
           "resourceNames": [
             "cert-manager-cloudflare-bootstrap"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "rolebindings"
-          ],
-          "resourceNames": [
-            "cert-manager-write-cloudflare-dns-token"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "roles"
-          ],
-          "resourceNames": [
-            "write-cloudflare-dns-token"
           ],
           "verbs": [
             "get",
@@ -703,9 +671,7 @@
         "gateway.networking.k8s.io/HTTPRoute/egress-fabric/service-zone-agent-mobile-egress-mobile-egress-control",
         "gateway.networking.k8s.io/HTTPRoute/egress-fabric/service-zone-agent-network-policy-public",
         "networking.k8s.io/NetworkPolicy/egress-fabric/identity-egress",
-        "policy/PodDisruptionBudget/egress-fabric/identity-egress",
-        "rbac.authorization.k8s.io/Role/egress-fabric/path-controller",
-        "rbac.authorization.k8s.io/RoleBinding/egress-fabric/path-controller"
+        "policy/PodDisruptionBudget/egress-fabric/identity-egress"
       ],
       "rules": [
         {
@@ -824,36 +790,6 @@
         },
         {
           "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "rolebindings"
-          ],
-          "resourceNames": [
-            "path-controller"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "roles"
-          ],
-          "resourceNames": [
-            "path-controller"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
             ""
           ],
           "resources": [
@@ -885,11 +821,7 @@
       "inventory": [
         "batch/Job/flux-system/among-clusters-legacy-agent-cleanup-v2",
         "core/ServiceAccount/flux-system/among-clusters-legacy-agent-cleanup",
-        "gateway.networking.k8s.io/HTTPRoute/flux-system/service-zone-hooks-github-flux-webhook",
-        "rbac.authorization.k8s.io/Role/flux-system/among-clusters-legacy-agent-cleanup",
-        "rbac.authorization.k8s.io/Role/flux-system/mihomo-node-labeler-inventory",
-        "rbac.authorization.k8s.io/RoleBinding/flux-system/among-clusters-legacy-agent-cleanup",
-        "rbac.authorization.k8s.io/RoleBinding/flux-system/mihomo-node-labeler-inventory"
+        "gateway.networking.k8s.io/HTTPRoute/flux-system/service-zone-hooks-github-flux-webhook"
       ],
       "rules": [
         {
@@ -931,38 +863,6 @@
           ],
           "resourceNames": [
             "service-zone-hooks-github-flux-webhook"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "rolebindings"
-          ],
-          "resourceNames": [
-            "among-clusters-legacy-agent-cleanup",
-            "mihomo-node-labeler-inventory"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "roles"
-          ],
-          "resourceNames": [
-            "among-clusters-legacy-agent-cleanup",
-            "mihomo-node-labeler-inventory"
           ],
           "verbs": [
             "get",
@@ -1089,11 +989,7 @@
         "core/ServiceAccount/kube-system/control-dns-reachability",
         "core/ServiceAccount/kube-system/host-network-controller",
         "gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary",
-        "gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public",
-        "rbac.authorization.k8s.io/Role/kube-system/control-dns-reachability",
-        "rbac.authorization.k8s.io/Role/kube-system/host-network-controller",
-        "rbac.authorization.k8s.io/RoleBinding/kube-system/control-dns-reachability",
-        "rbac.authorization.k8s.io/RoleBinding/kube-system/host-network-controller"
+        "gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public"
       ],
       "rules": [
         {
@@ -1265,38 +1161,6 @@
           ],
           "resourceNames": [
             "kube-api-public"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "rolebindings"
-          ],
-          "resourceNames": [
-            "control-dns-reachability",
-            "host-network-controller"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "roles"
-          ],
-          "resourceNames": [
-            "control-dns-reachability",
-            "host-network-controller"
           ],
           "verbs": [
             "get",
@@ -1814,9 +1678,7 @@
         "apps/Deployment/qianwen-ops/external-dns-cloudflare",
         "core/Service/qianwen-ops/tenant-apps-dns-placeholder",
         "core/ServiceAccount/qianwen-ops/external-dns-cloudflare",
-        "networking.k8s.io/Ingress/qianwen-ops/tenant-apps-wildcard-dns-authority",
-        "rbac.authorization.k8s.io/Role/qianwen-ops/read-cloudflare-dns-token",
-        "rbac.authorization.k8s.io/RoleBinding/qianwen-ops/cert-manager-read-cloudflare-dns-token"
+        "networking.k8s.io/Ingress/qianwen-ops/tenant-apps-wildcard-dns-authority"
       ],
       "rules": [
         {
@@ -1873,36 +1735,6 @@
           ],
           "resourceNames": [
             "tenant-apps-wildcard-dns-authority"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "rolebindings"
-          ],
-          "resourceNames": [
-            "cert-manager-read-cloudflare-dns-token"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "rbac.authorization.k8s.io"
-          ],
-          "resources": [
-            "roles"
-          ],
-          "resourceNames": [
-            "read-cloudflare-dns-token"
           ],
           "verbs": [
             "get",
@@ -2293,6 +2125,324 @@
       }
     }
   ],
+  "platformBootstrap": [
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "write-cloudflare-dns-token",
+        "namespace": "cert-manager"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "get",
+            "create",
+            "patch",
+            "update"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "path-controller",
+        "namespace": "egress-fabric"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "pods"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "among-clusters-legacy-agent-cleanup",
+        "namespace": "flux-system"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "helm.toolkit.fluxcd.io"
+          ],
+          "resourceNames": [
+            "among-clusters-hub-agent"
+          ],
+          "resources": [
+            "helmreleases"
+          ],
+          "verbs": [
+            "get",
+            "delete"
+          ]
+        },
+        {
+          "apiGroups": [
+            "batch"
+          ],
+          "resourceNames": [
+            "among-clusters-legacy-agent-cleanup"
+          ],
+          "resources": [
+            "jobs"
+          ],
+          "verbs": [
+            "delete"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "mihomo-node-labeler-inventory",
+        "namespace": "flux-system"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "cluster-node-inventory"
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "get"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "control-dns-reachability",
+        "namespace": "kube-system"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "discovery.k8s.io"
+          ],
+          "resources": [
+            "endpointslices"
+          ],
+          "verbs": [
+            "list"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "host-network-controller",
+        "namespace": "kube-system"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "discovery.k8s.io"
+          ],
+          "resources": [
+            "endpointslices"
+          ],
+          "verbs": [
+            "list"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "read-cloudflare-dns-token",
+        "namespace": "qianwen-ops"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "cloudflare-pg-dns-controller-secret"
+          ],
+          "resources": [
+            "secrets"
+          ],
+          "verbs": [
+            "get"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cert-manager-write-cloudflare-dns-token",
+        "namespace": "cert-manager"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "write-cloudflare-dns-token"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cert-manager-cloudflare-bootstrap",
+          "namespace": "cert-manager"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "path-controller",
+        "namespace": "egress-fabric"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "path-controller"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "path-controller",
+          "namespace": "egress-fabric"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "among-clusters-legacy-agent-cleanup",
+        "namespace": "flux-system"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "among-clusters-legacy-agent-cleanup"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "among-clusters-legacy-agent-cleanup",
+          "namespace": "flux-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "mihomo-node-labeler-inventory",
+        "namespace": "flux-system"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "mihomo-node-labeler-inventory"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "mihomo-node-labeler",
+          "namespace": "egress-fabric"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "control-dns-reachability",
+        "namespace": "kube-system"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "control-dns-reachability"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "control-dns-reachability",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "host-network-controller",
+        "namespace": "kube-system"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "host-network-controller"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "host-network-controller",
+          "namespace": "kube-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "cert-manager-read-cloudflare-dns-token",
+        "namespace": "qianwen-ops"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "read-cloudflare-dns-token"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "cert-manager-cloudflare-bootstrap",
+          "namespace": "cert-manager"
+        }
+      ]
+    }
+  ],
   "omitted": [
     {
       "identity": "apps/Deployment/egress-fabric/identity-egress",
@@ -2401,6 +2551,62 @@
     {
       "identity": "helm.toolkit.fluxcd.io/HelmRelease/flux-network-system/public-edge-manager",
       "reason": "cloud-helm-render"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/cert-manager/write-cloudflare-dns-token",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/egress-fabric/path-controller",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/flux-system/among-clusters-legacy-agent-cleanup",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/flux-system/mihomo-node-labeler-inventory",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/kube-system/control-dns-reachability",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/kube-system/host-network-controller",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/Role/qianwen-ops/read-cloudflare-dns-token",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/cert-manager/cert-manager-write-cloudflare-dns-token",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/egress-fabric/path-controller",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/flux-system/among-clusters-legacy-agent-cleanup",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/flux-system/mihomo-node-labeler-inventory",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/kube-system/control-dns-reachability",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/kube-system/host-network-controller",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/qianwen-ops/cert-manager-read-cloudflare-dns-token",
+      "reason": "platform-bootstrap-rbac"
     },
     {
       "identity": "source.toolkit.fluxcd.io/OCIRepository/flux-network-system/advanced-fabric",

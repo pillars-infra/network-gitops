@@ -134,32 +134,3 @@ spec:
               name: dns-only
         path: /
         pathType: Prefix
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: read-cloudflare-dns-token
-  namespace: qianwen-ops
-rules:
-- apiGroups:
-  - ''
-  resourceNames:
-  - cloudflare-pg-dns-controller-secret
-  resources:
-  - secrets
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: cert-manager-read-cloudflare-dns-token
-  namespace: qianwen-ops
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: read-cloudflare-dns-token
-subjects:
-- kind: ServiceAccount
-  name: cert-manager-cloudflare-bootstrap
-  namespace: cert-manager
