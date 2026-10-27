@@ -97,6 +97,9 @@ def normalize_documents(rendered: bytes, contract: dict) -> tuple[list[dict], li
             raise ValueError(f"object must declare exact namespace {namespace}: {resource}/{name}")
         if raw["kind"] == "Secret":
             raise ValueError(f"Secret payloads are forbidden in release bundles: {name}")
+        if 'sops' in raw:
+            from restricted_configmap import bind_source
+            raw=bind_source(raw)
         assert_pinned_images(raw)
         identity = object_identity(raw)
         if identity in identities:

@@ -26,9 +26,24 @@ def validate_envelope(item):
         raise RestrictedConfigError('complete plaintext parity digests are required') from None
     return hashes
 
+SOURCE_FIELD='_re8chSopsSource'
+
+def bind_source(item, original=None):
+    """Keep SOPS traversal order inside the signed canonical JSON artifact."""
+    if original is None:original={k:v for k,v in item.items() if k!=SOURCE_FIELD}
+    source=item.get(SOURCE_FIELD,json.dumps(original,separators=(',',':')))
+    try:
+        if json.loads(source)!={k:v for k,v in item.items() if k!=SOURCE_FIELD}:raise ValueError()
+    except (ValueError,TypeError):
+        raise RestrictedConfigError('serialized SOPS source differs from signed envelope') from None
+    return {**item,SOURCE_FIELD:source}
+
 def decrypt_configmap(item,command):
     hashes=validate_envelope(item)
-    result=command(['sops','--decrypt','--input-type','json','--output-type','json','/dev/stdin'],json.dumps(item),timeout=60,redact=True)
+    if SOURCE_FIELD not in item:raise RestrictedConfigError('ordered SOPS source is required')
+    item=bind_source(item)
+    source=item.pop(SOURCE_FIELD)
+    result=command(['sops','--decrypt','--input-type','json','--output-type','json','/dev/stdin'],source,timeout=60,redact=True)
     try:
         if len(result.stdout)>10*1024*1024:raise ValueError()
         plain=json.loads(result.stdout)
