@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cilium-multi-pool-cutover
+  namespace: kube-system
+  labels: {networking.re8ch.com/address-plan: multi-pool-v1}
+data:
+  state: migrating
+  maintenance-window-minutes: "120"
+  hard-rollback-minutes: "60"
+  previous-ipam-mode: kubernetes
+  desired-ipam-mode: multi-pool
+  default-pool: tenant-apps
+  migration-native-routing-cidr: 10.0.0.0/8
+  native-routing-cidr: 10.64.0.0/12
+  allocation-mask-size: "24"
+  cilium-image-digest: sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+  operator-image-digest: sha256:b6390ca03f3cba10d8ab963a9735ec1657e62bce254de45ffb101d1d4d528315

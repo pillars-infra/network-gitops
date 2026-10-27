@@ -1,0 +1,3 @@
+domain: networking
+controllerNamespace: flux-network-system
+forbidden: []

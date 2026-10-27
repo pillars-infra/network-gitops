@@ -1,0 +1,9 @@
+- op: add
+  path: /spec/listeners/-
+  value:
+    name: kube-api
+    protocol: TCP
+    port: 6443
+    allowedRoutes:
+      namespaces:
+        from: Same

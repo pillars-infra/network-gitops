@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cilium-release.yaml
+  - r640-cilium-datapath.yaml
+  - resources.yaml
+  - kube-api-public.yaml
+  - kube-api-observer-proxy.yaml
+  - kube-api-overseas-relay.yaml
+  - kube-api-overseas-relay-upstream.enc.yaml
+  - routeros-public-forward-controller.yaml
+  - multi-pool
+patches:
+  - path: gateway-kube-api-patch.yaml
+    target:
+      group: gateway.networking.k8s.io
+      version: v1
+      kind: Gateway
+      namespace: kube-system
+      name: re8ch-gateway-canary
+  - path: advanced-fabric-control-plane-offload.yaml
+    target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      namespace: flux-network-system
+      name: advanced-fabric
+  - path: routeros-transit-control-plane-offload.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      namespace: ops
+      name: routeros-transit-controller
+  - path: external-dns-control-api.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      namespace: qianwen-ops
+      name: external-dns-cloudflare
+  - path: among-clusters-public-authority.yaml
+    target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      namespace: flux-network-system
+      name: among-clusters-agent

@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-api-observer-proxy
+  namespace: kube-system
+data:
+  proxy.py: |
+    #!/usr/bin/env python3
+    """Credential-free TCP bridge from the public Gateway to the internal API."""
+    import asyncio
+
+
+    UPSTREAM_HOST = "10.43.0.1"
+    UPSTREAM_PORT = 443
+
+
+    async def pump(reader, writer):
+        try:
+            while data := await reader.read(65536):
+                writer.write(data)
+                await writer.drain()
+        finally:
+            try:
+                writer.write_eof()
+                await writer.drain()
+            except (AttributeError, OSError):
+                writer.close()
+
+
+    async def handle(client_reader, client_writer):
+        try:
+            upstream_reader, upstream_writer = await asyncio.wait_for(
+                asyncio.open_connection(UPSTREAM_HOST, UPSTREAM_PORT), timeout=5
+            )
+        except (OSError, TimeoutError):
+            client_writer.close()
+            return
+        await asyncio.gather(
+            pump(client_reader, upstream_writer),
+            pump(upstream_reader, client_writer),
+            return_exceptions=True,
+        )
+        upstream_writer.close()
+        client_writer.close()
+        await asyncio.gather(
+            upstream_writer.wait_closed(), client_writer.wait_closed(), return_exceptions=True
+        )
+
+
+    async def main():
+        server = await asyncio.start_server(handle, "0.0.0.0", 6443, backlog=64)
+        async with server:
+            await server.serve_forever()
+
+
+    asyncio.run(main())
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-api-observer-proxy
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-api-observer-proxy
+  template:
+    metadata:
+      annotations:
+        networking.re8ch.com/config-revision: observer-proxy-v2
+      labels:
+        app.kubernetes.io/name: kube-api-observer-proxy
+        operations.re8ch.com/credential-contract: node-observer
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: r640
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: proxy
+          image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+          command: ["python3", "/config/proxy.py"]
+          ports:
+            - name: kube-api
+              containerPort: 6443
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - import socket; socket.create_connection(('10.43.0.1', 443), 3).close()
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - import socket; socket.create_connection(('10.43.0.1', 443), 3).close()
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: kube-api-observer-proxy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-api-observer-proxy
+  namespace: kube-system
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+spec:
+  selector:
+    app.kubernetes.io/name: kube-api-observer-proxy
+  ports:
+    - name: kube-api
+      port: 6443
+      targetPort: kube-api
+      protocol: TCP

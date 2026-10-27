@@ -1,0 +1,23 @@
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: r640-xdp-native
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: cilium
+    app.kubernetes.io/part-of: advanced-fabric
+spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: r640
+  defaults:
+    auto-direct-node-routes: "false"
+    bpf-lb-acceleration: native
+    devices: eno2np1
+    direct-routing-device: eno2np1
+    direct-routing-skip-unreachable: "false"
+    # Clear the chart-wide legacy iptables masquerade selector. Cilium merges
+    # node defaults over cilium-config, so omitting this key would inherit eth0
+    # and make BPF masquerade fail closed on startup.
+    egress-masquerade-interfaces: ""
+    enable-bpf-masquerade: "true"

@@ -1,0 +1,9 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: FluxDomainContract
+metadata: {name: networking}
+spec:
+  cluster: re8ch
+  controllerNamespace: flux-network-system
+  root: clusters/re8ch
+  pruneAfterInventoryHandoff: true
+  platformBootstrapRepository: https://github.com/re8ch/service-backend
