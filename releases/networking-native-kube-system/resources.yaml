@@ -2679,6 +2679,15 @@ spec:
     name: kube-api
     port: 6443
     protocol: TCP
+  - allowedRoutes:
+      namespaces:
+        from: Same
+    hostname: kube-api.re8ch.com
+    name: kube-api-https
+    port: 443
+    protocol: TLS
+    tls:
+      mode: Passthrough
 ---
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
@@ -2691,6 +2700,24 @@ spec:
   parentRefs:
   - name: re8ch-gateway-canary
     sectionName: kube-api
+  rules:
+  - backendRefs:
+    - name: kube-api-observer-proxy
+      port: 6443
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: TLSRoute
+metadata:
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+  name: kube-api-https
+  namespace: kube-system
+spec:
+  hostnames:
+  - kube-api.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    sectionName: kube-api-https
   rules:
   - backendRefs:
     - name: kube-api-observer-proxy
