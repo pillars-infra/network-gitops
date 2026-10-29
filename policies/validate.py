@@ -181,6 +181,21 @@ kube_api_backends = (((kube_api_route or {}).get("spec", {}).get("rules") or [{}
                      .get("backendRefs", []))
 if kube_api_backends != [{"name": "kube-api-observer-proxy", "port": 6443}]:
     errors.append("public kube API TCPRoute must terminate its transport at the local observer proxy")
+api_https_route = next((doc for doc in kube_api_documents if doc.get("kind") == "TLSRoute"
+                        and doc.get("metadata", {}).get("name") == "kube-api-https"), None)
+if ((api_https_route or {}).get("spec", {}).get("hostnames") != ["kube-api.re8ch.com"] or
+        (api_https_route or {}).get("spec", {}).get("parentRefs") !=
+        [{"name": "re8ch-gateway-canary", "sectionName": "kube-api-https"}] or
+        ((api_https_route or {}).get("spec", {}).get("rules") or [{}])[0].get("backendRefs") !=
+        [{"name": "kube-api-observer-proxy", "port": 6443}]):
+    errors.append("public kube API TLSRoute must pass only the reviewed hostname to the observer proxy")
+gateway_patch = yaml.safe_load((root / "clusters/re8ch/gateway-kube-api-patch.yaml").read_text())
+api_https_listener = next((op.get("value") for op in gateway_patch
+                           if op.get("value", {}).get("name") == "kube-api-https"), None)
+if api_https_listener != {"name": "kube-api-https", "hostname": "kube-api.re8ch.com",
+                          "protocol": "TLS", "port": 443, "tls": {"mode": "Passthrough"},
+                          "allowedRoutes": {"namespaces": {"from": "Same"}}}:
+    errors.append("public kube API 443 listener must be hostname-scoped TLS passthrough")
 if any(doc.get("kind") == "ReferenceGrant" for doc in kube_api_documents):
     errors.append("public kube API route must not retain the obsolete cross-namespace grant")
 if any(doc.get("kind") == "Ingress" for doc in kube_api_documents):

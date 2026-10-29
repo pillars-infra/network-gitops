@@ -1028,7 +1028,8 @@
         "core/ServiceAccount/kube-system/control-dns-reachability",
         "core/ServiceAccount/kube-system/host-network-controller",
         "gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary",
-        "gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public"
+        "gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public",
+        "gateway.networking.k8s.io/TLSRoute/kube-system/kube-api-https"
       ],
       "rules": [
         {
@@ -1206,6 +1207,21 @@
           ],
           "resourceNames": [
             "kube-api-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "tlsroutes"
+          ],
+          "resourceNames": [
+            "kube-api-https"
           ],
           "verbs": [
             "get",

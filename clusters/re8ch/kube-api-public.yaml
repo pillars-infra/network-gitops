@@ -13,3 +13,21 @@ spec:
     - backendRefs:
         - name: kube-api-observer-proxy
           port: 6443
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: TLSRoute
+metadata:
+  name: kube-api-https
+  namespace: kube-system
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+spec:
+  parentRefs:
+    - name: re8ch-gateway-canary
+      sectionName: kube-api-https
+  hostnames:
+    - kube-api.re8ch.com
+  rules:
+    - backendRefs:
+        - name: kube-api-observer-proxy
+          port: 6443
