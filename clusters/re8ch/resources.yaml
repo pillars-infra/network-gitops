@@ -25772,10 +25772,10 @@ spec:
           cpu: 10m
           memory: 32Mi
     image:
-      digest: sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+      digest: sha256:f852bd8afecad98c0d0bb98fc2056a74fa92d2f1697fb07db3c63e6a2bf0b5fd
       pullPolicy: IfNotPresent
       repository: ghcr.io/public-edge/public-edge-manager
-      tag: 0.8.3
+      tag: 0.8.5
     nameservers:
     - ns-bootstrap.re8ch.com.
     probe:
@@ -26917,7 +26917,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:b5a9a2cd60ff53da529388f2b1d5fa65a6ccc9a705262f9dcd3d3650c6ddc351
+    digest: sha256:9056ea7a997c540c3d0965a723c9e5b06e7294fcd73639cc5dc6e11bb676f13a
   url: oci://ghcr.io/public-edge/charts/public-edge-manager
 ---
 apiVersion: networking.k8s.io/v1
