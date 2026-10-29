@@ -52,7 +52,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        image: ghcr.io/public-edge/public-edge-manager@sha256:f852bd8afecad98c0d0bb98fc2056a74fa92d2f1697fb07db3c63e6a2bf0b5fd
         imagePullPolicy: IfNotPresent
         name: manager
         readinessProbe:
@@ -164,7 +164,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        image: ghcr.io/public-edge/public-edge-manager@sha256:f852bd8afecad98c0d0bb98fc2056a74fa92d2f1697fb07db3c63e6a2bf0b5fd
         imagePullPolicy: IfNotPresent
         name: redirector
         ports:
@@ -246,7 +246,7 @@ spec:
           value: kube-system
         - name: RUNTIME_CONFIGMAP
           value: public-edge-runtime
-        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        image: ghcr.io/public-edge/public-edge-manager@sha256:f852bd8afecad98c0d0bb98fc2056a74fa92d2f1697fb07db3c63e6a2bf0b5fd
         imagePullPolicy: IfNotPresent
         name: cli
         securityContext:
@@ -372,7 +372,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        image: ghcr.io/public-edge/public-edge-manager@sha256:f852bd8afecad98c0d0bb98fc2056a74fa92d2f1697fb07db3c63e6a2bf0b5fd
         imagePullPolicy: IfNotPresent
         name: controller
         resources:
@@ -465,7 +465,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        image: ghcr.io/public-edge/public-edge-manager@sha256:f852bd8afecad98c0d0bb98fc2056a74fa92d2f1697fb07db3c63e6a2bf0b5fd
         imagePullPolicy: IfNotPresent
         name: observer
         resources:
@@ -528,7 +528,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:60038439603bc63d20a760e1570b3ee515343e29c647d9c257feca45e021841e
+        image: ghcr.io/public-edge/public-edge-manager@sha256:f852bd8afecad98c0d0bb98fc2056a74fa92d2f1697fb07db3c63e6a2bf0b5fd
         imagePullPolicy: IfNotPresent
         name: hidden-primary
         ports:
