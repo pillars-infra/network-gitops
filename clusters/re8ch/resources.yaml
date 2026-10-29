@@ -26954,6 +26954,32 @@ spec:
                 port:
                   number: 8080
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kube-api-cname-dns-authority
+  namespace: regional-routing
+  labels:
+    networking.re8ch.com/dns-authority: public-edge
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: kube-api.re8ch.com
+    external-dns.alpha.kubernetes.io/target: kube-api.service.re8ch.com
+    external-dns.alpha.kubernetes.io/ttl: "60"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+spec:
+  ingressClassName: external-dns-only
+  rules:
+    - host: kube-api.re8ch.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: public-edge-manager
+                port:
+                  number: 8080
+---
 apiVersion: cilium.io/v2
 kind: CiliumNodeConfig
 metadata:
