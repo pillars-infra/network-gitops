@@ -715,7 +715,7 @@
         "path": "releases/networking-helm-public-edge-manager-regional-routing",
         "chartOCI": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:9056ea7a997c540c3d0965a723c9e5b06e7294fcd73639cc5dc6e11bb676f13a"
       },
-      "renderedSHA256": "db147d6fa1d2e4c17ef416b03549a8d99bb7288e40aabd75073624baa50118e4"
+      "renderedSHA256": "df78fc6223d17218389df055753c7774be1e608315c3d43a0a63575755670103"
     }
   ],
   "platformBootstrap": [
