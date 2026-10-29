@@ -31,7 +31,6 @@ spec:
     - networking.k8s.io/Ingress
     objectNames:
     - catalog-edgeone-dns-authority
-    - kube-api-cname-dns-authority
     - powerdns-cloud-authorities
     - public-edge-bootstrap
     - public-edge-domain-ex
@@ -56,9 +55,8 @@ spec:
     - core/ConfigMap/regional-routing/powerdns-cloud-authorities
     - core/ConfigMap/regional-routing/public-edge-route-snapshot-public-key
     - networking.k8s.io/Ingress/regional-routing/catalog-edgeone-dns-authority
-    - networking.k8s.io/Ingress/regional-routing/kube-api-cname-dns-authority
   inventory:
-    digest: sha256:9ccf5b12567474b7fe41daa0e2cbf5198ef1903289308d2f0e6b75c6d02295b5
+    digest: sha256:aa3d53239ffed98a56c8ebf63659623a255c3369a1a3ed76e1f6881e734c6e58
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

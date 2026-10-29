@@ -1896,8 +1896,7 @@
         "cert-manager.io/Issuer/regional-routing/public-edge-transfer-ca",
         "core/ConfigMap/regional-routing/powerdns-cloud-authorities",
         "core/ConfigMap/regional-routing/public-edge-route-snapshot-public-key",
-        "networking.k8s.io/Ingress/regional-routing/catalog-edgeone-dns-authority",
-        "networking.k8s.io/Ingress/regional-routing/kube-api-cname-dns-authority"
+        "networking.k8s.io/Ingress/regional-routing/catalog-edgeone-dns-authority"
       ],
       "rules": [
         {
@@ -1976,8 +1975,7 @@
             "ingresses"
           ],
           "resourceNames": [
-            "catalog-edgeone-dns-authority",
-            "kube-api-cname-dns-authority"
+            "catalog-edgeone-dns-authority"
           ],
           "verbs": [
             "get",
