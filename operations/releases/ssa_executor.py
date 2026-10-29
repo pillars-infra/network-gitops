@@ -318,7 +318,7 @@ class Executor:
             raise Rejected(str(error)) from None
 
     def apply(self, objects: list[dict], field_manager: str, dry_run: bool,
-              force_objects: set[str] | None = None) -> None:
+              force_objects: set[str] | None = None, rebind_existing: bool = False) -> None:
         for item in objects:
             argv = ["kubectl", "apply", "--server-side", f"--field-manager={field_manager}"]
             if object_identity(item) in (force_objects or set()):
@@ -326,7 +326,15 @@ class Executor:
             if dry_run:
                 argv.append("--dry-run=server")
             argv += ["-f", "-"]
-            self.command(argv, json.dumps(item), timeout=120, redact=object_identity(item) in self._restricted_identities)
+            for attempt in range(3):
+                current = self.with_existing_versions([item])[0] if rebind_existing else item
+                try:
+                    self.command(argv, json.dumps(current), timeout=120,
+                                 redact=object_identity(item) in self._restricted_identities)
+                    break
+                except Rejected as error:
+                    if not rebind_existing or attempt == 2 or "the object has been modified" not in str(error):
+                        raise
 
     @staticmethod
     def pointer(value: object, pointer: str) -> object:
@@ -585,18 +593,16 @@ class Executor:
             raise Rejected("stage selection contains no objects")
         for stage in stages:
             stage_objects = [by_identity[identity] for identity in stage["inventory"]]
-            self.apply(stage_objects, manager, dry_run=True, force_objects=requested_force)
+            self.apply(stage_objects, manager, dry_run=True, force_objects=requested_force,
+                       rebind_existing=contract["spec"]["authorization"].get("requireExisting", False))
         attempted_inventory, applied_inventory = [], []
         command_timed_out = False
         try:
             for stage in stages:
                 for identity in stage["inventory"]:
                     attempted_inventory.append(identity)
-                    if contract["spec"]["authorization"].get("requireExisting", False):
-                        # Dry-run binds the whole inventory up front. Another controller
-                        # may update an object before this later write reaches it.
-                        by_identity[identity] = self.with_existing_versions([by_identity[identity]])[0]
-                    self.apply([by_identity[identity]], manager, dry_run=False, force_objects=requested_force)
+                    self.apply([by_identity[identity]], manager, dry_run=False, force_objects=requested_force,
+                               rebind_existing=contract["spec"]["authorization"].get("requireExisting", False))
                     applied_inventory.append(identity)
             lifecycle = contract["spec"]["lifecycle"]
             healthy, reason = self.wait_healthy(
