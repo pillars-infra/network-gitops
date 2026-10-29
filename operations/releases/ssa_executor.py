@@ -592,6 +592,10 @@ class Executor:
             for stage in stages:
                 for identity in stage["inventory"]:
                     attempted_inventory.append(identity)
+                    if contract["spec"]["authorization"].get("requireExisting", False):
+                        # Dry-run binds the whole inventory up front. Another controller
+                        # may update an object before this later write reaches it.
+                        by_identity[identity] = self.with_existing_versions([by_identity[identity]])[0]
                     self.apply([by_identity[identity]], manager, dry_run=False, force_objects=requested_force)
                     applied_inventory.append(identity)
             lifecycle = contract["spec"]["lifecycle"]

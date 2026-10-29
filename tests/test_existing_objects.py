@@ -54,6 +54,27 @@ def test_resource_version_precondition_is_bound_after_signature(tmp_path):
     applies=[json.loads(data) for argv,data in runner.calls if argv[:2]==['kubectl','apply']]
     assert len(applies)==2 and all(o['metadata']['resourceVersion']=='17' for o in applies)
 
+def test_adoption_refreshes_version_after_dry_run(tmp_path):
+    class UpdatingRunner(ExistingRunner):
+        def __init__(self):
+            super().__init__();self.reads=0
+        def __call__(self,argv,**kwargs):
+            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+                self.reads+=1
+                self.calls.append((argv,kwargs.get('input')))
+                return subprocess.CompletedProcess(argv,0,str(16+self.reads),'')
+            if argv[:2]==['kubectl','apply']:
+                self.calls.append((argv,kwargs.get('input')))
+                item=json.loads(kwargs['input'])
+                expected='17' if '--dry-run=server' in argv else '18'
+                assert item['metadata']['resourceVersion']==expected
+                if '--dry-run=server' not in argv:self.written=True
+                return subprocess.CompletedProcess(argv,0,'','')
+            return super().__call__(argv,**kwargs)
+    value,op,path=fixture(tmp_path);runner=UpdatingRunner()
+    result=executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state')
+    assert result['outcome']=='healthy' and runner.written and runner.reads==2
+
 def test_failed_signature_never_reads_existing_resource(tmp_path):
     value,op,path=fixture(tmp_path);runner=ExistingRunner('signature')
     with pytest.raises(executor.Rejected):executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state')
