@@ -65,7 +65,7 @@ def test_initialize_creates_private_fixed_config_without_output_or_overwrite(tmp
     monkeypatch.setattr(refresh_kubeconfig.Executor,'actions_kube_token',lambda self:'fixture-token')
     refresh_kubeconfig.initialize();value=yaml.safe_load(path.read_text())
     assert path.stat().st_mode&0o777==0o600
-    assert value['clusters'][0]['cluster']['server']=='https://kube-api.re8ch.com:6443'
+    assert value['clusters'][0]['cluster']['server']=='https://kube-api.re8ch.com'
     assert value['users'][0]['user']['token']=='fixture-token'
     assert capsys.readouterr()==('','')
     with pytest.raises(FileExistsError):refresh_kubeconfig.initialize()
