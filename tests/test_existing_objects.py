@@ -66,14 +66,29 @@ def test_adoption_refreshes_version_after_dry_run(tmp_path):
             if argv[:2]==['kubectl','apply']:
                 self.calls.append((argv,kwargs.get('input')))
                 item=json.loads(kwargs['input'])
-                expected='17' if '--dry-run=server' in argv else '18'
+                expected='18' if '--dry-run=server' in argv else '19'
                 assert item['metadata']['resourceVersion']==expected
                 if '--dry-run=server' not in argv:self.written=True
                 return subprocess.CompletedProcess(argv,0,'','')
             return super().__call__(argv,**kwargs)
     value,op,path=fixture(tmp_path);runner=UpdatingRunner()
     result=executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state')
-    assert result['outcome']=='healthy' and runner.written and runner.reads==2
+    assert result['outcome']=='healthy' and runner.written and runner.reads==3
+
+def test_adoption_retries_transient_resource_version_conflict_in_dry_run(tmp_path):
+    class RacingRunner(ExistingRunner):
+        def __init__(self):super().__init__();self.dry_runs=0
+        def __call__(self,argv,**kwargs):
+            if argv[:2]==['kubectl','apply'] and '--dry-run=server' in argv:
+                self.dry_runs+=1
+                if self.dry_runs==1:
+                    self.calls.append((argv,kwargs.get('input')))
+                    return subprocess.CompletedProcess(argv,1,'',
+                        'the object has been modified; please apply your changes to the latest version')
+            return super().__call__(argv,**kwargs)
+    value,op,path=fixture(tmp_path);runner=RacingRunner()
+    result=executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state')
+    assert result['outcome']=='healthy' and runner.written and runner.dry_runs==2
 
 def test_failed_signature_never_reads_existing_resource(tmp_path):
     value,op,path=fixture(tmp_path);runner=ExistingRunner('signature')
