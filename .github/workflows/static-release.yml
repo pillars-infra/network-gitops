@@ -226,7 +226,7 @@ jobs:
           token="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["value"])' "$RUNNER_TEMP/oidc.json")"
           echo "::add-mask::$token"
           kubeconfig="$RUNNER_TEMP/executor.kubeconfig"
-          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://kube-api.re8ch.com \
+          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://223.159.210.222 --tls-server-name=kube-api.re8ch.com \
             --certificate-authority="$RUNNER_TEMP/re8ch-ca.crt" --embed-certs=true
           kubectl config --kubeconfig "$kubeconfig" set-credentials release-executor --token="$token"
           kubectl config --kubeconfig "$kubeconfig" set-context release-executor --cluster=re8ch-main --user=release-executor
@@ -342,7 +342,7 @@ jobs:
           token="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["value"])' "$RUNNER_TEMP/oidc.json")"
           echo "::add-mask::$token"
           kubeconfig="$RUNNER_TEMP/executor.kubeconfig"
-          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://kube-api.re8ch.com \
+          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://223.159.210.222 --tls-server-name=kube-api.re8ch.com \
             --certificate-authority="$RUNNER_TEMP/re8ch-ca.crt" --embed-certs=true
           kubectl config --kubeconfig "$kubeconfig" set-credentials release-executor --token="$token"
           kubectl config --kubeconfig "$kubeconfig" set-context release-executor --cluster=re8ch-main --user=release-executor
