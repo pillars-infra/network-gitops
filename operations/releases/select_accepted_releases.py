@@ -8,22 +8,37 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import jsonschema
 from unified_bundle import validate_schema
 
+from kube_transport import transient_failure
 from operation_materialize import accepted_bundle, state_configmap_name
 from profile import ROOT, replay_matrix
 
 
-def select(matrix, root=ROOT, runner=subprocess.run):
+def read_state(argv, runner, sleeper):
+    for attempt in range(3):
+        try:
+            result=runner(argv,capture_output=True,text=True,timeout=10)
+        except subprocess.TimeoutExpired:
+            if attempt == 2:raise
+        else:
+            if not result.returncode or not transient_failure(result.stdout,result.stderr) or attempt == 2:
+                return result
+        sleeper(2 ** attempt)
+    raise AssertionError('bounded state read exhausted without a result')
+
+
+def select(matrix, root=ROOT, runner=subprocess.run, sleeper=time.sleep):
     selected, skipped, invalid = [], [], []
     with tempfile.TemporaryDirectory(prefix='accepted-selector-') as directory:
         path=Path(directory)/'state.json'
         for entry in matrix:
             release=entry['release-id']
             try:
-                result=runner(['kubectl','get','configmap',state_configmap_name(release),'--namespace',entry['namespace'],
-                               '--ignore-not-found','-o','json'],capture_output=True,text=True,timeout=10)
+                result=read_state(['kubectl','get','configmap',state_configmap_name(release),'--namespace',entry['namespace'],
+                                  '--ignore-not-found','-o','json'],runner,sleeper)
                 if result.returncode:
                     invalid.append((release,'state-read-failed'));continue
                 if not result.stdout.strip():
