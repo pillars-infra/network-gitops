@@ -33,8 +33,9 @@ def test_selection_reads_only_exact_state_and_never_selects_invalid_acceptance(t
         calls.append(argv)
         if fault=='timeout':raise subprocess.TimeoutExpired(['kubectl','private'],10)
         return subprocess.CompletedProcess(argv,1 if fault=='read-error' else 0,'' if fault=='missing' else json.dumps(cm),'private diagnostics')
-    selected,skipped,invalid=selector.select([entry],tmp_path,runner)
-    assert calls==[['kubectl','get','configmap','ssa-state-demo','--namespace','demo','--ignore-not-found','-o','json']]
+    selected,skipped,invalid=selector.select([entry],tmp_path,runner,sleeper=lambda _:None)
+    expected=['kubectl','get','configmap','ssa-state-demo','--namespace','demo','--ignore-not-found','-o','json']
+    assert calls==([expected]*3 if fault=='timeout' else [expected])
     if fault is None:assert selected==[entry] and not skipped and not invalid
     elif fault in ['foreign','malformed','read-error','timeout']:assert not selected and invalid and not skipped
     else:assert not selected and skipped and not invalid
@@ -48,6 +49,27 @@ def test_invalid_selection_does_not_block_valid_release(tmp_path):
         return subprocess.CompletedProcess(argv,0,json.dumps(cm) if argv[3]=='ssa-state-demo' else '[]','')
     selected,_,invalid=selector.select([broken,entry],tmp_path,runner)
     assert selected==[entry] and invalid==[('broken','invalid-or-changed-acceptance')]
+
+
+def test_selection_retries_only_transient_transport_failures(tmp_path):
+    entry,cm,_=fixture(tmp_path);calls=[];delays=[]
+    failures=['Unable to connect to the server: EOF','net/http: TLS handshake timeout']
+    def runner(argv,**kwargs):
+        calls.append(argv)
+        if failures:return subprocess.CompletedProcess(argv,1,'',failures.pop(0))
+        return subprocess.CompletedProcess(argv,0,json.dumps(cm),'')
+    selected,skipped,invalid=selector.select([entry],tmp_path,runner,sleeper=delays.append)
+    assert selected==[entry] and not skipped and not invalid
+    assert len(calls)==3 and delays==[1,2]
+
+
+def test_selection_does_not_retry_authorization_failure(tmp_path):
+    entry,_,_=fixture(tmp_path);calls=[]
+    def runner(argv,**kwargs):
+        calls.append(argv);return subprocess.CompletedProcess(argv,1,'','forbidden')
+    selected,skipped,invalid=selector.select([entry],tmp_path,runner,sleeper=lambda _:None)
+    assert not selected and not skipped and invalid==[('demo','state-read-failed')]
+    assert len(calls)==1
 
 
 def test_empty_matrix_is_explicitly_skipped_and_execution_rechecks_state():

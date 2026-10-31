@@ -100,3 +100,27 @@ def test_normal_release_without_adoption_flag_keeps_existing_behavior(tmp_path):
     result=executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state',verify_signature=False)
     assert result['outcome']=='healthy'
     assert not any('jsonpath={.metadata.resourceVersion}' in argv for argv,_ in runner.calls)
+
+
+def test_existing_object_get_retries_transient_transport_failure(tmp_path):
+    class TransientRunner(ExistingRunner):
+        def __init__(self):super().__init__();self.reads=0
+        def __call__(self,argv,**kwargs):
+            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+                self.reads+=1
+                if self.reads < 3:
+                    self.calls.append((argv,kwargs.get('input')))
+                    message='Unable to connect to the server: EOF' if self.reads==1 else 'net/http: TLS handshake timeout'
+                    return subprocess.CompletedProcess(argv,1,'',message)
+            return super().__call__(argv,**kwargs)
+    value,op,path=fixture(tmp_path);runner=TransientRunner()
+    result=executor.Executor(runner=runner,now=lambda:NOW,sleeper=lambda _:None).reconcile(value,op,path,tmp_path/'state')
+    assert result['outcome']=='healthy' and runner.written and runner.reads>=3
+
+
+def test_existing_object_get_does_not_retry_non_transient_failure(tmp_path):
+    value,op,path=fixture(tmp_path);runner=ExistingRunner('missing')
+    with pytest.raises(executor.Rejected):
+        executor.Executor(runner=runner,now=lambda:NOW,sleeper=lambda _:None).reconcile(value,op,path,tmp_path/'state')
+    reads=[argv for argv,_ in runner.calls if argv[:2]==['kubectl','get']]
+    assert len(reads)==1

@@ -30,6 +30,7 @@ import yaml
 from unified_bundle import canonical, digest, object_identity, validate_schema
 from restricted_configmap import decrypt_configmap, RestrictedConfigError
 from existing_objects import bind_existing, ExistingObjectError
+from kube_transport import transient_failure
 
 PROTECTED_KINDS = {"Namespace", "CustomResourceDefinition", "PersistentVolume", "PersistentVolumeClaim", "StorageClass",
                    "CephCluster", "CephFilesystem", "CephBlockPool", "CephFilesystemSubVolumeGroup"}
@@ -199,16 +200,24 @@ class Executor:
             token = self.actions_kube_token()
             if token:
                 effective.insert(1, "--token=" + token)
-        try:
-            result = self.runner(effective, input=stdin, text=True, capture_output=True, timeout=timeout, check=False)
-        except subprocess.TimeoutExpired as error:
-            # Dynamic OIDC credentials can be present in effective argv. Keep the
-            # timeout type for durable unknown-result handling without its payload.
-            raise subprocess.TimeoutExpired([effective[0]] if effective else [], error.timeout) from None
-        except (OSError, subprocess.SubprocessError):
-            if redact:
-                raise Rejected("restricted command failed; diagnostics withheld") from None
-            raise
+        read_only = argv[:2] == ["kubectl", "get"]
+        for attempt in range(3 if read_only else 1):
+            try:
+                result = self.runner(effective, input=stdin, text=True, capture_output=True, timeout=timeout, check=False)
+            except subprocess.TimeoutExpired as error:
+                if read_only and attempt < 2:
+                    self.sleeper(2 ** attempt)
+                    continue
+                # Dynamic OIDC credentials can be present in effective argv. Keep the
+                # timeout type for durable unknown-result handling without its payload.
+                raise subprocess.TimeoutExpired([effective[0]] if effective else [], error.timeout) from None
+            except (OSError, subprocess.SubprocessError):
+                if redact:
+                    raise Rejected("restricted command failed; diagnostics withheld") from None
+                raise
+            if not (read_only and result.returncode and transient_failure(result.stdout,result.stderr) and attempt < 2):
+                break
+            self.sleeper(2 ** attempt)
         if result.returncode:
             message = "restricted command failed; diagnostics withheld" if redact else (result.stderr or result.stdout or "command failed")[-2048:]
             raise Rejected(message)
