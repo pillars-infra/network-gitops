@@ -56,6 +56,10 @@ def replay_matrix():
     for path in sorted((ROOT/'contracts').glob('networking-*.yaml')):
         relative=path.relative_to(ROOT)
         profile=validate_contract(relative)
+        # The local Flux namespace was removed; its retained encrypted input
+        # cannot have an accepted runtime state to replay.
+        if profile['namespace']=='flux-network-system':
+            continue
         result.append({**profile,'contract':str(relative),'environment':REPLAY_ENVIRONMENT,'audience':REPLAY_AUDIENCE})
     return result
 
