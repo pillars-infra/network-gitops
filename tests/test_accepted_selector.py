@@ -1,5 +1,7 @@
 import json
 import subprocess
+import threading
+import time
 from pathlib import Path
 import yaml
 import pytest
@@ -103,3 +105,16 @@ def test_empty_selector_outputs_skip_flag(tmp_path,monkeypatch):
     assert 'matrix={"include":[]}\n' in output.read_text()
     assert 'has-accepted=false\n' in output.read_text()
     assert 'invalid=0\n' in output.read_text()
+
+
+def test_domain_outage_is_bounded_by_four_exact_reads(tmp_path):
+    active=0;maximum=0;lock=threading.Lock()
+    def runner(argv,**kwargs):
+        nonlocal active,maximum
+        with lock:active+=1;maximum=max(maximum,active)
+        time.sleep(0.01)
+        with lock:active-=1
+        return subprocess.CompletedProcess(argv,0,'','')
+    matrix=[{'release-id':f'demo-{i}','namespace':'demo','contract':'unused'} for i in range(8)]
+    selected,skipped,invalid=selector.select(matrix,tmp_path,runner,sleeper=lambda _:None)
+    assert maximum==4 and not selected and not invalid and len(skipped)==8
