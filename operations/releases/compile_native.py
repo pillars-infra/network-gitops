@@ -16,6 +16,14 @@ from restricted_configmap import validate_envelope, bind_source
 from profile import REPOSITORY, WORKFLOW, ENVIRONMENT, AUDIENCE, SIGNER
 ROOT=Path(__file__).resolve().parents[2]
 PLURALS={'NetworkPolicy':'networkpolicies','CiliumNetworkPolicy':'ciliumnetworkpolicies','PeerPolicy':'peerpolicies','BackendTLSPolicy':'backendtlspolicies','Ingress':'ingresses'}
+KUBE_API_RELEASE_OBJECTS={
+    'core/ConfigMap/kube-system/kube-api-observer-proxy',
+    'apps/Deployment/kube-system/kube-api-observer-proxy',
+    'core/Service/kube-system/kube-api-observer-proxy',
+    'gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy',
+    'gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service',
+    'gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public',
+}
 
 def classify(document):
     if 'sops' in document:
@@ -40,10 +48,12 @@ def project(documents, prefix="networking-native", source_context=None):
             omitted.append({'identity':object_identity(d),'reason':reason})
             if reason=='platform-bootstrap-rbac':bootstrap.append(d)
             continue
-        groups[d['metadata']['namespace']].append(d)
+        namespace=d['metadata']['namespace']
+        name='networking-native-kube-api' if prefix=='networking-native' and object_identity(d) in KUBE_API_RELEASE_OBJECTS else prefix+'-'+namespace
+        groups[(name,namespace)].append(d)
     files={};releases=[]
-    for namespace,objects in sorted(groups.items()):
-        objects.sort(key=object_identity);name=prefix+'-'+namespace;folder=f'releases/{name}'
+    for (name,namespace),objects in sorted(groups.items()):
+        objects.sort(key=object_identity);folder=f'releases/{name}'
         inventory=sorted(object_identity(o) for o in objects)
         contract={'apiVersion':'delivery.re8ch.com/v1alpha1','kind':'ReleaseContract','metadata':{'name':name},'spec':{
             'authorityDomain':'networking','target':{'cluster':'re8ch','namespace':namespace},

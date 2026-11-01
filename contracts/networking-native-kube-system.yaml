@@ -32,10 +32,7 @@ spec:
     - core/ConfigMap
     - core/Service
     - core/ServiceAccount
-    - gateway.networking.k8s.io/BackendTLSPolicy
     - gateway.networking.k8s.io/Gateway
-    - gateway.networking.k8s.io/HTTPRoute
-    - gateway.networking.k8s.io/TCPRoute
     objectNames:
     - access-subdomains
     - advfab-worker-node-ips
@@ -49,10 +46,7 @@ spec:
     - host-network-contract
     - host-network-controller
     - host-network-controller-679588ggt2
-    - kube-api-observer-proxy
     - kube-api-overseas-relay
-    - kube-api-public
-    - kube-api-service
     - kube-dns
     - native-routing-canary
     - native-routing-mubao-wsl
@@ -77,7 +71,6 @@ spec:
     - apps/DaemonSet/kube-system/host-network-controller
     - apps/DaemonSet/kube-system/podcidr-fabric-reconciler
     - apps/DaemonSet/kube-system/public-mesh-podcidr-reconciler
-    - apps/Deployment/kube-system/kube-api-observer-proxy
     - apps/Deployment/kube-system/kube-api-overseas-relay
     - apps/Deployment/kube-system/zerotier-planet
     - cert-manager.io/Certificate/kube-system/access-subdomains
@@ -99,23 +92,18 @@ spec:
     - core/ConfigMap/kube-system/control-transit-controller-98df2kft25
     - core/ConfigMap/kube-system/host-network-contract
     - core/ConfigMap/kube-system/host-network-controller-679588ggt2
-    - core/ConfigMap/kube-system/kube-api-observer-proxy
     - core/ConfigMap/kube-system/kube-api-overseas-relay
     - core/ConfigMap/kube-system/native-routing-rollout-order
     - core/ConfigMap/kube-system/podcidr-fabric-inventory
     - core/ConfigMap/kube-system/podcidr-fabric-reconciler
     - core/ConfigMap/kube-system/public-mesh-podcidr
-    - core/Service/kube-system/kube-api-observer-proxy
     - core/Service/kube-system/kube-api-overseas-relay
     - core/Service/kube-system/kube-dns
     - core/ServiceAccount/kube-system/control-dns-reachability
     - core/ServiceAccount/kube-system/host-network-controller
-    - gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy
     - gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary
-    - gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service
-    - gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public
   inventory:
-    digest: sha256:4dba8e2b2789ee4b8811eea2c79059ab01559be06ec77ad249e33a2609f1e47c
+    digest: sha256:a9ec0b73cfb54a411e6282e9ad4fa16b1151abb0d2188b6e105dfd560dd9ee04
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

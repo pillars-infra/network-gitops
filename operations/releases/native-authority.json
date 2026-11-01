@@ -984,6 +984,135 @@
       }
     },
     {
+      "releaseId": "networking-native-kube-api",
+      "contract": "contracts/networking-native-kube-api.yaml",
+      "namespace": "kube-system",
+      "inventory": [
+        "apps/Deployment/kube-system/kube-api-observer-proxy",
+        "core/ConfigMap/kube-system/kube-api-observer-proxy",
+        "core/Service/kube-system/kube-api-observer-proxy",
+        "gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy",
+        "gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service",
+        "gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "kube-api-observer-proxy"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "kube-api-observer-proxy"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "kube-api-observer-proxy"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "backendtlspolicies"
+          ],
+          "resourceNames": [
+            "kube-api-observer-proxy"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "httproutes"
+          ],
+          "resourceNames": [
+            "kube-api-service"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "gateway.networking.k8s.io"
+          ],
+          "resources": [
+            "tcproutes"
+          ],
+          "resourceNames": [
+            "kube-api-public"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-kube-api"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-kube-api",
+          "namespace": "kube-system"
+        },
+        "data": {}
+      }
+    },
+    {
       "releaseId": "networking-native-kube-system",
       "contract": "contracts/networking-native-kube-system.yaml",
       "namespace": "kube-system",
@@ -994,7 +1123,6 @@
         "apps/DaemonSet/kube-system/host-network-controller",
         "apps/DaemonSet/kube-system/podcidr-fabric-reconciler",
         "apps/DaemonSet/kube-system/public-mesh-podcidr-reconciler",
-        "apps/Deployment/kube-system/kube-api-observer-proxy",
         "apps/Deployment/kube-system/kube-api-overseas-relay",
         "apps/Deployment/kube-system/zerotier-planet",
         "cert-manager.io/Certificate/kube-system/access-subdomains",
@@ -1016,21 +1144,16 @@
         "core/ConfigMap/kube-system/control-transit-controller-98df2kft25",
         "core/ConfigMap/kube-system/host-network-contract",
         "core/ConfigMap/kube-system/host-network-controller-679588ggt2",
-        "core/ConfigMap/kube-system/kube-api-observer-proxy",
         "core/ConfigMap/kube-system/kube-api-overseas-relay",
         "core/ConfigMap/kube-system/native-routing-rollout-order",
         "core/ConfigMap/kube-system/podcidr-fabric-inventory",
         "core/ConfigMap/kube-system/podcidr-fabric-reconciler",
         "core/ConfigMap/kube-system/public-mesh-podcidr",
-        "core/Service/kube-system/kube-api-observer-proxy",
         "core/Service/kube-system/kube-api-overseas-relay",
         "core/Service/kube-system/kube-dns",
         "core/ServiceAccount/kube-system/control-dns-reachability",
         "core/ServiceAccount/kube-system/host-network-controller",
-        "gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy",
-        "gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary",
-        "gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service",
-        "gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public"
+        "gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary"
       ],
       "rules": [
         {
@@ -1061,7 +1184,6 @@
             "deployments"
           ],
           "resourceNames": [
-            "kube-api-observer-proxy",
             "kube-api-overseas-relay",
             "zerotier-planet"
           ],
@@ -1139,7 +1261,6 @@
             "control-transit-controller-98df2kft25",
             "host-network-contract",
             "host-network-controller-679588ggt2",
-            "kube-api-observer-proxy",
             "kube-api-overseas-relay",
             "native-routing-rollout-order",
             "podcidr-fabric-inventory",
@@ -1175,24 +1296,8 @@
             "services"
           ],
           "resourceNames": [
-            "kube-api-observer-proxy",
             "kube-api-overseas-relay",
             "kube-dns"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "gateway.networking.k8s.io"
-          ],
-          "resources": [
-            "backendtlspolicies"
-          ],
-          "resourceNames": [
-            "kube-api-observer-proxy"
           ],
           "verbs": [
             "get",
@@ -1208,36 +1313,6 @@
           ],
           "resourceNames": [
             "re8ch-gateway-canary"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "gateway.networking.k8s.io"
-          ],
-          "resources": [
-            "httproutes"
-          ],
-          "resourceNames": [
-            "kube-api-service"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "gateway.networking.k8s.io"
-          ],
-          "resources": [
-            "tcproutes"
-          ],
-          "resourceNames": [
-            "kube-api-public"
           ],
           "verbs": [
             "get",

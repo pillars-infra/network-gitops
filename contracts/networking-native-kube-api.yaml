@@ -1,0 +1,55 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-kube-api
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: kube-system
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-kube-api
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-native-kube-api
+    resources:
+    - apps/Deployment
+    - core/ConfigMap
+    - core/Service
+    - gateway.networking.k8s.io/BackendTLSPolicy
+    - gateway.networking.k8s.io/HTTPRoute
+    - gateway.networking.k8s.io/TCPRoute
+    objectNames:
+    - kube-api-observer-proxy
+    - kube-api-public
+    - kube-api-service
+    forceConflictObjects:
+    - apps/Deployment/kube-system/kube-api-observer-proxy
+    - core/ConfigMap/kube-system/kube-api-observer-proxy
+    - core/Service/kube-system/kube-api-observer-proxy
+    - gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy
+    - gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service
+    - gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public
+  inventory:
+    digest: sha256:049109a67cb04131c50d3fcfe0c0586eb45a7abf9cb8c0a686004dbdb77730e3
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []
