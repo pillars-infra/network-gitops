@@ -469,7 +469,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/config-revision: observer-proxy-v2
+        networking.re8ch.com/config-revision: observer-proxy-hostnet-v1
       labels:
         app.kubernetes.io/name: kube-api-observer-proxy
         operations.re8ch.com/credential-contract: node-observer
@@ -491,7 +491,7 @@ spec:
           timeoutSeconds: 5
         name: proxy
         ports:
-        - containerPort: 6443
+        - containerPort: 16443
           name: kube-api
           protocol: TCP
         readinessProbe:
@@ -522,6 +522,8 @@ spec:
         - mountPath: /config
           name: config
           readOnly: true
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
       nodeSelector:
         kubernetes.io/hostname: r640
       securityContext:
@@ -1665,7 +1667,7 @@ data:
     \    )\n    upstream_writer.close()\n    client_writer.close()\n    await asyncio.gather(\n\
     \        upstream_writer.wait_closed(), client_writer.wait_closed(), return_exceptions=True\n\
     \    )\n\n\nasync def main():\n    server = await asyncio.start_server(handle,\
-    \ \"0.0.0.0\", 6443, backlog=64)\n    async with server:\n        await server.serve_forever()\n\
+    \ \"0.0.0.0\", 16443, backlog=64)\n    async with server:\n        await server.serve_forever()\n\
     \n\nasyncio.run(main())\n"
 kind: ConfigMap
 metadata:
