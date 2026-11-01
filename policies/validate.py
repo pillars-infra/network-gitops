@@ -176,11 +176,8 @@ if "kube-api-overseas-relay.yaml" not in cluster_resources:
     errors.append("production root must reconcile the overseas kube API relay")
 kube_api_documents = [d for d in yaml.safe_load_all(
     (root / "clusters/re8ch/kube-api-public.yaml").read_text()) if d]
-kube_api_route = next((doc for doc in kube_api_documents if doc.get("kind") == "TCPRoute"), None)
-kube_api_backends = (((kube_api_route or {}).get("spec", {}).get("rules") or [{}])[0]
-                     .get("backendRefs", []))
-if kube_api_backends != [{"name": "kube-api-observer-proxy", "port": 6443}]:
-    errors.append("public kube API TCPRoute must terminate its transport at the local observer proxy")
+if any(doc.get("kind") == "TCPRoute" for doc in kube_api_documents):
+    errors.append("legacy public kube API TCPRoute must be retired")
 api_https_route = next((doc for doc in kube_api_documents if doc.get("kind") == "HTTPRoute"
                         and doc.get("metadata", {}).get("name") == "kube-api-service"), None)
 if ((api_https_route or {}).get("spec", {}).get("hostnames") != ["kube-api.service.re8ch.com"] or
@@ -189,9 +186,8 @@ if ((api_https_route or {}).get("spec", {}).get("hostnames") != ["kube-api.servi
         ((api_https_route or {}).get("spec", {}).get("rules") or [{}])[0].get("backendRefs") !=
         [{"name": "kube-api-observer-proxy", "port": 6443}]):
     errors.append("public kube API HTTPRoute must use the service wildcard listener")
-gateway_patch = yaml.safe_load((root / "clusters/re8ch/gateway-kube-api-patch.yaml").read_text())
-if any(op.get("value", {}).get("name") == "kube-api-https" for op in gateway_patch):
-    errors.append("public kube API must share the service HTTPS listener")
+if (root / "clusters/re8ch/gateway-kube-api-patch.yaml").exists():
+    errors.append("legacy public kube API Gateway listener patch must be retired")
 api_backend_tls = next((doc for doc in kube_api_documents if doc.get("kind") == "BackendTLSPolicy"), None)
 if ((api_backend_tls or {}).get("spec", {}).get("validation", {}).get("hostname") !=
         "k3s-api.internal.re8ch.com"):
