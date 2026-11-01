@@ -1189,7 +1189,7 @@
             "gateway.networking.k8s.io"
           ],
           "resources": [
-            "backendtlspolicys"
+            "backendtlspolicies"
           ],
           "resourceNames": [
             "kube-api-observer-proxy"
