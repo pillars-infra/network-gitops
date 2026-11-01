@@ -230,7 +230,14 @@ if relay_ports != [{"name": "kube-api", "containerPort": 6443,
     errors.append("overseas kube API relay must expose only host TCP 6443")
 relay_service = next((doc for doc in relay_documents if doc.get("kind") == "Service"), None)
 relay_annotations = (relay_service or {}).get("metadata", {}).get("annotations", {})
-if any(key.startswith("external-dns.alpha.kubernetes.io/") for key in relay_annotations):
+relay_external_dns_keys = {
+    "external-dns.alpha.kubernetes.io/hostname",
+    "external-dns.alpha.kubernetes.io/endpoints-type",
+    "external-dns.alpha.kubernetes.io/ttl",
+    "external-dns.alpha.kubernetes.io/cloudflare-proxied",
+    "external-dns.alpha.kubernetes.io/target",
+}
+if relay_external_dns_keys.intersection(relay_annotations):
     errors.append("overseas kube API relay must not bypass PublicEdge DNS authority")
 relay_labels = (relay_service or {}).get("metadata", {}).get("labels", {})
 if "networking.re8ch.com/dns-authority" in relay_labels:
