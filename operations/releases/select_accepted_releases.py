@@ -4,6 +4,7 @@
 This snapshot reduces empty jobs; execution must re-read and authorize its state.
 """
 import argparse
+import concurrent.futures
 import json
 from pathlib import Path
 import subprocess
@@ -33,34 +34,42 @@ def read_state(argv, runner, sleeper):
 def select(matrix, root=ROOT, runner=subprocess.run, sleeper=time.sleep):
     selected, skipped, invalid = [], [], []
     with tempfile.TemporaryDirectory(prefix='accepted-selector-') as directory:
-        path=Path(directory)/'state.json'
-        for entry in matrix:
+        def inspect(entry):
             release=entry['release-id']
+            path=Path(directory)/(release+'.json')
             try:
                 result=read_state(['kubectl','get','configmap',state_configmap_name(release),'--namespace',entry['namespace'],
                                   '--ignore-not-found','-o','json'],runner,sleeper)
                 if result.returncode:
-                    invalid.append((release,'state-read-failed'));continue
+                    return 'invalid',release,'state-read-failed',entry
                 if not result.stdout.strip():
-                    skipped.append((release,'no-accepted-state'));continue
+                    return 'skipped',release,'no-accepted-state',entry
                 cm=json.loads(result.stdout)
                 if not isinstance(cm,dict):raise ValueError('invalid state envelope')
                 raw=cm.get('data',{}).get('accepted-state.json')
                 if not raw:
-                    skipped.append((release,'no-accepted-state'));continue
+                    return 'skipped',release,'no-accepted-state',entry
                 state=json.loads(raw)
                 validate_schema(state,"release-accepted-state.schema.json")
                 if state.get('blocked') or state.get('suspended'):
-                    skipped.append((release,'blocked-or-suspended'));continue
+                    return 'skipped',release,'blocked-or-suspended',entry
                 if not state.get('healthyDigest') or state.get('healthyDigest')!=state.get('appliedDigest'):
-                    skipped.append((release,'not-healthy-accepted'));continue
+                    return 'skipped',release,'not-healthy-accepted',entry
                 path.write_text(json.dumps(cm))
                 accepted_bundle(path,root/entry['contract'])
-                selected.append(entry)
+                return 'selected',release,'',entry
             except subprocess.TimeoutExpired:
-                invalid.append((release,'state-read-timeout'))
+                return 'invalid',release,'state-read-timeout',entry
             except (ValueError,KeyError,TypeError,jsonschema.ValidationError):
-                invalid.append((release,'invalid-or-changed-acceptance'))
+                return 'invalid',release,'invalid-or-changed-acceptance',entry
+        # Exact GETs remain independently authorized, but a broken public edge must
+        # not multiply one transport timeout by every contract in the domain.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(4,max(1,len(matrix)))) as pool:
+            results=list(pool.map(inspect,matrix))
+        for kind,release,reason,entry in results:
+            if kind=='selected':selected.append(entry)
+            elif kind=='skipped':skipped.append((release,reason))
+            else:invalid.append((release,reason))
     return selected,skipped,invalid
 
 
