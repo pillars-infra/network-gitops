@@ -207,12 +207,18 @@ proxy_pod_spec = ((proxy_deployment or {}).get("spec", {}).get("template", {}).g
 proxy_revision = (((proxy_deployment or {}).get("spec", {}).get("template", {})
                    .get("metadata", {}).get("annotations", {}))
                   .get("networking.re8ch.com/config-revision"))
-if proxy_revision != "observer-proxy-v2":
+if proxy_revision != "observer-proxy-hostnet-v1":
     errors.append("kube API observer proxy must roll out half-close-safe transport")
 if proxy_pod_spec.get("automountServiceAccountToken") is not False:
     errors.append("kube API observer proxy must not mount a ServiceAccount token")
 if proxy_pod_spec.get("nodeSelector") != {"kubernetes.io/hostname": "r640"}:
     errors.append("kube API observer proxy must remain on the public-authority node")
+if proxy_pod_spec.get("hostNetwork") is not True:
+    errors.append("kube API observer proxy must use the public-authority host network")
+proxy_containers = proxy_pod_spec.get("containers", [])
+proxy_ports = (proxy_containers[0].get("ports", []) if len(proxy_containers) == 1 else [])
+if proxy_ports != [{"name": "kube-api", "containerPort": 16443, "protocol": "TCP"}]:
+    errors.append("kube API observer proxy must expose host TCP 16443")
 relay_documents = [d for d in yaml.safe_load_all(
     (root / "clusters/re8ch/kube-api-overseas-relay.yaml").read_text()) if d]
 relay_deployment = next((doc for doc in relay_documents if doc.get("kind") == "Deployment"), None)

@@ -48,7 +48,7 @@ data:
 
 
     async def main():
-        server = await asyncio.start_server(handle, "0.0.0.0", 6443, backlog=64)
+        server = await asyncio.start_server(handle, "0.0.0.0", 16443, backlog=64)
         async with server:
             await server.serve_forever()
 
@@ -68,12 +68,14 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/config-revision: observer-proxy-v2
+        networking.re8ch.com/config-revision: observer-proxy-hostnet-v1
       labels:
         app.kubernetes.io/name: kube-api-observer-proxy
         operations.re8ch.com/credential-contract: node-observer
     spec:
       automountServiceAccountToken: false
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       nodeSelector:
         kubernetes.io/hostname: r640
       securityContext:
@@ -85,7 +87,7 @@ spec:
           command: ["python3", "/config/proxy.py"]
           ports:
             - name: kube-api
-              containerPort: 6443
+              containerPort: 16443
               protocol: TCP
           readinessProbe:
             exec:
