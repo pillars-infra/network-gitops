@@ -176,14 +176,7 @@ metadata:
   name: kube-api-overseas-relay
   namespace: kube-system
   labels:
-    networking.re8ch.com/dns-authority: public-edge
     operations.re8ch.com/credential-contract: node-observer
-  annotations:
-    external-dns.alpha.kubernetes.io/hostname: kube-api.re8ch.com
-    external-dns.alpha.kubernetes.io/endpoints-type: NodeExternalIP
-    external-dns.alpha.kubernetes.io/ttl: "60"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
-    networking.re8ch.com/public-authority: kubernetes://node/overseas-flk#status.addresses[ExternalIP]
 spec:
   clusterIP: None
   selector:
