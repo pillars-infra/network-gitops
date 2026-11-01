@@ -36,7 +36,7 @@ def test_replay_requires_exact_healthy_acceptance(tmp_path,monkeypatch,fault):
 def test_matrix_and_workflow_have_no_publishing_inputs(monkeypatch):
     monkeypatch.chdir(ROOT)
     matrix=replay_matrix()
-    assert len(matrix)==34
+    assert len(matrix)==33
     assert all(p['audience']==REPLAY_AUDIENCE for p in matrix)
     text=(ROOT/'.github/workflows/networking-reconcile.yml').read_text()
     workflow=yaml.safe_load(text)

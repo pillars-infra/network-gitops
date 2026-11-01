@@ -8,6 +8,7 @@ import pytest
 from test_ssa_release_executor import prepare,executor,Runner,NOW
 import select_accepted_releases as selector
 import refresh_kubeconfig
+from profile import replay_matrix
 
 
 def fixture(tmp_path):
@@ -106,6 +107,10 @@ def test_empty_selector_outputs_skip_flag(tmp_path,monkeypatch):
     assert 'matrix={"include":[]}\n' in output.read_text()
     assert 'has-accepted=false\n' in output.read_text()
     assert 'invalid=0\n' in output.read_text()
+
+
+def test_retired_flux_namespace_is_not_a_cloud_replay_target():
+    assert all(entry['namespace'] != 'flux-network-system' for entry in replay_matrix())
 
 
 def test_domain_outage_is_bounded_by_four_exact_reads(tmp_path):
