@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-api-observer-proxy
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-api-observer-proxy
+  template:
+    metadata:
+      annotations:
+        networking.re8ch.com/config-revision: observer-proxy-hostnet-v1
+      labels:
+        app.kubernetes.io/name: kube-api-observer-proxy
+        operations.re8ch.com/credential-contract: node-observer
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - python3
+        - /config/proxy.py
+        image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+        livenessProbe:
+          exec:
+            command:
+            - python3
+            - -c
+            - import socket; socket.create_connection(('10.43.0.1', 443), 3).close()
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+        name: proxy
+        ports:
+        - containerPort: 16443
+          name: kube-api
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - python3
+            - -c
+            - import socket; socket.create_connection(('10.43.0.1', 443), 3).close()
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 5m
+            memory: 16Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: r640
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - configMap:
+          name: kube-api-observer-proxy
+        name: config
+---
+apiVersion: v1
+data:
+  proxy.py: "#!/usr/bin/env python3\n\"\"\"Credential-free TCP bridge from the public\
+    \ Gateway to the internal API.\"\"\"\nimport asyncio\n\n\nUPSTREAM_HOST = \"10.43.0.1\"\
+    \nUPSTREAM_PORT = 443\n\n\nasync def pump(reader, writer):\n    try:\n       \
+    \ while data := await reader.read(65536):\n            writer.write(data)\n  \
+    \          await writer.drain()\n    finally:\n        try:\n            writer.write_eof()\n\
+    \            await writer.drain()\n        except (AttributeError, OSError):\n\
+    \            writer.close()\n\n\nasync def handle(client_reader, client_writer):\n\
+    \    try:\n        upstream_reader, upstream_writer = await asyncio.wait_for(\n\
+    \            asyncio.open_connection(UPSTREAM_HOST, UPSTREAM_PORT), timeout=5\n\
+    \        )\n    except (OSError, TimeoutError):\n        client_writer.close()\n\
+    \        return\n    await asyncio.gather(\n        pump(client_reader, upstream_writer),\n\
+    \        pump(upstream_reader, client_writer),\n        return_exceptions=True,\n\
+    \    )\n    upstream_writer.close()\n    client_writer.close()\n    await asyncio.gather(\n\
+    \        upstream_writer.wait_closed(), client_writer.wait_closed(), return_exceptions=True\n\
+    \    )\n\n\nasync def main():\n    server = await asyncio.start_server(handle,\
+    \ \"0.0.0.0\", 16443, backlog=64)\n    async with server:\n        await server.serve_forever()\n\
+    \n\nasyncio.run(main())\n"
+kind: ConfigMap
+metadata:
+  name: kube-api-observer-proxy
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+  name: kube-api-observer-proxy
+  namespace: kube-system
+spec:
+  ports:
+  - name: kube-api
+    port: 6443
+    protocol: TCP
+    targetPort: kube-api
+  selector:
+    app.kubernetes.io/name: kube-api-observer-proxy
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: kube-api-observer-proxy
+  namespace: kube-system
+spec:
+  targetRefs:
+  - group: ''
+    kind: Service
+    name: kube-api-observer-proxy
+    sectionName: kube-api
+  validation:
+    caCertificateRefs:
+    - group: ''
+      kind: ConfigMap
+      name: kube-root-ca.crt
+    hostname: k3s-api.internal.re8ch.com
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+  name: kube-api-service
+  namespace: kube-system
+spec:
+  hostnames:
+  - kube-api.service.re8ch.com
+  parentRefs:
+  - name: re8ch-gateway-canary
+    sectionName: service-wildcard-https
+  rules:
+  - backendRefs:
+    - name: kube-api-observer-proxy
+      port: 6443
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  labels:
+    operations.re8ch.com/credential-contract: node-observer
+  name: kube-api-public
+  namespace: kube-system
+spec:
+  parentRefs:
+  - name: re8ch-gateway-canary
+    sectionName: kube-api
+  rules:
+  - backendRefs:
+    - name: kube-api-observer-proxy
+      port: 6443

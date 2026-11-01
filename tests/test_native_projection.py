@@ -6,7 +6,7 @@ import pytest
 import yaml
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'operations/releases'))
-from compile_native import classify, project
+from compile_native import KUBE_API_RELEASE_OBJECTS, classify, project
 from profile import validate_contract
 
 def obj(kind='ConfigMap',namespace='demo'):
@@ -58,3 +58,15 @@ def test_backend_tls_policy_uses_kubernetes_resource_plural():
     _,ledger=project([policy])
     rules=ledger['releases'][0]['rules']
     assert any(rule['resources']==['backendtlspolicies'] and rule['resourceNames']==['sample'] for rule in rules)
+
+
+def test_kube_api_objects_have_a_separate_existing_only_release():
+    docs=[]
+    for path in (ROOT/'clusters/re8ch/kube-api-observer-proxy.yaml',
+                 ROOT/'clusters/re8ch/kube-api-public.yaml'):
+        docs.extend(d for d in yaml.safe_load_all(path.read_text()) if d)
+    _,ledger=project(docs)
+    release=next(x for x in ledger['releases'] if x['releaseId']=='networking-native-kube-api')
+    assert set(release['inventory'])==KUBE_API_RELEASE_OBJECTS
+    assert release['namespace']=='kube-system'
+    assert all(rule['verbs']==['get','patch'] for rule in release['rules'])
