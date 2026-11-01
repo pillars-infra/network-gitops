@@ -29,10 +29,8 @@ spec:
     - core/Service
     - gateway.networking.k8s.io/BackendTLSPolicy
     - gateway.networking.k8s.io/HTTPRoute
-    - gateway.networking.k8s.io/TCPRoute
     objectNames:
     - kube-api-observer-proxy
-    - kube-api-public
     - kube-api-service
     forceConflictObjects:
     - apps/Deployment/kube-system/kube-api-observer-proxy
@@ -40,9 +38,8 @@ spec:
     - core/Service/kube-system/kube-api-observer-proxy
     - gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy
     - gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service
-    - gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public
   inventory:
-    digest: sha256:049109a67cb04131c50d3fcfe0c0586eb45a7abf9cb8c0a686004dbdb77730e3
+    digest: sha256:f028a21138cf2675b1bb6a2b6bc6a13692fecb988454a3d4640edbee34fba357
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

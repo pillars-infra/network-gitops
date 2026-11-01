@@ -22,7 +22,6 @@ KUBE_API_RELEASE_OBJECTS={
     'core/Service/kube-system/kube-api-observer-proxy',
     'gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy',
     'gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service',
-    'gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public',
 }
 
 def classify(document):

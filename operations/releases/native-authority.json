@@ -992,8 +992,7 @@
         "core/ConfigMap/kube-system/kube-api-observer-proxy",
         "core/Service/kube-system/kube-api-observer-proxy",
         "gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy",
-        "gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service",
-        "gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public"
+        "gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service"
       ],
       "rules": [
         {
@@ -1065,21 +1064,6 @@
           ],
           "resourceNames": [
             "kube-api-service"
-          ],
-          "verbs": [
-            "get",
-            "patch"
-          ]
-        },
-        {
-          "apiGroups": [
-            "gateway.networking.k8s.io"
-          ],
-          "resources": [
-            "tcproutes"
-          ],
-          "resourceNames": [
-            "kube-api-public"
           ],
           "verbs": [
             "get",

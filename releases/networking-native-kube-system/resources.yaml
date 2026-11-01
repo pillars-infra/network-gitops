@@ -2550,9 +2550,3 @@ spec:
     protocol: TLS
     tls:
       mode: Passthrough
-  - allowedRoutes:
-      namespaces:
-        from: Same
-    name: kube-api
-    port: 6443
-    protocol: TCP
