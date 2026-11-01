@@ -32,9 +32,10 @@ spec:
     - core/ConfigMap
     - core/Service
     - core/ServiceAccount
+    - gateway.networking.k8s.io/BackendTLSPolicy
     - gateway.networking.k8s.io/Gateway
+    - gateway.networking.k8s.io/HTTPRoute
     - gateway.networking.k8s.io/TCPRoute
-    - gateway.networking.k8s.io/TLSRoute
     objectNames:
     - access-subdomains
     - advfab-worker-node-ips
@@ -48,10 +49,10 @@ spec:
     - host-network-contract
     - host-network-controller
     - host-network-controller-679588ggt2
-    - kube-api-https
     - kube-api-observer-proxy
     - kube-api-overseas-relay
     - kube-api-public
+    - kube-api-service
     - kube-dns
     - native-routing-canary
     - native-routing-mubao-wsl
@@ -109,11 +110,12 @@ spec:
     - core/Service/kube-system/kube-dns
     - core/ServiceAccount/kube-system/control-dns-reachability
     - core/ServiceAccount/kube-system/host-network-controller
+    - gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy
     - gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary
+    - gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service
     - gateway.networking.k8s.io/TCPRoute/kube-system/kube-api-public
-    - gateway.networking.k8s.io/TLSRoute/kube-system/kube-api-https
   inventory:
-    digest: sha256:bcb0bc3c3acf5691982f4026c7da7e826713237f27f268fb42c47115ae5ea3b3
+    digest: sha256:4dba8e2b2789ee4b8811eea2c79059ab01559be06ec77ad249e33a2609f1e47c
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

@@ -7,15 +7,3 @@
     allowedRoutes:
       namespaces:
         from: Same
-- op: add
-  path: /spec/listeners/-
-  value:
-    name: kube-api-https
-    hostname: kube-api.service.re8ch.com
-    protocol: TLS
-    port: 443
-    tls:
-      mode: Passthrough
-    allowedRoutes:
-      namespaces:
-        from: Same
