@@ -96,6 +96,14 @@ def test_initialize_creates_private_fixed_config_without_output_or_overwrite(tmp
     with pytest.raises(FileExistsError):refresh_kubeconfig.initialize()
 
 
+def test_github_workflows_do_not_override_delegated_kube_api_tls_name():
+    root = Path(__file__).resolve().parents[1]
+    for name in ("networking-reconcile.yml", "static-release.yml"):
+        raw = (root / ".github/workflows" / name).read_text()
+        assert "--server=https://kube-api.service.re8ch.com" in raw
+        assert "--tls-server-name=kube-api.re8ch.com" not in raw
+
+
 def test_empty_selector_outputs_skip_flag(tmp_path,monkeypatch):
     import sys
     output=tmp_path/'output';summary=tmp_path/'summary'
