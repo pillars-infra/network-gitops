@@ -89,18 +89,18 @@ def test_initialize_creates_private_fixed_config_without_output_or_overwrite(tmp
     monkeypatch.setattr(refresh_kubeconfig.Executor,'actions_kube_token',lambda self:'fixture-token')
     refresh_kubeconfig.initialize();value=yaml.safe_load(path.read_text())
     assert path.stat().st_mode&0o777==0o600
-    assert value['clusters'][0]['cluster']['server']=='https://kube-api.service.re8ch.com'
+    assert value['clusters'][0]['cluster']['server']=='https://kube-api.re8ch.com:6443'
     assert 'tls-server-name' not in value['clusters'][0]['cluster']
     assert value['users'][0]['user']['token']=='fixture-token'
     assert capsys.readouterr()==('','')
     with pytest.raises(FileExistsError):refresh_kubeconfig.initialize()
 
 
-def test_github_workflows_do_not_override_delegated_kube_api_tls_name():
+def test_github_workflows_use_emergency_bootstrap_kube_api_transport():
     root = Path(__file__).resolve().parents[1]
     for name in ("networking-reconcile.yml", "static-release.yml"):
         raw = (root / ".github/workflows" / name).read_text()
-        assert "--server=https://kube-api.service.re8ch.com" in raw
+        assert "--server=https://kube-api.re8ch.com:6443" in raw
         assert "--tls-server-name=kube-api.re8ch.com" not in raw
 
 
