@@ -46,3 +46,14 @@ jobs:
           kubectl -n kube-system delete tlsroute kube-api-https --ignore-not-found
           kubectl -n kube-system get httproute kube-api-service
           kubectl -n kube-system get backendtlspolicy kube-api-observer-proxy
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error
