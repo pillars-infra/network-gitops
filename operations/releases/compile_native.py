@@ -15,7 +15,7 @@ from operation_materialize import state_configmap_name
 from restricted_configmap import validate_envelope, bind_source
 from profile import REPOSITORY, WORKFLOW, ENVIRONMENT, AUDIENCE, SIGNER
 ROOT=Path(__file__).resolve().parents[2]
-PLURALS={'NetworkPolicy':'networkpolicies','CiliumNetworkPolicy':'ciliumnetworkpolicies','PeerPolicy':'peerpolicies','Ingress':'ingresses'}
+PLURALS={'NetworkPolicy':'networkpolicies','CiliumNetworkPolicy':'ciliumnetworkpolicies','PeerPolicy':'peerpolicies','BackendTLSPolicy':'backendtlspolicies','Ingress':'ingresses'}
 
 def classify(document):
     if 'sops' in document:

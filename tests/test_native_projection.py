@@ -50,3 +50,11 @@ def test_rbac_is_platform_owned_without_executor_inventory():
     _,ledger=project([role,binding,obj()])
     assert len(ledger['platformBootstrap'])==2
     assert all('/Role/' not in x and '/RoleBinding/' not in x for release in ledger['releases'] for x in release['inventory'])
+
+
+def test_backend_tls_policy_uses_kubernetes_resource_plural():
+    policy=obj('BackendTLSPolicy')
+    policy['apiVersion']='gateway.networking.k8s.io/v1'
+    _,ledger=project([policy])
+    rules=ledger['releases'][0]['rules']
+    assert any(rule['resources']==['backendtlspolicies'] and rule['resourceNames']==['sample'] for rule in rules)
