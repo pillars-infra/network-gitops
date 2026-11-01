@@ -183,7 +183,7 @@ if kube_api_backends != [{"name": "kube-api-observer-proxy", "port": 6443}]:
     errors.append("public kube API TCPRoute must terminate its transport at the local observer proxy")
 api_https_route = next((doc for doc in kube_api_documents if doc.get("kind") == "TLSRoute"
                         and doc.get("metadata", {}).get("name") == "kube-api-https"), None)
-if ((api_https_route or {}).get("spec", {}).get("hostnames") != ["kube-api.re8ch.com"] or
+if ((api_https_route or {}).get("spec", {}).get("hostnames") != ["kube-api.service.re8ch.com"] or
         (api_https_route or {}).get("spec", {}).get("parentRefs") !=
         [{"name": "re8ch-gateway-canary", "sectionName": "kube-api-https"}] or
         ((api_https_route or {}).get("spec", {}).get("rules") or [{}])[0].get("backendRefs") !=
@@ -192,7 +192,7 @@ if ((api_https_route or {}).get("spec", {}).get("hostnames") != ["kube-api.re8ch
 gateway_patch = yaml.safe_load((root / "clusters/re8ch/gateway-kube-api-patch.yaml").read_text())
 api_https_listener = next((op.get("value") for op in gateway_patch
                            if op.get("value", {}).get("name") == "kube-api-https"), None)
-if api_https_listener != {"name": "kube-api-https", "hostname": "kube-api.re8ch.com",
+if api_https_listener != {"name": "kube-api-https", "hostname": "kube-api.service.re8ch.com",
                           "protocol": "TLS", "port": 443, "tls": {"mode": "Passthrough"},
                           "allowedRoutes": {"namespaces": {"from": "Same"}}}:
     errors.append("public kube API 443 listener must be hostname-scoped TLS passthrough")
@@ -230,12 +230,11 @@ if relay_ports != [{"name": "kube-api", "containerPort": 6443,
     errors.append("overseas kube API relay must expose only host TCP 6443")
 relay_service = next((doc for doc in relay_documents if doc.get("kind") == "Service"), None)
 relay_annotations = (relay_service or {}).get("metadata", {}).get("annotations", {})
-if relay_annotations.get("external-dns.alpha.kubernetes.io/hostname") != "kube-api.re8ch.com":
-    errors.append("overseas kube API relay must own the observer hostname")
-if relay_annotations.get("external-dns.alpha.kubernetes.io/endpoints-type") != "NodeExternalIP":
-    errors.append("observer DNS must derive its target from Kubernetes Node status")
-if "external-dns.alpha.kubernetes.io/target" in relay_annotations:
-    errors.append("observer DNS must not duplicate a node public IP in static YAML")
+if any(key.startswith("external-dns.alpha.kubernetes.io/") for key in relay_annotations):
+    errors.append("overseas kube API relay must not bypass PublicEdge DNS authority")
+relay_labels = (relay_service or {}).get("metadata", {}).get("labels", {})
+if "networking.re8ch.com/dns-authority" in relay_labels:
+    errors.append("overseas kube API relay must not claim delegated DNS authority")
 external_dns_patch = yaml.safe_load((root / "clusters/re8ch/external-dns-control-api.yaml").read_text())
 external_dns_containers = (((external_dns_patch.get("spec") or {}).get("template") or {})
                            .get("spec", {}).get("containers", []))

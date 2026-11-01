@@ -1949,14 +1949,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
-    external-dns.alpha.kubernetes.io/endpoints-type: NodeExternalIP
-    external-dns.alpha.kubernetes.io/hostname: kube-api.re8ch.com
-    external-dns.alpha.kubernetes.io/ttl: '60'
-    networking.re8ch.com/public-authority: kubernetes://node/overseas-flk#status.addresses[ExternalIP]
   labels:
-    networking.re8ch.com/dns-authority: public-edge
     operations.re8ch.com/credential-contract: node-observer
   name: kube-api-overseas-relay
   namespace: kube-system
@@ -2682,7 +2675,7 @@ spec:
   - allowedRoutes:
       namespaces:
         from: Same
-    hostname: kube-api.re8ch.com
+    hostname: kube-api.service.re8ch.com
     name: kube-api-https
     port: 443
     protocol: TLS
@@ -2714,7 +2707,7 @@ metadata:
   namespace: kube-system
 spec:
   hostnames:
-  - kube-api.re8ch.com
+  - kube-api.service.re8ch.com
   parentRefs:
   - name: re8ch-gateway-canary
     sectionName: kube-api-https

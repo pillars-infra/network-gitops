@@ -25975,7 +25975,7 @@ spec:
         acceptedStatuses:
         - 200
         class: api
-        probeHost: kube-api.re8ch.com
+        probeHost: kube-api.service.re8ch.com
         probeTrust: kubernetes-ca
         probePath: /readyz
         service: kube-api
