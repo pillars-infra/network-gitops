@@ -21,7 +21,9 @@ def preflight(executor,contract,operation,bundle,state_dir):
     if contract["spec"]["authorization"].get("requireExisting",False):audited=executor.with_existing_versions(audited)
     try:parity=check(audited,Store(state_dir,operation['releaseId']).state(),executor.command)
     except TopologyParityError as error:raise Rejected(str(error)) from None
-    executor.apply(audited,contract['spec']['authorization']['fieldManager'],dry_run=True,force_objects=requested)
+    executor.apply(audited,contract['spec']['authorization']['fieldManager'],dry_run=True,
+                   force_objects=requested,
+                   rebind_existing=contract['spec']['authorization'].get('requireExisting',False))
     return {'releaseId':operation['releaseId'],'preflight':'accepted','topologyParity':parity,'inventory':[object_identity(o) for o in objects]}
 
 def main():

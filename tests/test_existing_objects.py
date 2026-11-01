@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 import pytest
 from test_ssa_release_executor import prepare,executor,NOW,Runner,compile_bundle,canonical,digest
+from ssa_preflight import preflight
 
 class ExistingRunner(Runner):
     def __init__(self,fault=None):super().__init__();self.fault=fault;self.written=False
@@ -53,6 +54,25 @@ def test_resource_version_precondition_is_bound_after_signature(tmp_path):
     assert path.read_bytes()==before
     applies=[json.loads(data) for argv,data in runner.calls if argv[:2]==['kubectl','apply']]
     assert len(applies)==2 and all(o['metadata']['resourceVersion']=='17' for o in applies)
+
+
+def test_preflight_refreshes_version_before_server_dry_run(tmp_path):
+    class UpdatingRunner(ExistingRunner):
+        def __init__(self):
+            super().__init__(); self.reads=0
+        def __call__(self,argv,**kwargs):
+            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+                self.reads+=1
+                self.calls.append((argv,kwargs.get('input')))
+                return subprocess.CompletedProcess(argv,0,str(16+self.reads),'')
+            if argv[:2]==['kubectl','apply']:
+                self.calls.append((argv,kwargs.get('input')))
+                assert json.loads(kwargs['input'])['metadata']['resourceVersion']==str(16+self.reads)
+                return subprocess.CompletedProcess(argv,0,'','')
+            return super().__call__(argv,**kwargs)
+    value,op,path=fixture(tmp_path);runner=UpdatingRunner()
+    result=preflight(executor.Executor(runner=runner,now=lambda:NOW),value,op,path,tmp_path/'state')
+    assert result['preflight']=='accepted' and runner.reads>=2
 
 def test_adoption_refreshes_version_after_dry_run(tmp_path):
     class UpdatingRunner(ExistingRunner):
