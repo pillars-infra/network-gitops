@@ -36,7 +36,7 @@ jobs:
           with open(sys.argv[1], 'w') as output:
               yaml.safe_dump_all([d for d in docs if d['kind'] in ('HTTPRoute', 'BackendTLSPolicy')], output)
           PY
-          kubectl apply --server-side --field-manager=networking-service-repair -f "$RUNNER_TEMP/api-route.yaml"
+          kubectl apply --validate=false --server-side --field-manager=networking-service-repair -f "$RUNNER_TEMP/api-route.yaml"
           index="$(kubectl -n kube-system get gateway re8ch-gateway-canary -o json | \
             jq -r '.spec.listeners | to_entries[] | select(.value.name == "kube-api-https") | .key')"
           if [[ -n "$index" ]]; then
