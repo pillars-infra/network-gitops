@@ -11,13 +11,6 @@ resources:
   - routeros-public-forward-controller.yaml
   - multi-pool
 patches:
-  - path: gateway-kube-api-patch.yaml
-    target:
-      group: gateway.networking.k8s.io
-      version: v1
-      kind: Gateway
-      namespace: kube-system
-      name: re8ch-gateway-canary
   - path: advanced-fabric-control-plane-offload.yaml
     target:
       group: helm.toolkit.fluxcd.io
