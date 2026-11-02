@@ -608,7 +608,10 @@ class Executor:
                        rebind_existing=contract["spec"]["authorization"].get("requireExisting", False))
         lifecycle = contract["spec"]["lifecycle"]
         if observe_only:
-            healthy, reason = self.wait_healthy(selected_objects, 0, lifecycle.get("healthChecks"))
+            try:
+                healthy, reason = self.wait_healthy(selected_objects, 0, lifecycle.get("healthChecks"))
+            except (subprocess.TimeoutExpired, Rejected):
+                healthy, reason = False, "readiness observation unavailable; diagnostics withheld"
             result = {
                 "apiVersion": "delivery.re8ch.com/release-result/v1alpha1",
                 "operationId": operation["operationId"], "releaseId": operation["releaseId"],

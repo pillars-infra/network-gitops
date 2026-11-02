@@ -193,6 +193,19 @@ def test_observe_only_dry_runs_and_snapshots_without_apply_or_acceptance(tmp_pat
     assert not (root / "state/demo.json").exists()
 
 
+def test_observe_only_health_read_failure_is_degraded_without_sensitive_diagnostics(tmp_path):
+    value, operation, bundle_path = prepare(tmp_path)
+    base = Runner()
+    def runner(argv, **kwargs):
+        if argv[:2] == ["kubectl", "get"]:
+            raise subprocess.TimeoutExpired(["kubectl", "--token=fixture-secret"], 30)
+        return base(argv, **kwargs)
+    result = executor.Executor(runner=runner, now=lambda: NOW).reconcile(
+        value, operation, bundle_path, tmp_path / "state", verify_signature=False, observe_only=True)
+    assert result["outcome"] == "degraded" and result["health"]["status"] == "degraded"
+    assert "fixture-secret" not in json.dumps(result)
+
+
 def test_explicit_empty_stage_selection_finalizes_without_applying_objects(tmp_path):
     value, operation, bundle_path = prepare(tmp_path)
     runner = Runner()
