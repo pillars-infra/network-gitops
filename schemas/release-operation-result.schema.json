@@ -15,8 +15,8 @@
     "inventoryDigest": {"$ref": "#/$defs/digest"},
     "startedAt": {"type": "string", "format": "date-time"},
     "finishedAt": {"type": "string", "format": "date-time"},
-    "outcome": {"enum": ["healthy", "rejected", "rolled-back", "rollback-failed", "failed"]},
-    "health": {"type": "object", "additionalProperties": false, "required": ["status"], "properties": {"status": {"enum": ["healthy", "unhealthy", "unknown"]}, "reason": {"type": "string", "maxLength": 512}}},
+    "outcome": {"enum": ["healthy", "degraded", "rejected", "rolled-back", "rollback-failed", "failed"]},
+    "health": {"type": "object", "additionalProperties": false, "required": ["status"], "properties": {"status": {"enum": ["healthy", "degraded", "unhealthy", "unknown"]}, "reason": {"type": "string", "maxLength": 512}}},
     "application": {"type": "object", "additionalProperties": false, "required": ["status", "attemptedInventory", "appliedInventory"], "properties": {"status": {"enum": ["complete", "partial-or-unknown"]}, "attemptedInventory": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}, "appliedInventory": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}}},
     "rollbackDigest": {"$ref": "#/$defs/digest"}
   },

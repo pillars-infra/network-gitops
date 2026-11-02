@@ -13,6 +13,7 @@
     "bundleReference": {"type": "string", "pattern": "^oci://"},
     "payloadDigest": {"$ref": "#/$defs/digest"},
     "appliedDigest": {"$ref": "#/$defs/digest"},
+    "acceptedDigest": {"$ref": "#/$defs/digest"},
     "healthyDigest": {"$ref": "#/$defs/digest"},
     "inventoryDigest": {"$ref": "#/$defs/digest"},
     "inventory": {"type": "array", "items": {"type": "string"}},
