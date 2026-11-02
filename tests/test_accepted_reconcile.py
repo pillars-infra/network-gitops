@@ -47,5 +47,6 @@ def test_matrix_and_workflow_have_no_publishing_inputs(monkeypatch):
     publisher=yaml.safe_load((ROOT/'.github/workflows/static-release.yml').read_text())
     assert publisher['concurrency']['group']=='networking-static-release-${{ inputs.contract }}'
     assert publisher['jobs']['execute']['concurrency']==workflow['jobs']['reconcile']['concurrency']=={'group':'networking-runtime-write','queue':'max','cancel-in-progress':False}
+    assert '--observe-only' in text
     assert 'packages: write' not in text
     assert 'flux push' not in text and 'cosign sign' not in text and 'compile_' not in text
