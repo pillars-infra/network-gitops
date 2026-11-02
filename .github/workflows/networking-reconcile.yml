@@ -125,7 +125,7 @@ jobs:
           done
           echo "KUBECONFIG=$kubeconfig" >> "$GITHUB_ENV"
       - id: accepted
-        name: Resolve accepted state and reconcile without rebuilding
+        name: Resolve accepted state and observe without applying
         env:
           SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
           CONTRACT: '${{ matrix.contract }}'
@@ -153,7 +153,7 @@ jobs:
             --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json"
           executor_status=0
           python operations/releases/ssa_executor.py --contract "$CONTRACT" --operation "$RUNNER_TEMP/operation.json" \
-            --bundle "$RUNNER_TEMP/pulled/release.bundle" --state-dir "$root" > "$RUNNER_TEMP/result.json" || executor_status=$?
+            --bundle "$RUNNER_TEMP/pulled/release.bundle" --state-dir "$root" --observe-only > "$RUNNER_TEMP/result.json" || executor_status=$?
           python operations/releases/operation_materialize.py state-patch --configmap "$RUNNER_TEMP/state-cm.json" \
             --state-dir "$root" --release-id "$RELEASE_ID" --result "$RUNNER_TEMP/result.json" --output "$RUNNER_TEMP/state-patch.json"
           if [[ -s "$RUNNER_TEMP/state-patch.json" ]]; then
