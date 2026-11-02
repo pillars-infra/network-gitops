@@ -23,6 +23,10 @@ KUBE_API_RELEASE_OBJECTS={
     'gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy',
     'gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service',
 }
+OBSERVED_READINESS_RELEASES={
+    'networking-helm-cilium-kube-system',
+    'networking-native-kube-system',
+}
 
 def classify(document):
     if 'sops' in document:
@@ -54,13 +58,15 @@ def project(documents, prefix="networking-native", source_context=None):
     for (name,namespace),objects in sorted(groups.items()):
         objects.sort(key=object_identity);folder=f'releases/{name}'
         inventory=sorted(object_identity(o) for o in objects)
+        lifecycle={'prune':False,'healthTimeoutSeconds':300,'protectedKinds':['Namespace','CustomResourceDefinition','PersistentVolume','PersistentVolumeClaim','StorageClass'],'deletionAllowlist':[]}
+        if name in OBSERVED_READINESS_RELEASES:lifecycle['readinessPolicy']='observe'
         contract={'apiVersion':'delivery.re8ch.com/v1alpha1','kind':'ReleaseContract','metadata':{'name':name},'spec':{
             'authorityDomain':'networking','target':{'cluster':'re8ch','namespace':namespace},
             'source':{'renderer':'kustomize','revision':'github-main-reviewed','repository':REPOSITORY,'path':folder,**(source_context or {})},
             'provenance':{'repository':REPOSITORY,'workflow':WORKFLOW,'ref':'refs/heads/main','environment':ENVIRONMENT,'audience':AUDIENCE,'signer':SIGNER,'issuer':'https://token.actions.githubusercontent.com'},
             'authorization':{'requireExisting':True,'fieldManager':'re8ch-release/'+name,'resources':sorted({api_group(o['apiVersion'])+'/'+o['kind'] for o in objects}),'objectNames':sorted({o['metadata']['name'] for o in objects}),'forceConflictObjects':inventory},
             'inventory':{'digest':digest(canonical(inventory))},
-            'lifecycle':{'prune':False,'healthTimeoutSeconds':300,'protectedKinds':['Namespace','CustomResourceDefinition','PersistentVolume','PersistentVolumeClaim','StorageClass'],'deletionAllowlist':[]}}}
+            'lifecycle':lifecycle}}
         rendered=yaml.safe_dump_all(objects,sort_keys=False)
         compile_bundle(contract,rendered.encode()) # Validate identity, pinning and envelope before emitting.
         files[f'contracts/{name}.yaml']=yaml.safe_dump(contract,sort_keys=False)

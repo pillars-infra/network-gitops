@@ -5,7 +5,19 @@ import sys
 import uuid
 import yaml
 import pytest
-from test_ssa_release_executor import prepare, executor, materialize, NOW, Runner, staged_release, operation_for
+from test_ssa_release_executor import prepare, executor, materialize, NOW, Runner, staged_release, operation_for, compile_bundle, rendered
+
+
+def observed_release(tmp_path):
+    value, op, bundle = prepare(tmp_path)
+    value['spec']['lifecycle']['readinessPolicy'] = 'observe'
+    archive, manifest = compile_bundle(value, rendered())
+    bundle.write_bytes(archive)
+    op['contractDigest'] = executor.digest(executor.canonical(value))
+    op['bundle']['digest'] = executor.digest(archive)
+    op['bundle']['payloadDigest'] = executor.digest(archive)
+    op['inventoryDigest'] = manifest['inventoryDigest']
+    return value, op, bundle
 
 
 def test_first_health_timeout_persists_failed_result_without_acceptance(tmp_path,monkeypatch):
@@ -33,6 +45,37 @@ def test_first_health_timeout_persists_failed_result_without_acceptance(tmp_path
     runner.live=None
     assert engine.reconcile(value,retry,bundle,hydrated,False)['outcome']=='healthy'
     assert json.loads((hydrated/'state/demo.json').read_text())['sequence']==1
+
+
+def test_observed_readiness_degradation_accepts_complete_apply_without_rollback(tmp_path, monkeypatch):
+    value, op, bundle = observed_release(tmp_path)
+    runner = Runner(live={'metadata': {'generation': 2}, 'spec': {'replicas': 1},
+                          'status': {'observedGeneration': 2, 'availableReplicas': 0}})
+    ticks = itertools.count(0, 2)
+    monkeypatch.setattr(executor.time, 'monotonic', lambda: next(ticks))
+    root = tmp_path / 'root'
+    result = executor.Executor(runner=runner, now=lambda: NOW, sleeper=lambda _: None).reconcile(
+        value, op, bundle, root, False)
+    state = json.loads((root / 'state/demo.json').read_text())
+    assert result['outcome'] == 'degraded'
+    assert result['health']['status'] == 'degraded'
+    assert state['acceptedDigest'] == state['appliedDigest'] == op['bundle']['digest']
+    assert 'healthyDigest' not in state
+    assert not [call for call, _ in runner.calls if call[:3] == ['flux', 'pull', 'artifact']]
+
+
+def test_observed_readiness_transport_failure_is_degraded_not_apply_failure(tmp_path):
+    value, op, bundle = observed_release(tmp_path)
+    base = Runner()
+    def runner(argv, **kwargs):
+        if argv[:2] == ['kubectl', 'get']:
+            raise subprocess.TimeoutExpired(['kubectl', '--token=fixture-secret'], 120)
+        return base(argv, **kwargs)
+    root = tmp_path / 'root'
+    result = executor.Executor(runner=runner, now=lambda: NOW).reconcile(value, op, bundle, root, False)
+    assert result['outcome'] == 'degraded' and result['health']['status'] == 'degraded'
+    assert executor.Store(root, 'demo').state()['acceptedDigest'] == op['bundle']['digest']
+    assert 'fixture-secret' not in json.dumps(result)
 
 
 def test_partial_api_failure_records_acknowledged_and_uncertain_writes(tmp_path):
@@ -72,7 +115,8 @@ def test_subprocess_timeout_is_durable_and_never_exposes_argv(tmp_path,phase):
     root=tmp_path/'root'
     result=executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,bundle,root,False)
     assert result['outcome']=='failed' and result['health']['status']=='unknown'
-    assert result['observedDigest'] is None and result['application']['status']=='partial-or-unknown'
+    assert result['observedDigest'] == (None if phase=='apply' else op['bundle']['digest'])
+    assert result['application']['status']==('partial-or-unknown' if phase=='apply' else 'complete')
     assert result['application']['attemptedInventory']==['apps/Deployment/demo/demo']
     assert result['application']['appliedInventory']==([] if phase=='apply' else ['apps/Deployment/demo/demo'])
     assert not (root/'state/demo.json').exists()

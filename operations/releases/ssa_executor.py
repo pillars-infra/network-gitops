@@ -263,8 +263,9 @@ class Executor:
         if replay_only:
             if operation["action"] != "reconcile" or operation.get("forceConflictObjects"):
                 raise Rejected("replay identity permits only unforced reconcile")
-            if not state or state.get("releaseId") != operation["releaseId"] or state.get("healthyDigest") != state.get("appliedDigest"):
-                raise Rejected("replay identity requires healthy accepted state")
+            accepted = state.get("acceptedDigest", state.get("healthyDigest")) if state else None
+            if not state or state.get("releaseId") != operation["releaseId"] or accepted != state.get("appliedDigest"):
+                raise Rejected("replay identity requires accepted state")
             expected = f"oci://ghcr.io/pillars-infra/network-gitops-release/{operation['releaseId']}"
             if (state["bundleReference"] != expected or operation["bundle"]["reference"] != expected
                     or operation["bundle"]["digest"] != state["appliedDigest"]
@@ -606,6 +607,8 @@ class Executor:
                        rebind_existing=contract["spec"]["authorization"].get("requireExisting", False))
         attempted_inventory, applied_inventory = [], []
         command_timed_out = False
+        observation_unknown = False
+        apply_complete = False
         try:
             for stage in stages:
                 for identity in stage["inventory"]:
@@ -613,17 +616,25 @@ class Executor:
                     self.apply([by_identity[identity]], manager, dry_run=False, force_objects=requested_force,
                                rebind_existing=contract["spec"]["authorization"].get("requireExisting", False))
                     applied_inventory.append(identity)
-            lifecycle = contract["spec"]["lifecycle"]
-            healthy, reason = self.wait_healthy(
-                selected_objects, lifecycle["healthTimeoutSeconds"], lifecycle.get("healthChecks"))
+            apply_complete = set(applied_inventory) == set(selected_identity for stage in stages for selected_identity in stage["inventory"])
         except subprocess.TimeoutExpired:
             command_timed_out = True
-            healthy, reason = False, "Kubernetes command timed out; write or health outcome unknown"
+            healthy, reason = False, "Kubernetes apply timed out; write outcome unknown"
         except Rejected as error:
             healthy, reason = False, f"apply failed: {error}"
+        else:
+            lifecycle = contract["spec"]["lifecycle"]
+            try:
+                healthy, reason = self.wait_healthy(
+                    selected_objects, lifecycle["healthTimeoutSeconds"], lifecycle.get("healthChecks"))
+            except (subprocess.TimeoutExpired, Rejected) as error:
+                observation_unknown = True
+                healthy, reason = False, f"readiness observation unavailable: {error}"
+        readiness_observed = contract["spec"]["lifecycle"].get("readinessPolicy", "block") == "observe"
+        degraded_accepted = apply_complete and not healthy and readiness_observed
         outcome = "healthy"
         rollback_digest = None
-        if not healthy:
+        if not healthy and not degraded_accepted:
             if not previous:
                 complete = not command_timed_out and set(applied_inventory) == set(manifest["inventory"])
                 result = {
@@ -633,7 +644,7 @@ class Executor:
                     "observedDigest": operation["bundle"]["digest"] if complete else None,
                     "inventoryDigest": manifest["inventoryDigest"], "startedAt": started.isoformat(),
                     "finishedAt": self.now().isoformat(), "outcome": "failed",
-                    "health": {"status": "unknown" if command_timed_out else "unhealthy", "reason": ("no accepted rollback bundle; " + reason)[:512]},
+                    "health": {"status": "unknown" if command_timed_out or observation_unknown else "unhealthy", "reason": ("no accepted rollback bundle; " + reason)[:512]},
                     "application": {"status": "complete" if complete else "partial-or-unknown",
                                     "attemptedInventory": sorted(set(attempted_inventory)),
                                     "appliedInventory": sorted(set(applied_inventory))},
@@ -665,16 +676,19 @@ class Executor:
                 "requestDigest": request_digest, "bundleReference": operation["bundle"]["reference"],
                 "payloadDigest": operation["bundle"]["payloadDigest"],
                 "appliedDigest": operation["bundle"]["digest"],
-                "healthyDigest": operation["bundle"]["digest"], "inventoryDigest": manifest["inventoryDigest"],
+                "acceptedDigest": operation["bundle"]["digest"], "inventoryDigest": manifest["inventoryDigest"],
                 "inventory": manifest["inventory"], "objectRefs": [object_ref(item) for item in objects],
                 "history": history, "sequence": operation["sequence"],
                 "updatedAt": self.now().isoformat(), "blocked": False,
             }
+            if healthy:
+                state["healthyDigest"] = operation["bundle"]["digest"]
             store.accept(state)
         if not finalize:
             return {"apiVersion": "delivery.re8ch.com/stage-result/v1alpha1", "operationId": operation["operationId"],
                     "releaseId": operation["releaseId"], "stages": [stage["name"] for stage in stages],
-                    "outcome": "healthy", "health": {"status": "healthy", "reason": reason}}
+                    "outcome": "degraded" if degraded_accepted else "healthy",
+                    "health": {"status": "degraded" if degraded_accepted else "healthy", "reason": reason}}
         if operation["action"] == "rollback" and outcome == "healthy":
             outcome = "rolled-back"
             rollback_digest = operation["bundle"]["digest"]
@@ -684,8 +698,8 @@ class Executor:
             "requestDigest": request_digest, "approvedDigest": operation["bundle"]["digest"],
             "observedDigest": rollback_digest if outcome == "rolled-back" else operation["bundle"]["digest"],
             "inventoryDigest": manifest["inventoryDigest"], "startedAt": started.isoformat(),
-            "finishedAt": self.now().isoformat(), "outcome": outcome,
-            "health": {"status": "healthy" if healthy else "unhealthy", "reason": reason},
+            "finishedAt": self.now().isoformat(), "outcome": "degraded" if degraded_accepted else outcome,
+            "health": {"status": "healthy" if healthy else ("degraded" if degraded_accepted else "unhealthy"), "reason": reason},
         }
         if rollback_digest:
             result["rollbackDigest"] = rollback_digest

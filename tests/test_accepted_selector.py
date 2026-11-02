@@ -22,11 +22,11 @@ def fixture(tmp_path):
     return entry,cm,state
 
 
-@pytest.mark.parametrize('fault',[None,'missing','empty','blocked','suspended','unhealthy','foreign','malformed','read-error','timeout'])
+@pytest.mark.parametrize('fault',[None,'missing','empty','blocked','suspended','unaccepted','foreign','malformed','read-error','timeout'])
 def test_selection_reads_only_exact_state_and_never_selects_invalid_acceptance(tmp_path,fault):
     entry,cm,state=fixture(tmp_path)
     if fault in ['blocked','suspended']:state[fault]=True
-    elif fault=='unhealthy':state['healthyDigest']='sha256:'+'0'*64
+    elif fault=='unaccepted':state['acceptedDigest']='sha256:'+'0'*64
     elif fault=='foreign':state['bundleReference']='oci://attacker.invalid/demo'
     elif fault=='malformed':state={'healthyDigest':'invalid'}
     cm['data']['accepted-state.json']=json.dumps(state)

@@ -76,6 +76,7 @@ spec:
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300
+    readinessPolicy: observe
     protectedKinds:
     - Namespace
     - CustomResourceDefinition

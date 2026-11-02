@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select healthy accepted releases using only exact state ConfigMap GETs.
+"""Select accepted releases using only exact state ConfigMap GETs.
 
 This snapshot reduces empty jobs; execution must re-read and authorize its state.
 """
@@ -53,8 +53,9 @@ def select(matrix, root=ROOT, runner=subprocess.run, sleeper=time.sleep):
                 validate_schema(state,"release-accepted-state.schema.json")
                 if state.get('blocked') or state.get('suspended'):
                     return 'skipped',release,'blocked-or-suspended',entry
-                if not state.get('healthyDigest') or state.get('healthyDigest')!=state.get('appliedDigest'):
-                    return 'skipped',release,'not-healthy-accepted',entry
+                accepted=state.get('acceptedDigest',state.get('healthyDigest'))
+                if not accepted or accepted!=state.get('appliedDigest'):
+                    return 'skipped',release,'not-accepted',entry
                 path.write_text(json.dumps(cm))
                 accepted_bundle(path,root/entry['contract'])
                 return 'selected',release,'',entry

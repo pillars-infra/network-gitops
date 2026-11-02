@@ -400,7 +400,7 @@ def test_archive_path_or_extra_member_is_rejected(tmp_path):
         executor.load_archive(path)
 
 
-@pytest.mark.parametrize("fault", [None, "blocked", "suspended", "healthyDigest", "releaseId", "bundleReference", "inventoryDigest", "namespace"])
+@pytest.mark.parametrize("fault", [None, "blocked", "suspended", "acceptedDigest", "releaseId", "bundleReference", "inventoryDigest", "namespace"])
 def test_replay_resolves_only_target_bound_healthy_acceptance(tmp_path, fault):
     import yaml
     value, operation, bundle_path = prepare(tmp_path)
@@ -410,7 +410,7 @@ def test_replay_resolves_only_target_bound_healthy_acceptance(tmp_path, fault):
     state["bundleReference"] = "oci://ghcr.io/pillars-infra/network-gitops-release/demo"
     if fault in {"blocked", "suspended"}:
         state[fault] = True
-    elif fault in {"healthyDigest", "inventoryDigest"}:
+    elif fault in {"acceptedDigest", "inventoryDigest"}:
         state[fault] = "sha256:" + "f" * 64
     elif fault == "releaseId":
         state[fault] = "another-release"

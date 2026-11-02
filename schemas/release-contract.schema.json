@@ -92,6 +92,7 @@
           "properties": {
             "prune": {"type": "boolean"},
             "healthTimeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 3600},
+            "readinessPolicy": {"enum": ["block", "observe"], "default": "block"},
             "protectedKinds": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
             "deletionAllowlist": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
             "healthChecks": {

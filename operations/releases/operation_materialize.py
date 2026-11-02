@@ -47,8 +47,9 @@ def accepted_bundle(configmap: Path, contract_path: Path) -> dict[str, str]:
         raise ValueError("accepted state belongs to another release")
     if state["blocked"] or state.get("suspended"):
         raise ValueError("release is blocked or suspended")
-    if state.get("healthyDigest") != state["appliedDigest"]:
-        raise ValueError("replay requires a previously healthy accepted digest")
+    accepted = state.get("acceptedDigest", state.get("healthyDigest"))
+    if accepted != state["appliedDigest"]:
+        raise ValueError("replay requires a previously accepted digest")
     expected = f"oci://ghcr.io/pillars-infra/network-gitops-release/{release_id}"
     if state["bundleReference"] != expected:
         raise ValueError("accepted bundle is outside the release repository")
