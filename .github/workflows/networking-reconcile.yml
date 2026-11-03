@@ -2,7 +2,7 @@ name: networking-reconcile
 on:
   workflow_dispatch:
   schedule:
-    - cron: '13,43 * * * *'
+    - cron: '17 3 * * *'
   push:
     branches: [main]
     paths:
