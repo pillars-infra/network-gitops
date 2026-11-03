@@ -284,6 +284,32 @@ def test_normal_apply_does_not_reclaim_conflicting_fields(tmp_path):
     assert "--force-conflicts" not in apply_calls[0][0]
 
 
+def test_server_dry_run_retries_transient_admission_webhook_timeout(tmp_path):
+    value, operation, bundle_path = prepare(tmp_path)
+    base = Runner()
+    attempts = 0
+    sleeps = []
+
+    def runner(argv, **kwargs):
+        nonlocal attempts
+        if argv[:2] == ["kubectl", "apply"] and "--dry-run=server" in argv:
+            attempts += 1
+            if attempts < 3:
+                return subprocess.CompletedProcess(
+                    argv, 1, "",
+                    'Internal error occurred: failed calling webhook "webhook.cert-manager.io": '
+                    'context deadline exceeded')
+        return base(argv, **kwargs)
+
+    result = executor.Executor(
+        runner=runner, now=lambda: NOW, sleeper=sleeps.append).reconcile(
+            value, operation, bundle_path, tmp_path / "state", verify_signature=False)
+
+    assert result["outcome"] == "healthy"
+    assert attempts == 3
+    assert sleeps == [1, 2]
+
+
 def test_force_conflicts_requires_action_and_contract_identity(tmp_path):
     value, operation, bundle_path = prepare(tmp_path)
     identity = "apps/Deployment/demo/demo"

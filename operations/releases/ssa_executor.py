@@ -343,6 +343,9 @@ class Executor:
                                  redact=object_identity(item) in self._restricted_identities)
                     break
                 except Rejected as error:
+                    if dry_run and attempt < 2 and transient_failure("", str(error)):
+                        self.sleeper(2 ** attempt)
+                        continue
                     if not rebind_existing or attempt == 2 or "the object has been modified" not in str(error):
                         raise
 
