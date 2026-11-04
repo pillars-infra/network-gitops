@@ -8,3 +8,5 @@
 - Build, publish and reconcile through the existing cloud SSA workflow and immutable artifacts.
 - Local Flux controllers are retired. Retained Flux manifests are inputs, not permission to restore a writer.
 - Verify real accepted state or server preflight; a merged PR alone is not runtime adoption evidence.
+
+- Before using RE8CH self-service or platform tools, read [docs/RE8CH-TOOLS.md](docs/RE8CH-TOOLS.md) and discover the current authenticated catalog.
