@@ -6,6 +6,10 @@ metadata:
 spec:
   values:
     advancedFabric:
+      dns:
+        kubernetesApiEndpoints:
+          - https://10.250.0.128:6443
+          - https://10.250.0.147:6443
       controller:
         affinity:
           nodeAffinity:
