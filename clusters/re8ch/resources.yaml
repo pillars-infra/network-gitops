@@ -24958,9 +24958,8 @@ spec:
                 enabled: true
                 image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
                 kubernetesApiEndpoints:
+                    - https://10.250.0.128:6443
                     - https://10.250.0.147:6443
-                    - https://10.250.0.125:6443
-                    - https://10.250.0.29:6443
                 migration:
                     phase: active
                 pdbMinAvailable: 3
