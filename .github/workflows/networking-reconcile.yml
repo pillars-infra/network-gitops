@@ -1,6 +1,12 @@
 name: networking-reconcile
+run-name: networking-reconcile ${{ inputs.delivery_id }}
 on:
   workflow_dispatch:
+    inputs:
+      delivery_id:
+        description: Release webhook delivery for accepted-field observation
+        required: false
+        type: string
   schedule:
     - cron: '17 3 * * *'
   push:
@@ -134,6 +140,7 @@ jobs:
         name: Resolve accepted state and observe without applying
         env:
           SOPS_AGE_KEY: '${{ secrets.SOPS_AGE_KEY }}'
+          DELIVERY_ID: ${{ inputs.delivery_id }}
           CONTRACT: '${{ matrix.contract }}'
           RELEASE_ID: '${{ matrix.release-id }}'
           TARGET_NAMESPACE: '${{ matrix.namespace }}'
@@ -157,6 +164,19 @@ jobs:
           flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
           python operations/releases/operation_materialize.py request --replay-only --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
             --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json"
+          if [[ -n "$DELIVERY_ID" ]]; then
+            receipt_status=0
+            python operations/releases/receipt_reconcile.py > "$RUNNER_TEMP/result.json" || receipt_status=$?
+            if [[ -s "$RUNNER_TEMP/executor-result.json" ]]; then
+              python operations/releases/operation_materialize.py state-patch --configmap "$RUNNER_TEMP/state-cm.json" \
+                --state-dir "$root" --release-id "$RELEASE_ID" --result "$RUNNER_TEMP/executor-result.json" --output "$RUNNER_TEMP/state-patch.json"
+              if [[ -s "$RUNNER_TEMP/state-patch.json" ]]; then
+                python operations/releases/refresh_kubeconfig.py
+                kubectl patch configmap "$state_name" -n "$TARGET_NAMESPACE" --type merge --patch-file "$RUNNER_TEMP/state-patch.json"
+              fi
+            fi
+            exit "$receipt_status"
+          fi
           executor_status=0
           python operations/releases/ssa_executor.py --contract "$CONTRACT" --operation "$RUNNER_TEMP/operation.json" \
             --bundle "$RUNNER_TEMP/pulled/release.bundle" --state-dir "$root" --observe-only > "$RUNNER_TEMP/result.json" || executor_status=$?
