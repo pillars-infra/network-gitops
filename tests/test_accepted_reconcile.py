@@ -41,7 +41,7 @@ def test_matrix_and_workflow_have_no_publishing_inputs(monkeypatch):
     text=(ROOT/'.github/workflows/networking-reconcile.yml').read_text()
     workflow=yaml.safe_load(text)
     triggers=workflow.get('on',workflow.get(True))
-    assert triggers['workflow_dispatch'] is None
+    assert set(triggers['workflow_dispatch']['inputs']) == {'delivery_id'}
     assert triggers['schedule']
     assert '--replay-only' in text and 'accepted-bundle' in text
     publisher=yaml.safe_load((ROOT/'.github/workflows/static-release.yml').read_text())
