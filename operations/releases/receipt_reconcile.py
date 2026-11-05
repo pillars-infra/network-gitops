@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import UUID
 
 import yaml
+from operation_materialize import accepted_bundle
 from ssa_executor import Executor, Store, object_identity
 
 
@@ -31,8 +32,9 @@ def run(report):
 
     def require_accepted():
         result = executor.command(["kubectl", "get", "configmap", state_ref["name"], "-n", state_ref["namespace"], "-o", "json"])
-        state = json.loads(json.loads(result.stdout)["data"]["accepted-state.json"])
-        if state["releaseId"] != rid or state["appliedDigest"] != digest or state["healthyDigest"] != digest or state["blocked"] or state.get("suspended"):
+        latest = root / "receipt-accepted-state.json"
+        latest.write_text(result.stdout)
+        if accepted_bundle(latest, Path(os.environ["CONTRACT"]))["digest"] != digest:
             raise ValueError("accepted state changed")
 
     def project(item):
