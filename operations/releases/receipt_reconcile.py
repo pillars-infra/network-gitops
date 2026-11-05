@@ -38,6 +38,10 @@ def run(report):
     def project(item):
         data = json.dumps(item)
         live = json.loads(executor.command(["kubectl", "get", "-f", "-", "-o", "json"], data).stdout)
+        if live.get("kind") == "List":
+            live, = live["items"]
+        if object_identity(live) != object_identity(item):
+            raise ValueError("unexpected readback identity")
         meta = live["metadata"]
         if meta.get("annotations", {}).get("delivery.re8ch.com/release-id") != rid:
             raise ValueError("release ownership differs")
