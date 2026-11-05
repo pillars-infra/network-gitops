@@ -10,7 +10,7 @@ def test_durable_state_write_refreshes_expired_outer_identity(tmp_path):
     for workflow, job in [('static-release.yml', 'execute'), ('networking-reconcile.yml', 'reconcile')]:
         definition = yaml.safe_load((ROOT / '.github/workflows' / workflow).read_text())
         script = next(step['run'] for step in definition['jobs'][job]['steps'] if 'state-patch --configmap' in step.get('run', ''))
-        script = script[script.index('if [[ -s "$RUNNER_TEMP/state-patch.json"'):]
+        script = script[script.rindex('if [[ -s "$RUNNER_TEMP/state-patch.json"'):]
         assert '--token=' not in script and 'Authorization: bearer' not in script
         run_dir = tmp_path / job
         run_dir.mkdir()
