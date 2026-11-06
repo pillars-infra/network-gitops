@@ -157,6 +157,7 @@ class Executor:
         self.runner = runner
         self.now = now
         self.sleeper = sleeper
+        self.apply_only = False
         self._restricted_identities: set[str] = set()
         self._kube_token: str | None = None
         self._kube_token_refresh_at = 0.0
@@ -263,7 +264,7 @@ class Executor:
         if replay_only:
             if operation["action"] != "reconcile" or operation.get("forceConflictObjects"):
                 raise Rejected("replay identity permits only unforced reconcile")
-            accepted = state.get("acceptedDigest", state.get("healthyDigest")) if state else None
+            accepted = state.get("acceptedDigest", state.get("acceptedDigest", state.get("healthyDigest"))) if state else None
             if not state or state.get("releaseId") != operation["releaseId"] or accepted != state.get("appliedDigest"):
                 raise Rejected("replay identity requires accepted state")
             expected = f"oci://ghcr.io/pillars-infra/network-gitops-release/{operation['releaseId']}"
@@ -406,6 +407,11 @@ class Executor:
         if ref["kind"] == "Job":
             return status.get("succeeded", 0) >= spec.get("completions", 1), "job incomplete"
         return True, "healthy"
+
+    def application_health(self, objects, timeout_seconds, checks=None):
+        if self.apply_only:
+            return True, "SSA complete; runtime health is observed separately"
+        return self.wait_healthy(objects, timeout_seconds, checks)
 
     def wait_healthy(self, objects: list[dict], timeout_seconds: int, checks: list[dict] | None = None) -> tuple[bool, str]:
         deadline = time.monotonic() + timeout_seconds
@@ -646,7 +652,7 @@ class Executor:
             healthy, reason = False, f"apply failed: {error}"
         else:
             try:
-                healthy, reason = self.wait_healthy(
+                healthy, reason = self.application_health(
                     selected_objects,
                     0 if lifecycle.get("readinessPolicy", "block") == "observe" else lifecycle["healthTimeoutSeconds"],
                     lifecycle.get("healthChecks"))
@@ -706,6 +712,11 @@ class Executor:
             }
             if healthy:
                 state["healthyDigest"] = operation["bundle"]["digest"]
+            if self.apply_only:
+                state["acceptedDigest"] = operation["bundle"]["digest"]
+                state.pop("healthyDigest", None)
+                if previous and previous.get("healthyDigest"):
+                    state["healthyDigest"] = previous["healthyDigest"]
             store.accept(state)
         if not finalize:
             return {"apiVersion": "delivery.re8ch.com/stage-result/v1alpha1", "operationId": operation["operationId"],
@@ -724,6 +735,11 @@ class Executor:
             "finishedAt": self.now().isoformat(), "outcome": "degraded" if degraded_accepted else outcome,
             "health": {"status": "healthy" if healthy else ("degraded" if degraded_accepted else "unhealthy"), "reason": reason},
         }
+        if self.apply_only and outcome == "healthy":
+            result["outcome"] = "applied"
+            result["health"] = {"status": "unknown", "reason": "SSA complete; Observe has not run"}
+            result["application"] = {"status": "complete", "attemptedInventory": sorted(set(attempted_inventory)),
+                                     "appliedInventory": sorted(set(applied_inventory))}
         if rollback_digest:
             result["rollbackDigest"] = rollback_digest
         validate_schema(result, "release-operation-result.schema.json")
@@ -745,6 +761,7 @@ def main() -> int:
     parser.add_argument("--rollback-stage", action="append", default=[])
     parser.add_argument("--observe-only", action="store_true",
                         help="validate, server-side dry-run, and snapshot readiness without applying")
+    parser.add_argument("--apply-only", action="store_true", help="Execute SSA; observe runtime health in a separate read-only step")
     args = parser.parse_args()
     if args.no_stage_apply and args.stage:
         parser.error("--no-stage-apply cannot be combined with --stage")

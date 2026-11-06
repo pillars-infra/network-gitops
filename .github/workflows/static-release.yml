@@ -389,7 +389,7 @@ jobs:
           fi
           python operations/releases/operation_materialize.py "${request_args[@]}"
           executor_status=0
-          python operations/releases/ssa_executor.py --contract "$CONTRACT" --operation "$RUNNER_TEMP/operation.json" \
+          python operations/releases/ssa_executor.py --apply-only --contract "$CONTRACT" --operation "$RUNNER_TEMP/operation.json" \
             --bundle "$RUNNER_TEMP/pulled/release.bundle" --state-dir "$root" > "$RUNNER_TEMP/result.json" || executor_status=$?
           python operations/releases/operation_materialize.py state-patch --configmap "$RUNNER_TEMP/state-cm.json" \
             --state-dir "$root" --release-id "$RELEASE_ID" --result "$RUNNER_TEMP/result.json" --output "$RUNNER_TEMP/state-patch.json"
@@ -400,6 +400,17 @@ jobs:
           fi
           cp "$RUNNER_TEMP/result.json" static-release-result.json
           exit "$executor_status"
+      - name: Observe runtime health (read-only)
+        if: always()
+        run: python operations/releases/observe_runtime.py
+      - name: Preserve independent observation
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: runtime-observation-${{ github.job }}-${{ strategy.job-index }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/observation.json
+          retention-days: 30
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with: {name: 'static-release-result-${{ github.run_id }}', path: static-release-result.json, retention-days: 30, if-no-files-found: warn}

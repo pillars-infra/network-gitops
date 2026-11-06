@@ -145,3 +145,15 @@ resource creation remains a separate publication authority.
 `networking-reconcile.yml` runs on relevant main changes and twice hourly. It reads each release's durable accepted state, skips releases without acceptance, verifies the publisher signature, and replays that exact healthy digest through the existing SSA executor. It never builds, publishes, changes an inventory, requests force, or migrates a contract. Publication and first adoption retain the protected `static-release.yml` workflow. Both workflows share per-contract concurrency.
 
 The separate `release-reconciler-networking` Environment needs `KUBE_API_CA_PEM` and `SOPS_AGE_KEY`. Its OIDC audience is `https://kube-api.re8ch.com/release-reconciler-networking`, restricted to this repository's main `networking-reconcile.yml` workflow. Platform provisioning maps it to the existing exact networking permissions; no new Kubernetes grants are required. The SOPS key is available only during accepted execution, never an artifact or log. Provision this identity before enabling successful automatic runtime execution.
+
+## Independent SSA and Observe actions
+
+Reconcile reports SSA execution and runtime observation separately. The SSA step
+validates authorization and the signed accepted artifact, performs server-side
+dry-run and apply, then records `outcome: applied` and `acceptedDigest`. It does
+not claim a healthy runtime. The following read-only Observe step publishes a
+separate observation artifact and records healthy, degraded or unknown health.
+Runtime health does not fail SSA, lock the release or trigger rollback. Signature,
+authorization, field ownership and API write failures remain execution failures.
+Legacy `healthyDigest` is only a fallback for older accepted records; new replay
+authorization uses the explicitly accepted digest without inventing health proof.
