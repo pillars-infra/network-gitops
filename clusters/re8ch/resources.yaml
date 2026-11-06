@@ -25913,6 +25913,15 @@ spec:
         class: service-pilot
         probePath: /
         service: cloud-disk-service
+      cube.service.re8ch.com.:
+        acceptedStatuses:
+        - 200
+        - 302
+        - 401
+        - 403
+        class: service-pilot
+        probePath: /
+        service: cube-service
       codex.service.re8ch.com.:
         acceptedStatuses:
         - 200
