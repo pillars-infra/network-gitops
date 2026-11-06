@@ -770,7 +770,9 @@ def main() -> int:
     contract = yaml.safe_load(args.contract.read_text())
     operation = json.loads(args.operation.read_text())
     selected_stages = set() if args.no_stage_apply else (set(args.stage) if args.stage else None)
-    result = Executor().reconcile(contract, operation, args.bundle, args.state_dir,
+    executor = Executor()
+    executor.apply_only = args.apply_only
+    result = executor.reconcile(contract, operation, args.bundle, args.state_dir,
                                   stages=selected_stages, finalize=not args.partial,
                                   current_bundle_path=args.current_bundle,
                                   rollback_stages=set(args.rollback_stage), observe_only=args.observe_only)
