@@ -188,7 +188,7 @@ jobs:
             kubectl patch configmap "$state_name" -n "$TARGET_NAMESPACE" --type merge --patch-file "$RUNNER_TEMP/state-patch.json"
           fi
           if (( executor_status != 0 )); then exit "$executor_status"; fi
-          jq -e '(.outcome == "healthy" and .health.status == "healthy") or (.outcome == "degraded" and .health.status == "degraded")' "$RUNNER_TEMP/result.json" >/dev/null
+          jq -e '.outcome == "healthy" and .health.status == "healthy"' "$RUNNER_TEMP/result.json" >/dev/null
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with: {name: 'networking-reconcile-${{ matrix.release-id }}-${{ github.run_id }}', path: '${{ runner.temp }}/result.json', retention-days: 30, if-no-files-found: warn}

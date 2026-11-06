@@ -580,7 +580,7 @@
         "chart": "charts/cilium-1.21.0-dev.tgz",
         "chartDigest": "sha256:5eea9d46a5afb92d5ce8b6456b8288b39159fbfd4c4b71efc8a44116105a6147"
       },
-      "renderedSHA256": "d4e742cded31f44a3404a30fc159614b288b49af56e0623c8ad61c9b8c7abf3e"
+      "renderedSHA256": "26760beb501e3f643aec1c2245f0855e2945801a6f636ba45058926588f166d1"
     },
     {
       "releaseId": "networking-helm-public-edge-manager-regional-routing",
