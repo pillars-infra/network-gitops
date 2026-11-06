@@ -1,0 +1,8 @@
+{
+  "name": "RE8CH network-gitops",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm",
+  "features": {"ghcr.io/devcontainers/features/github-cli:1": {}},
+  "postCreateCommand": "git status --short --branch && test -f AGENTS.md",
+  "customizations": {"vscode": {"extensions": ["redhat.vscode-yaml", "ms-python.python"]}},
+  "remoteUser": "vscode"
+}
