@@ -38,7 +38,8 @@ def observe(root, contract=None):
     for path in (root / 'result.json', Path('static-release-result.json')):
         if path.exists() and path.stat().st_size:
             result = json.loads(path.read_text())
-            if result.get('releaseId', result.get('release')) == operation['releaseId']:
+            if (result.get('releaseId', result.get('release')) == operation['releaseId']
+                    and result.get('outcome') in {'applied', 'healthy', 'degraded', 'aligned', 'recovered'}):
                 result['health'] = observation['health']
                 path.write_text(json.dumps(result, sort_keys=True) + '\n')
     summary = os.environ.get('GITHUB_STEP_SUMMARY')
