@@ -53,7 +53,7 @@ def select(matrix, root=ROOT, runner=subprocess.run, sleeper=time.sleep):
                 validate_schema(state,"release-accepted-state.schema.json")
                 if state.get('blocked') or state.get('suspended'):
                     return 'skipped',release,'blocked-or-suspended',entry
-                accepted=state.get('acceptedDigest',state.get('healthyDigest'))
+                accepted=state.get('acceptedDigest',state.get('acceptedDigest',state.get('healthyDigest')))
                 if not accepted or accepted!=state.get('appliedDigest'):
                     return 'skipped',release,'not-accepted',entry
                 path.write_text(json.dumps(cm))
