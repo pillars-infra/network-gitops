@@ -82,7 +82,8 @@ def run(report):
         report["checking"] = object_identity(item)
         if project(item):
             raise ValueError("readback differs")
-    healthy, _ = executor.wait_healthy(prepared, 0, contract["spec"]["lifecycle"].get("healthChecks"))
+    healthy, reason = executor.wait_healthy(prepared, 0, contract["spec"]["lifecycle"].get("healthChecks"))
+    report["health"] = {"status": "healthy" if healthy else "unhealthy", "reason": reason}
     report.pop("checking", None)
     report["outcome"] = ("recovered" if changed else "aligned") if healthy else "unhealthy"
     return healthy

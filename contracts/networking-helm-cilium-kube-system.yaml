@@ -68,3 +68,6 @@ spec:
     - StorageClass
     deletionAllowlist: []
     readinessPolicy: observe
+    unavailableNodeWarnings:
+    - muaya-ecs
+    - overseas-kl

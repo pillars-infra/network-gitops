@@ -145,3 +145,16 @@ resource creation remains a separate publication authority.
 `networking-reconcile.yml` runs on relevant main changes and twice hourly. It reads each release's durable accepted state, skips releases without acceptance, verifies the publisher signature, and replays that exact healthy digest through the existing SSA executor. It never builds, publishes, changes an inventory, requests force, or migrates a contract. Publication and first adoption retain the protected `static-release.yml` workflow. Both workflows share per-contract concurrency.
 
 The separate `release-reconciler-networking` Environment needs `KUBE_API_CA_PEM` and `SOPS_AGE_KEY`. Its OIDC audience is `https://kube-api.re8ch.com/release-reconciler-networking`, restricted to this repository's main `networking-reconcile.yml` workflow. Platform provisioning maps it to the existing exact networking permissions; no new Kubernetes grants are required. The SOPS key is available only during accepted execution, never an artifact or log. Provision this identity before enabling successful automatic runtime execution.
+
+## Node-health warnings
+
+The Cilium and native kube-system release contracts classify `muaya-ecs` and
+`overseas-kl` NotReady as warnings, as approved by the operator. The executor
+reads current Nodes and Pods, verifies DaemonSet ownership and full node coverage,
+and still rejects unavailable Pods on Ready nodes or any other unavailable node.
+Deployments and other health checks remain strict. Result `health.reason` retains
+the warning; workflow success means all non-exempt workload health passed.
+
+`operations/releases/node-health-access.yaml` is the reviewed bootstrap grant for
+Node get/list and kube-system Pod get/list only, for the existing networking
+Executor and Reconciler groups. It grants no writes or Secret access.

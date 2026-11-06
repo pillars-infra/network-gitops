@@ -1,0 +1,52 @@
+# Read-only health evidence for the two reviewed networking release contracts.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: networking-release-node-health
+rules:
+- apiGroups: ['']
+  resources: [nodes]
+  verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: networking-release-node-health
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: networking-release-node-health
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: re8ch:release-reconciler:networking
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: re8ch:release-executor:networking
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: networking-release-pod-health
+  namespace: kube-system
+rules:
+- apiGroups: ['']
+  resources: [pods]
+  verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: networking-release-pod-health
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: networking-release-pod-health
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: re8ch:release-reconciler:networking
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: re8ch:release-executor:networking

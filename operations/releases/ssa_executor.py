@@ -158,6 +158,7 @@ class Executor:
         self.now = now
         self.sleeper = sleeper
         self._restricted_identities: set[str] = set()
+        self.warning_nodes: set[str] = set()
         self._kube_token: str | None = None
         self._kube_token_refresh_at = 0.0
 
@@ -225,6 +226,7 @@ class Executor:
 
     def validate(self, contract: dict, operation: dict, bundle_path: Path, store: Store) -> tuple[dict, list[dict], str]:
         validate_schema(contract, "release-contract.schema.json")
+        self.warning_nodes = set(contract["spec"]["lifecycle"].get("unavailableNodeWarnings", []))
         validate_schema(operation, "release-operation.schema.json")
         now = self.now()
         if parse_time(operation["issuedAt"]) > now + dt.timedelta(minutes=2) or parse_time(operation["expiresAt"]) <= now:
@@ -402,21 +404,63 @@ class Executor:
             desired = spec.get("replicas", 1)
             return status.get("availableReplicas", 0) >= desired, "replicas unavailable"
         if ref["kind"] == "DaemonSet":
-            return status.get("numberAvailable", 0) >= status.get("desiredNumberScheduled", 0), "daemon pods unavailable"
+            if status.get("numberAvailable", 0) >= status.get("desiredNumberScheduled", 0):
+                return True, "daemon pods available"
+            if self.warning_nodes:
+                return self.daemonset_node_health(live)
+            return False, "daemon pods unavailable"
         if ref["kind"] == "Job":
             return status.get("succeeded", 0) >= spec.get("completions", 1), "job incomplete"
         return True, "healthy"
+
+    def daemonset_node_health(self, live: dict) -> tuple[bool, str]:
+        # Count only Pods owned by this exact DaemonSet, never another rollout.
+        nodes = json.loads(self.command(["kubectl", "get", "nodes", "-o", "json"]).stdout)["items"]
+        ready_nodes = {n["metadata"]["name"] for n in nodes if any(
+            c.get("type") == "Ready" and c.get("status") == "True"
+            for c in n.get("status", {}).get("conditions", []))}
+        known_nodes = {n["metadata"]["name"] for n in nodes}
+        pods = json.loads(self.command(["kubectl", "get", "pods", "--namespace",
+                                      live["metadata"]["namespace"], "-o", "json"]).stdout)["items"]
+        available, excused = set(), set()
+        for pod in pods:
+            if not any(o.get("uid") == live["metadata"]["uid"] and o.get("controller")
+                       for o in pod["metadata"].get("ownerReferences", [])):
+                continue
+            node = pod.get("spec", {}).get("nodeName")
+            if node not in known_nodes:
+                return False, "daemon Pod has no known assigned node"
+            if node not in ready_nodes:
+                if node not in self.warning_nodes:
+                    return False, "daemon Pod is on an unapproved unavailable node"
+                excused.add(node)
+                continue
+            if pod["metadata"].get("deletionTimestamp") or not any(
+                c.get("type") == "Ready" and c.get("status") == "True"
+                for c in pod.get("status", {}).get("conditions", [])
+            ):
+                return False, "daemon Pod unavailable on a Ready node"
+            available.add(node)
+        desired = live.get("status", {}).get("desiredNumberScheduled", 0)
+        if not excused or len(available) + len(excused) != desired:
+            return False, "daemon Pod coverage does not explain unavailable replicas"
+        if live["status"].get("numberAvailable", 0) + len(excused) < desired:
+            return False, "additional daemon replicas unavailable"
+        return True, "Warning: NotReady nodes " + ", ".join(sorted(excused)) + "; Ready-node daemon Pods healthy"
 
     def wait_healthy(self, objects: list[dict], timeout_seconds: int, checks: list[dict] | None = None) -> tuple[bool, str]:
         deadline = time.monotonic() + timeout_seconds
         while True:
             failures = []
+            warnings = []
             for item in objects:
                 ready, reason = self.healthy(item, checks)
+                if ready and reason.startswith("Warning:"):
+                    warnings.append(reason)
                 if not ready:
                     failures.append(f"{object_identity(item)}: {reason}")
             if not failures:
-                return True, "declared readiness satisfied"
+                return True, "; ".join(sorted(set(warnings)))[:512] if warnings else "declared readiness satisfied"
             if time.monotonic() >= deadline:
                 return False, "; ".join(failures)[:512]
             self.sleeper(min(5, max(0, deadline - time.monotonic())))
