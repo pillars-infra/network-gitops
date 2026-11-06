@@ -619,6 +619,14 @@ spec:
         operator: Exists
       - key: node-role.kubernetes.io/master
         operator: Exists
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+      - effect: NoSchedule
+        key: storage.re8ch.com/coordinator
+        operator: Equal
+        value: 'true'
       - key: node.kubernetes.io/not-ready
         operator: Exists
       - key: node.cilium.io/agent-not-ready
@@ -729,13 +737,23 @@ spec:
                 k8s-app: cilium
             topologyKey: kubernetes.io/hostname
       nodeSelector:
-        kubernetes.io/hostname: artchais-nuclio-1
         kubernetes.io/os: linux
       tolerations:
       - effect: NoSchedule
         key: dedicated
         operator: Equal
         value: observability
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+      - effect: NoSchedule
+        key: storage.re8ch.com/coordinator
+        operator: Equal
+        value: 'true'
       volumes:
       - name: tmp-volume
         emptyDir: {}
@@ -857,11 +875,21 @@ spec:
             drop:
             - ALL
       nodeSelector:
-        kubernetes.io/hostname: vm-20-12-ubuntu
         kubernetes.io/os: linux
       tolerations:
       - effect: NoSchedule
         key: anchor
+        operator: Equal
+        value: 'true'
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      - effect: NoSchedule
+        key: scheduling.re8ch.com/capacity-window
+        operator: Equal
+        value: closed
+      - effect: NoSchedule
+        key: storage.re8ch.com/coordinator
         operator: Equal
         value: 'true'
       volumes:

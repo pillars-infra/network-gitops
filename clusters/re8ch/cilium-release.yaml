@@ -92,14 +92,15 @@ spec:
           repository: quay.io/cilium/hubble-relay-ci
           tag: latest
           useDigest: true
-        nodeSelector:
-          kubernetes.io/hostname: artchais-nuclio-1
         replicas: 1
         resources:
           limits: {cpu: 500m, memory: 256Mi}
           requests: {cpu: 50m, memory: 64Mi}
         tolerations:
           - {effect: NoSchedule, key: dedicated, operator: Equal, value: observability}
+          - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+          - {key: scheduling.re8ch.com/capacity-window, operator: Equal, value: closed, effect: NoSchedule}
+          - {key: storage.re8ch.com/coordinator, operator: Equal, value: "true", effect: NoSchedule}
       ui:
         backend:
           image:
@@ -122,13 +123,14 @@ spec:
           resources:
             limits: {cpu: 100m, memory: 64Mi}
             requests: {cpu: 10m, memory: 16Mi}
-        nodeSelector:
-          kubernetes.io/hostname: vm-20-12-ubuntu
         replicas: 1
         service:
           type: ClusterIP
         tolerations:
           - {effect: NoSchedule, key: anchor, operator: Equal, value: "true"}
+          - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+          - {key: scheduling.re8ch.com/capacity-window, operator: Equal, value: closed, effect: NoSchedule}
+          - {key: storage.re8ch.com/coordinator, operator: Equal, value: "true", effect: NoSchedule}
     image:
       digest: sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
       pullPolicy: IfNotPresent
@@ -178,6 +180,8 @@ spec:
       tolerations:
         - {key: node-role.kubernetes.io/control-plane, operator: Exists}
         - {key: node-role.kubernetes.io/master, operator: Exists}
+        - {key: scheduling.re8ch.com/capacity-window, operator: Equal, value: closed, effect: NoSchedule}
+        - {key: storage.re8ch.com/coordinator, operator: Equal, value: "true", effect: NoSchedule}
         - {key: node.kubernetes.io/not-ready, operator: Exists}
       unmanagedPodWatcher:
         restart: false
