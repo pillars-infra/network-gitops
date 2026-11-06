@@ -1,5 +1,18 @@
 # RE8CH Network GitOps
 
+<!-- gitops-status:start -->
+[![Reconcile](https://github.com/pillars-infra/network-gitops/actions/workflows/networking-reconcile.yml/badge.svg?branch=main)](https://github.com/pillars-infra/network-gitops/actions/workflows/networking-reconcile.yml?query=branch%3Amain)
+[![Contract validation](https://github.com/pillars-infra/network-gitops/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/pillars-infra/network-gitops/actions/workflows/validate.yml?query=branch%3Amain)
+
+These live badges show the latest workflow result on `main`, including scheduled
+and manual runs. Reconcile runs can cover a single release; a passing badge is
+not proof that every release is healthy or that SSA changed an object. Open the
+run for its release scope, accepted digest, comparison, apply and health results.
+The [domain observation Project](https://github.com/orgs/pillars-infra/projects/1) retains release-level evidence;
+receipt dispatch and governance checks do not replace runtime health verification.
+Private workflow badges require repository access.
+<!-- gitops-status:end -->
+
 Public desired-state authority for RE8CH Gateway, DNS, Cilium, and cross-cluster network configuration. Open-source networking products remain in their own organizations.
 
 GitHub Actions builds and signs immutable release artifacts. The bounded SSA
