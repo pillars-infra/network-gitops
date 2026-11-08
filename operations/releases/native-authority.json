@@ -1107,6 +1107,7 @@
         "apps/DaemonSet/kube-system/host-network-controller",
         "apps/DaemonSet/kube-system/podcidr-fabric-reconciler",
         "apps/DaemonSet/kube-system/public-mesh-podcidr-reconciler",
+        "apps/DaemonSet/kube-system/regional-origin-dnat",
         "apps/Deployment/kube-system/kube-api-overseas-relay",
         "apps/Deployment/kube-system/zerotier-planet",
         "cert-manager.io/Certificate/kube-system/access-subdomains",
@@ -1153,7 +1154,8 @@
             "control-transit-controller",
             "host-network-controller",
             "podcidr-fabric-reconciler",
-            "public-mesh-podcidr-reconciler"
+            "public-mesh-podcidr-reconciler",
+            "regional-origin-dnat"
           ],
           "verbs": [
             "get",
