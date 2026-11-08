@@ -1,5 +1,5 @@
 apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+kind: TLSRoute
 metadata:
   name: kube-api-service
   namespace: kube-system
@@ -8,28 +8,10 @@ metadata:
 spec:
   parentRefs:
     - name: re8ch-gateway-canary
-      sectionName: service-wildcard-https
+      sectionName: kube-api-service-tls
   hostnames:
     - kube-api.service.re8ch.com
   rules:
     - backendRefs:
         - name: kube-api-observer-proxy
           port: 6443
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: BackendTLSPolicy
-metadata:
-  name: kube-api-observer-proxy
-  namespace: kube-system
-spec:
-  targetRefs:
-    - group: ""
-      kind: Service
-      name: kube-api-observer-proxy
-      sectionName: kube-api
-  validation:
-    caCertificateRefs:
-      - group: ""
-        kind: ConfigMap
-        name: kube-root-ca.crt
-    hostname: k3s-api.internal.re8ch.com

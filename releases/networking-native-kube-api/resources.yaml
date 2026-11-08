@@ -117,25 +117,7 @@ spec:
     app.kubernetes.io/name: kube-api-observer-proxy
 ---
 apiVersion: gateway.networking.k8s.io/v1
-kind: BackendTLSPolicy
-metadata:
-  name: kube-api-observer-proxy
-  namespace: kube-system
-spec:
-  targetRefs:
-  - group: ''
-    kind: Service
-    name: kube-api-observer-proxy
-    sectionName: kube-api
-  validation:
-    caCertificateRefs:
-    - group: ''
-      kind: ConfigMap
-      name: kube-root-ca.crt
-    hostname: k3s-api.internal.re8ch.com
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+kind: TLSRoute
 metadata:
   labels:
     operations.re8ch.com/credential-contract: node-observer
@@ -146,7 +128,7 @@ spec:
   - kube-api.service.re8ch.com
   parentRefs:
   - name: re8ch-gateway-canary
-    sectionName: service-wildcard-https
+    sectionName: kube-api-service-tls
   rules:
   - backendRefs:
     - name: kube-api-observer-proxy
