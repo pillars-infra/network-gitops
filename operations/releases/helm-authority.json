@@ -710,12 +710,12 @@
       },
       "source": {
         "renderer": "kustomize",
-        "revision": "helm-oci@sha256:fed00e6fa111efeedfb90837c53e156b4fcfed1fb8d31f5ff42f2b9399da0cff",
+        "revision": "helm-oci@sha256:47dcf11d958db846ca219bd26c78867c18f13ce39360ef997154d747a1e2726e",
         "repository": "pillars-infra/network-gitops",
         "path": "releases/networking-helm-public-edge-manager-regional-routing",
-        "chartOCI": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:fed00e6fa111efeedfb90837c53e156b4fcfed1fb8d31f5ff42f2b9399da0cff"
+        "chartOCI": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:47dcf11d958db846ca219bd26c78867c18f13ce39360ef997154d747a1e2726e"
       },
-      "renderedSHA256": "0e6a373a06472491b1b9e2871ea09f9648334492613e81a819462e092dfd2665"
+      "renderedSHA256": "13c6402706ef881a1e8c516a2c2679818c479ad103f3779eea54da2593a9643e"
     }
   ],
   "platformBootstrap": [
@@ -3761,8 +3761,8 @@
     {
       "name": "public-edge-manager",
       "chart": {
-        "oci": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:fed00e6fa111efeedfb90837c53e156b4fcfed1fb8d31f5ff42f2b9399da0cff",
-        "sha256": "3f64b0b0bb1a0babc71b397c1429ab3e753ea6a02a75ed7ec9d640fa8293a0ae"
+        "oci": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:47dcf11d958db846ca219bd26c78867c18f13ce39360ef997154d747a1e2726e",
+        "sha256": "fc617b8a9ebab2e352977462af7264ad85a35a120367e6a2e34c215981a886cf"
       },
       "objects": 23
     }

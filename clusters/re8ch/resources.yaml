@@ -25772,10 +25772,10 @@ spec:
           cpu: 10m
           memory: 32Mi
     image:
-      digest: sha256:46768bcd8284d50d6622b908f210cb5ea1e7c2bb9d0ea668a3f31db2abc9d88f
+      digest: sha256:5e7860204e5e81c716838a309ed2a2c1be4de09e4724127f22a82e5f3ce8d527
       pullPolicy: IfNotPresent
       repository: ghcr.io/public-edge/public-edge-manager
-      tag: 0.8.6
+      tag: 0.8.7
     nameservers:
     - ns-bootstrap.re8ch.com.
     probe:
@@ -25783,13 +25783,18 @@ spec:
       intervalSeconds: 15
       maxWorkers: 8
       responseTimeoutSeconds: 12
-      userAgent: public-edge-manager/0.8.6
+      userAgent: public-edge-manager/0.8.7
     publication:
       adapters: {}
       enabled: false
       refs: {}
     rbac:
       mutateIngresses: false
+    redirector:
+      sniRoutes:
+        kube-api.service.re8ch.com:
+          host: 10.250.0.147
+          port: 6443
     resources:
       limits:
         cpu: 250m
@@ -26934,7 +26939,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:fed00e6fa111efeedfb90837c53e156b4fcfed1fb8d31f5ff42f2b9399da0cff
+    digest: sha256:47dcf11d958db846ca219bd26c78867c18f13ce39360ef997154d747a1e2726e
   url: oci://ghcr.io/public-edge/charts/public-edge-manager
 ---
 apiVersion: networking.k8s.io/v1
