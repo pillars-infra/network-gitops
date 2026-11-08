@@ -1107,6 +1107,7 @@
         "apps/DaemonSet/kube-system/host-network-controller",
         "apps/DaemonSet/kube-system/podcidr-fabric-reconciler",
         "apps/DaemonSet/kube-system/public-mesh-podcidr-reconciler",
+        "apps/DaemonSet/kube-system/r640-outer-sni-dnat",
         "apps/DaemonSet/kube-system/regional-origin-dnat",
         "apps/Deployment/kube-system/kube-api-overseas-relay",
         "apps/Deployment/kube-system/zerotier-planet",
@@ -1134,6 +1135,7 @@
         "core/ConfigMap/kube-system/podcidr-fabric-inventory",
         "core/ConfigMap/kube-system/podcidr-fabric-reconciler",
         "core/ConfigMap/kube-system/public-mesh-podcidr",
+        "core/ConfigMap/kube-system/r640-outer-sni-dnat",
         "core/Service/kube-system/kube-api-overseas-relay",
         "core/Service/kube-system/kube-dns",
         "core/ServiceAccount/kube-system/control-dns-reachability",
@@ -1155,6 +1157,7 @@
             "host-network-controller",
             "podcidr-fabric-reconciler",
             "public-mesh-podcidr-reconciler",
+            "r640-outer-sni-dnat",
             "regional-origin-dnat"
           ],
           "verbs": [
@@ -1251,7 +1254,8 @@
             "native-routing-rollout-order",
             "podcidr-fabric-inventory",
             "podcidr-fabric-reconciler",
-            "public-mesh-podcidr"
+            "public-mesh-podcidr",
+            "r640-outer-sni-dnat"
           ],
           "verbs": [
             "get",
