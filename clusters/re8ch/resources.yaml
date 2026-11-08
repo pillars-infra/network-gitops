@@ -23017,15 +23017,6 @@ spec:
   - allowedRoutes:
       namespaces:
         from: All
-    hostname: kube-api.service.re8ch.com
-    name: kube-api-service-tls
-    port: 443
-    protocol: TLS
-    tls:
-      mode: Passthrough
-  - allowedRoutes:
-      namespaces:
-        from: All
     hostname: '*.service.re8ch.com'
     name: service-wildcard-https
     port: 443
