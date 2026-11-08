@@ -460,6 +460,79 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
+    app.kubernetes.io/name: r640-outer-sni-dnat
+  name: r640-outer-sni-dnat
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: r640-outer-sni-dnat
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: r640-outer-sni-dnat
+    spec:
+      containers:
+      - command:
+        - /usr/bin/sh
+        - /config/reconcile.sh
+        image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+        imagePullPolicy: IfNotPresent
+        name: reconciler
+        readinessProbe:
+          exec:
+            command:
+            - /usr/bin/nsenter
+            - -t
+            - '1'
+            - -n
+            - chroot
+            - /host
+            - /usr/sbin/nft
+            - list
+            - table
+            - ip
+            - re8ch_outer_sni
+          initialDelaySeconds: 2
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 50m
+            memory: 32Mi
+          requests:
+            cpu: 5m
+            memory: 16Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /host
+          name: host-root
+          readOnly: true
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/hostname: r640
+      priorityClassName: system-node-critical
+      terminationGracePeriodSeconds: 10
+      tolerations:
+      - operator: Exists
+      volumes:
+      - configMap:
+          defaultMode: 365
+          name: r640-outer-sni-dnat
+        name: config
+      - hostPath:
+          path: /
+          type: Directory
+        name: host-root
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
     app.kubernetes.io/name: regional-origin-dnat
   name: regional-origin-dnat
   namespace: kube-system
@@ -542,6 +615,8 @@ spec:
           path: /var/run/cilium
           type: Directory
         name: cilium-run
+  updateStrategy:
+    type: OnDelete
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -1916,6 +1991,29 @@ _re8chSopsSource: '{"apiVersion":"v1","data":{"inventory.json":"ENC[AES256_GCM,d
   ready\" >&2\n  done\n  sleep 30\ndone\n"},"kind":"ConfigMap","metadata":{"name":"public-mesh-podcidr","namespace":"kube-system","annotations":{"security.re8ch.com/restricted-data-sha256":"{\"inventory.json\":\"aa53f5fcf3e68227d32c8470ae749fe5fd7294bbfbcb8e5be07601c7045caadc\"}"}},"sops":{"age":[{"enc":"-----BEGIN
   AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA5MU00SG9GRDVmcFcybjJi\nR0lGakEzNmlpV0ozeFJUTHY3YnA1UkVYdENvCmxaVldtQ2ZsLzk4elM4aU1uMDBp\nVTJURjFKUWxLblVKcHU0N2wvVTJJRUEKLS0tICtJcGlkbzF6TTdWUExwOHZlR1pw\ncVZ6cEo1YTE0SFdPRzUvV1pNcE9nRFUK8GS0VX95pKrmpDrUC/O5L2sdN3tc9/Q0\ncEzbnD94FmjdZIT0pyhNoYV0cfEtwgnsj66OdO7+unY2LM5PKUQO+A==\n-----END
   AGE ENCRYPTED FILE-----\n","recipient":"age1c7camhc8ql85t5u4hrjmsmkurfa0n0v7lg05espasa9fqapjz5vqql8lfj"}],"encrypted_regex":"^(nodes\\.json|inventory\\.json|advanced-fabric-values\\.yaml|adoption\\.json|routeros-transit\\.json|package\\.json|host-network-contract\\.json|ssh-config|reconcile\\.sh|controlPlaneApi)$","lastmodified":"2026-10-27T15:40:15Z","mac":"ENC[AES256_GCM,data:rp5ZU1zugVfFOWPin0QbsY0DRC6ZSwnQnEDAnadxgrH6HcUs1Cw2JzvQNtD6Y+oV3zSYM5k9uTOgIMS9JRpR+gaLn3dA8vHkZVMBfp2eun75y79ygFT1FLwUZN6/UsawOS332iXo3gRE+YkVv1HQTkTsXEtzkeKE7d4Pcs/W/3Q=,iv:JnXH6gHQQwxz3EaO0HdRw4ISXLAMoVOBOEPKlAIPwug=,tag:2b9NQprFW5UQDuF8EX7W7A==,type:str]","version":"3.13.3"}}'
+---
+apiVersion: v1
+data:
+  reconcile.sh: "#!/bin/sh\nset -eu\n\nnft() { nsenter -t 1 -n chroot /host /usr/sbin/nft\
+    \ \"$@\"; }\niptables() { nsenter -t 1 -n chroot /host /usr/sbin/iptables \"$@\"\
+    ; }\nsysctl() { nsenter -t 1 -n chroot /host /usr/sbin/sysctl \"$@\"; }\n\ninstall_rules()\
+    \ {\n  sysctl -w net.ipv4.conf.eno2np1.route_localnet=1 >/dev/null\n  iptables\
+    \ -C INPUT -p tcp -d 127.0.0.1 --dport 443 \\\n    -m comment --comment re8ch-outer-sni\
+    \ -j ACCEPT 2>/dev/null || \\\n  iptables -I INPUT 1 -p tcp -d 127.0.0.1 --dport\
+    \ 443 \\\n    -m comment --comment re8ch-outer-sni -j ACCEPT\n  nft delete table\
+    \ ip re8ch_outer_sni 2>/dev/null || true\n  nft add table ip re8ch_outer_sni\n\
+    \  nft 'add chain ip re8ch_outer_sni prerouting { type nat hook prerouting priority\
+    \ dstnat - 10; policy accept; }'\n  nft add rule ip re8ch_outer_sni prerouting\
+    \ \\\n    fib daddr type local tcp dport 10443 dnat to 127.0.0.1:443\n}\n\ncleanup()\
+    \ {\n  nft delete table ip re8ch_outer_sni 2>/dev/null || true\n  iptables -D\
+    \ INPUT -p tcp -d 127.0.0.1 --dport 443 \\\n    -m comment --comment re8ch-outer-sni\
+    \ -j ACCEPT 2>/dev/null || true\n}\ntrap cleanup EXIT INT TERM\n\ninstall_rules\n\
+    while sleep 10; do\n  nft list table ip re8ch_outer_sni >/dev/null 2>&1 || install_rules\n\
+    done\n"
+kind: ConfigMap
+metadata:
+  name: r640-outer-sni-dnat
+  namespace: kube-system
 ---
 apiVersion: v1
 kind: Service

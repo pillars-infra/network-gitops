@@ -6,6 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: regional-origin-dnat
 spec:
+  updateStrategy:
+    type: OnDelete
   selector:
     matchLabels:
       app.kubernetes.io/name: regional-origin-dnat

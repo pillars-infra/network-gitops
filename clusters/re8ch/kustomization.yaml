@@ -10,6 +10,7 @@ resources:
   - kube-api-overseas-relay-upstream.enc.yaml
   - routeros-public-forward-controller.yaml
   - regional-origin-dnat-r640-exclusion.yaml
+  - r640-outer-sni-dnat.yaml
   - multi-pool
 patches:
   - path: advanced-fabric-control-plane-offload.yaml

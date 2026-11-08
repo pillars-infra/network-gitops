@@ -12,6 +12,12 @@ data:
       "anchorComment": "RE8CH default WAN TCP same-port DNAT to R640",
       "returnAnchorComment": "defconf: masquerade after symmetric rules",
       "commentPrefix": "RE8CH GITOPS PUBLIC FORWARD",
+      "outerSniBackend": "192.168.88.251",
+      "outerSniPort": "10443",
+      "outerSniRules": [
+        "RE8CH priority public web direct to Cilium Loudi Gateway VIP",
+        "RE8CH public web LAN VPN hairpin to Cilium Loudi VIP"
+      ],
       "forwards": [
         {"protocol": "tcp", "port": "6443", "toPort": "6443"}
       ]
@@ -40,11 +46,19 @@ data:
             raise ValueError("return anchor differs")
         if spec["commentPrefix"] != "RE8CH GITOPS PUBLIC FORWARD":
             raise ValueError("ownership prefix differs")
+        if spec["outerSniBackend"] != "192.168.88.251" or spec["outerSniPort"] != "10443":
+            raise ValueError("outer SNI authority differs")
+        if spec["outerSniRules"] != [
+            "RE8CH priority public web direct to Cilium Loudi Gateway VIP",
+            "RE8CH public web LAN VPN hairpin to Cilium Loudi VIP",
+        ]:
+            raise ValueError("outer SNI rule ownership differs")
         if spec["forwards"] != [{"protocol": "tcp", "port": "6443", "toPort": "6443"}]:
             raise ValueError("unexpected public forwards")
         ipaddress.ip_address(spec["managementIp"])
         ipaddress.ip_address(spec["publicEndpoint"])
         ipaddress.ip_address(spec["gatewayVip"])
+        ipaddress.ip_address(spec["outerSniBackend"])
 
 
     class Router:
@@ -81,6 +95,23 @@ data:
         return_anchor = return_anchors[0]
         wanted = set()
         changes = 0
+        for comment in spec["outerSniRules"]:
+            prior = [row for row in rows if row.get("comment") == comment]
+            if len(prior) != 1:
+                raise ValueError("outer SNI rule missing or ambiguous")
+            row = prior[0]
+            expected = {
+                "chain": "dstnat",
+                "protocol": "tcp",
+                "dst-port": "80,443",
+                "dst-address": spec["publicEndpoint"],
+                "action": "dst-nat",
+                "to-addresses": spec["outerSniBackend"],
+                "to-ports": spec["outerSniPort"],
+            }
+            if any(row.get(key) != value for key, value in expected.items()):
+                router.request("/ip/firewall/nat/" + row[".id"], "PATCH", expected)
+                changes += 1
         for forward in spec["forwards"]:
             comment = f'{spec["commentPrefix"]} {forward["protocol"]} {forward["port"]}'
             wanted.add(comment)
@@ -175,7 +206,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/config-revision: kube-api-return-v2
+        networking.re8ch.com/config-revision: outer-sni-v1
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:

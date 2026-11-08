@@ -11,7 +11,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/config-revision: kube-api-return-v2
+        networking.re8ch.com/config-revision: outer-sni-v1
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:
@@ -157,7 +157,10 @@ data:
     223.159.210.222\",\n  \"gatewayVip\": \"10.251.0.4\",\n  \"anchorComment\": \"\
     RE8CH default WAN TCP same-port DNAT to R640\",\n  \"returnAnchorComment\": \"\
     defconf: masquerade after symmetric rules\",\n  \"commentPrefix\": \"RE8CH GITOPS\
-    \ PUBLIC FORWARD\",\n  \"forwards\": [\n    {\"protocol\": \"tcp\", \"port\":\
+    \ PUBLIC FORWARD\",\n  \"outerSniBackend\": \"192.168.88.251\",\n  \"outerSniPort\"\
+    : \"10443\",\n  \"outerSniRules\": [\n    \"RE8CH priority public web direct to\
+    \ Cilium Loudi Gateway VIP\",\n    \"RE8CH public web LAN VPN hairpin to Cilium\
+    \ Loudi VIP\"\n  ],\n  \"forwards\": [\n    {\"protocol\": \"tcp\", \"port\":\
     \ \"6443\", \"toPort\": \"6443\"}\n  ]\n}\n"
   reconcile.py: "#!/usr/bin/env python3\n\"\"\"Reconcile explicitly owned public RouterOS\
     \ forwards before the fallback rule.\"\"\"\nimport base64\nimport ipaddress\n\
@@ -171,17 +174,23 @@ data:
     fallback anchor differs\")\n    if spec[\"returnAnchorComment\"] != \"defconf:\
     \ masquerade after symmetric rules\":\n        raise ValueError(\"return anchor\
     \ differs\")\n    if spec[\"commentPrefix\"] != \"RE8CH GITOPS PUBLIC FORWARD\"\
-    :\n        raise ValueError(\"ownership prefix differs\")\n    if spec[\"forwards\"\
-    ] != [{\"protocol\": \"tcp\", \"port\": \"6443\", \"toPort\": \"6443\"}]:\n  \
-    \      raise ValueError(\"unexpected public forwards\")\n    ipaddress.ip_address(spec[\"\
+    :\n        raise ValueError(\"ownership prefix differs\")\n    if spec[\"outerSniBackend\"\
+    ] != \"192.168.88.251\" or spec[\"outerSniPort\"] != \"10443\":\n        raise\
+    \ ValueError(\"outer SNI authority differs\")\n    if spec[\"outerSniRules\"]\
+    \ != [\n        \"RE8CH priority public web direct to Cilium Loudi Gateway VIP\"\
+    ,\n        \"RE8CH public web LAN VPN hairpin to Cilium Loudi VIP\",\n    ]:\n\
+    \        raise ValueError(\"outer SNI rule ownership differs\")\n    if spec[\"\
+    forwards\"] != [{\"protocol\": \"tcp\", \"port\": \"6443\", \"toPort\": \"6443\"\
+    }]:\n        raise ValueError(\"unexpected public forwards\")\n    ipaddress.ip_address(spec[\"\
     managementIp\"])\n    ipaddress.ip_address(spec[\"publicEndpoint\"])\n    ipaddress.ip_address(spec[\"\
-    gatewayVip\"])\n\n\nclass Router:\n    def __init__(self, address):\n        user\
-    \ = Path(\"/credential/username\").read_bytes().strip()\n        password = Path(\"\
-    /credential/password\").read_bytes()\n        auth = base64.b64encode(user + b\"\
-    :\" + password).decode()\n        self.base = \"http://\" + address + \"/rest\"\
-    \n        self.headers = {\"Authorization\": \"Basic \" + auth, \"Content-Type\"\
-    : \"application/json\"}\n        self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))\n\
-    \n    def request(self, path, method=\"GET\", body=None):\n        request = urllib.request.Request(\n\
+    gatewayVip\"])\n    ipaddress.ip_address(spec[\"outerSniBackend\"])\n\n\nclass\
+    \ Router:\n    def __init__(self, address):\n        user = Path(\"/credential/username\"\
+    ).read_bytes().strip()\n        password = Path(\"/credential/password\").read_bytes()\n\
+    \        auth = base64.b64encode(user + b\":\" + password).decode()\n        self.base\
+    \ = \"http://\" + address + \"/rest\"\n        self.headers = {\"Authorization\"\
+    : \"Basic \" + auth, \"Content-Type\": \"application/json\"}\n        self.opener\
+    \ = urllib.request.build_opener(urllib.request.ProxyHandler({}))\n\n    def request(self,\
+    \ path, method=\"GET\", body=None):\n        request = urllib.request.Request(\n\
     \            self.base + path,\n            method=method,\n            headers=self.headers,\n\
     \            data=json.dumps(body).encode() if body is not None else None,\n \
     \       )\n        with self.opener.open(request, timeout=10) as response:\n \
@@ -193,51 +202,60 @@ data:
     \ = [row for row in rows if row.get(\"comment\") == spec[\"returnAnchorComment\"\
     ]]\n    if len(return_anchors) != 1:\n        raise ValueError(\"return anchor\
     \ missing or ambiguous\")\n    return_anchor = return_anchors[0]\n    wanted =\
-    \ set()\n    changes = 0\n    for forward in spec[\"forwards\"]:\n        comment\
-    \ = f'{spec[\"commentPrefix\"]} {forward[\"protocol\"]} {forward[\"port\"]}'\n\
-    \        wanted.add(comment)\n        body = {\n            \"comment\": comment,\n\
-    \            \"chain\": \"dstnat\",\n            \"protocol\": forward[\"protocol\"\
-    ],\n            \"dst-port\": forward[\"port\"],\n            \"dst-address\"\
-    : spec[\"publicEndpoint\"],\n            \"action\": \"dst-nat\",\n          \
-    \  \"to-addresses\": spec[\"gatewayVip\"],\n            \"to-ports\": forward[\"\
-    toPort\"],\n            \"disabled\": \"false\",\n        }\n        prior = [row\
-    \ for row in rows if row.get(\"comment\") == comment]\n        if len(prior) >\
-    \ 1:\n            raise ValueError(\"duplicate owned public forward\")\n     \
-    \   if prior:\n            row = prior[0]\n            if any(row.get(key) !=\
-    \ value for key, value in body.items()):\n                router.request(\"/ip/firewall/nat/\"\
-    \ + row[\".id\"], \"PATCH\", body)\n                changes += 1\n        else:\n\
-    \            row = router.request(\"/ip/firewall/nat\", \"PUT\", body)\n     \
-    \       changes += 1\n        router.request(\n            \"/ip/firewall/nat/move\"\
-    ,\n            \"POST\",\n            {\"numbers\": row[\".id\"], \"destination\"\
-    : anchor[\".id\"]},\n        )\n        return_comment = f'{spec[\"commentPrefix\"\
-    ]} RETURN {forward[\"protocol\"]} {forward[\"port\"]}'\n        wanted.add(return_comment)\n\
-    \        return_body = {\n            \"comment\": return_comment,\n         \
-    \   \"chain\": \"srcnat\",\n            \"protocol\": forward[\"protocol\"],\n\
-    \            \"dst-port\": forward[\"toPort\"],\n            \"dst-address\":\
-    \ spec[\"gatewayVip\"],\n            \"action\": \"masquerade\",\n           \
-    \ \"disabled\": \"false\",\n        }\n        return_prior = [row for row in\
-    \ rows if row.get(\"comment\") == return_comment]\n        if len(return_prior)\
-    \ > 1:\n            raise ValueError(\"duplicate owned public return rule\")\n\
-    \        if return_prior:\n            return_row = return_prior[0]\n        \
-    \    if any(return_row.get(key) != value for key, value in return_body.items()):\n\
-    \                router.request(\"/ip/firewall/nat/\" + return_row[\".id\"], \"\
-    PATCH\", return_body)\n                changes += 1\n        else:\n         \
-    \   return_row = router.request(\"/ip/firewall/nat\", \"PUT\", return_body)\n\
-    \            changes += 1\n        router.request(\n            \"/ip/firewall/nat/move\"\
-    ,\n            \"POST\",\n            {\"numbers\": return_row[\".id\"], \"destination\"\
-    : return_anchor[\".id\"]},\n        )\n    for row in rows:\n        comment =\
-    \ row.get(\"comment\", \"\")\n        if comment.startswith(spec[\"commentPrefix\"\
-    ] + \" \") and comment not in wanted:\n            router.request(\"/ip/firewall/nat/\"\
-    \ + row[\".id\"], \"DELETE\")\n            changes += 1\n    return {\"changes\"\
-    : changes, \"forwards\": len(spec[\"forwards\"])}\n\n\ndef main():\n    while\
-    \ True:\n        try:\n            spec = json.loads(Path(\"/config/desired.json\"\
-    ).read_text())\n            result = reconcile(Router(spec[\"managementIp\"]),\
-    \ spec)\n            Path(\"/tmp/routeros-public-forward-ready\").touch()\n  \
-    \          print(json.dumps({\"state\": \"reconciled\", **result}), flush=True)\n\
-    \        except Exception as exc:\n            Path(\"/tmp/routeros-public-forward-ready\"\
-    ).unlink(missing_ok=True)\n            print(json.dumps({\"state\": \"failed\"\
-    , \"errorType\": type(exc).__name__}), flush=True)\n        time.sleep(30)\n\n\
-    \nif __name__ == \"__main__\":\n    main()\n"
+    \ set()\n    changes = 0\n    for comment in spec[\"outerSniRules\"]:\n      \
+    \  prior = [row for row in rows if row.get(\"comment\") == comment]\n        if\
+    \ len(prior) != 1:\n            raise ValueError(\"outer SNI rule missing or ambiguous\"\
+    )\n        row = prior[0]\n        expected = {\n            \"chain\": \"dstnat\"\
+    ,\n            \"protocol\": \"tcp\",\n            \"dst-port\": \"80,443\",\n\
+    \            \"dst-address\": spec[\"publicEndpoint\"],\n            \"action\"\
+    : \"dst-nat\",\n            \"to-addresses\": spec[\"outerSniBackend\"],\n   \
+    \         \"to-ports\": spec[\"outerSniPort\"],\n        }\n        if any(row.get(key)\
+    \ != value for key, value in expected.items()):\n            router.request(\"\
+    /ip/firewall/nat/\" + row[\".id\"], \"PATCH\", expected)\n            changes\
+    \ += 1\n    for forward in spec[\"forwards\"]:\n        comment = f'{spec[\"commentPrefix\"\
+    ]} {forward[\"protocol\"]} {forward[\"port\"]}'\n        wanted.add(comment)\n\
+    \        body = {\n            \"comment\": comment,\n            \"chain\": \"\
+    dstnat\",\n            \"protocol\": forward[\"protocol\"],\n            \"dst-port\"\
+    : forward[\"port\"],\n            \"dst-address\": spec[\"publicEndpoint\"],\n\
+    \            \"action\": \"dst-nat\",\n            \"to-addresses\": spec[\"gatewayVip\"\
+    ],\n            \"to-ports\": forward[\"toPort\"],\n            \"disabled\":\
+    \ \"false\",\n        }\n        prior = [row for row in rows if row.get(\"comment\"\
+    ) == comment]\n        if len(prior) > 1:\n            raise ValueError(\"duplicate\
+    \ owned public forward\")\n        if prior:\n            row = prior[0]\n   \
+    \         if any(row.get(key) != value for key, value in body.items()):\n    \
+    \            router.request(\"/ip/firewall/nat/\" + row[\".id\"], \"PATCH\", body)\n\
+    \                changes += 1\n        else:\n            row = router.request(\"\
+    /ip/firewall/nat\", \"PUT\", body)\n            changes += 1\n        router.request(\n\
+    \            \"/ip/firewall/nat/move\",\n            \"POST\",\n            {\"\
+    numbers\": row[\".id\"], \"destination\": anchor[\".id\"]},\n        )\n     \
+    \   return_comment = f'{spec[\"commentPrefix\"]} RETURN {forward[\"protocol\"\
+    ]} {forward[\"port\"]}'\n        wanted.add(return_comment)\n        return_body\
+    \ = {\n            \"comment\": return_comment,\n            \"chain\": \"srcnat\"\
+    ,\n            \"protocol\": forward[\"protocol\"],\n            \"dst-port\"\
+    : forward[\"toPort\"],\n            \"dst-address\": spec[\"gatewayVip\"],\n \
+    \           \"action\": \"masquerade\",\n            \"disabled\": \"false\",\n\
+    \        }\n        return_prior = [row for row in rows if row.get(\"comment\"\
+    ) == return_comment]\n        if len(return_prior) > 1:\n            raise ValueError(\"\
+    duplicate owned public return rule\")\n        if return_prior:\n            return_row\
+    \ = return_prior[0]\n            if any(return_row.get(key) != value for key,\
+    \ value in return_body.items()):\n                router.request(\"/ip/firewall/nat/\"\
+    \ + return_row[\".id\"], \"PATCH\", return_body)\n                changes += 1\n\
+    \        else:\n            return_row = router.request(\"/ip/firewall/nat\",\
+    \ \"PUT\", return_body)\n            changes += 1\n        router.request(\n \
+    \           \"/ip/firewall/nat/move\",\n            \"POST\",\n            {\"\
+    numbers\": return_row[\".id\"], \"destination\": return_anchor[\".id\"]},\n  \
+    \      )\n    for row in rows:\n        comment = row.get(\"comment\", \"\")\n\
+    \        if comment.startswith(spec[\"commentPrefix\"] + \" \") and comment not\
+    \ in wanted:\n            router.request(\"/ip/firewall/nat/\" + row[\".id\"],\
+    \ \"DELETE\")\n            changes += 1\n    return {\"changes\": changes, \"\
+    forwards\": len(spec[\"forwards\"])}\n\n\ndef main():\n    while True:\n     \
+    \   try:\n            spec = json.loads(Path(\"/config/desired.json\").read_text())\n\
+    \            result = reconcile(Router(spec[\"managementIp\"]), spec)\n      \
+    \      Path(\"/tmp/routeros-public-forward-ready\").touch()\n            print(json.dumps({\"\
+    state\": \"reconciled\", **result}), flush=True)\n        except Exception as\
+    \ exc:\n            Path(\"/tmp/routeros-public-forward-ready\").unlink(missing_ok=True)\n\
+    \            print(json.dumps({\"state\": \"failed\", \"errorType\": type(exc).__name__}),\
+    \ flush=True)\n        time.sleep(30)\n\n\nif __name__ == \"__main__\":\n    main()\n"
 kind: ConfigMap
 metadata:
   name: routeros-public-forward-controller

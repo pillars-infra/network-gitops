@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: r640-outer-sni-dnat
+  namespace: kube-system
+data:
+  reconcile.sh: |
+    #!/bin/sh
+    set -eu
+
+    nft() { nsenter -t 1 -n chroot /host /usr/sbin/nft "$@"; }
+    iptables() { nsenter -t 1 -n chroot /host /usr/sbin/iptables "$@"; }
+    sysctl() { nsenter -t 1 -n chroot /host /usr/sbin/sysctl "$@"; }
+
+    install_rules() {
+      sysctl -w net.ipv4.conf.eno2np1.route_localnet=1 >/dev/null
+      iptables -C INPUT -p tcp -d 127.0.0.1 --dport 443 \
+        -m comment --comment re8ch-outer-sni -j ACCEPT 2>/dev/null || \
+      iptables -I INPUT 1 -p tcp -d 127.0.0.1 --dport 443 \
+        -m comment --comment re8ch-outer-sni -j ACCEPT
+      nft delete table ip re8ch_outer_sni 2>/dev/null || true
+      nft add table ip re8ch_outer_sni
+      nft 'add chain ip re8ch_outer_sni prerouting { type nat hook prerouting priority dstnat - 10; policy accept; }'
+      nft add rule ip re8ch_outer_sni prerouting \
+        fib daddr type local tcp dport 10443 dnat to 127.0.0.1:443
+    }
+
+    cleanup() {
+      nft delete table ip re8ch_outer_sni 2>/dev/null || true
+      iptables -D INPUT -p tcp -d 127.0.0.1 --dport 443 \
+        -m comment --comment re8ch-outer-sni -j ACCEPT 2>/dev/null || true
+    }
+    trap cleanup EXIT INT TERM
+
+    install_rules
+    while sleep 10; do
+      nft list table ip re8ch_outer_sni >/dev/null 2>&1 || install_rules
+    done
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: r640-outer-sni-dnat
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: r640-outer-sni-dnat
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: r640-outer-sni-dnat
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: r640-outer-sni-dnat
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: r640
+      hostNetwork: true
+      hostPID: true
+      priorityClassName: system-node-critical
+      terminationGracePeriodSeconds: 10
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: reconciler
+          image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+          imagePullPolicy: IfNotPresent
+          command: [/usr/bin/sh, /config/reconcile.sh]
+          readinessProbe:
+            exec:
+              command: [/usr/bin/nsenter, -t, "1", -n, chroot, /host, /usr/sbin/nft, list, table, ip, re8ch_outer_sni]
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          securityContext:
+            privileged: true
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {cpu: 50m, memory: 32Mi}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: host-root
+              mountPath: /host
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: r640-outer-sni-dnat
+            defaultMode: 365
+        - name: host-root
+          hostPath:
+            path: /
+            type: Directory

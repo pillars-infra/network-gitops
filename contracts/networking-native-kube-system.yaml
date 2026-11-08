@@ -57,6 +57,7 @@ spec:
     - podcidr-fabric-reconciler
     - public-mesh-podcidr
     - public-mesh-podcidr-reconciler
+    - r640-outer-sni-dnat
     - r640-policy-update-budget
     - r640-xdp-native
     - re8ch-apps-public-gateway
@@ -72,6 +73,7 @@ spec:
     - apps/DaemonSet/kube-system/host-network-controller
     - apps/DaemonSet/kube-system/podcidr-fabric-reconciler
     - apps/DaemonSet/kube-system/public-mesh-podcidr-reconciler
+    - apps/DaemonSet/kube-system/r640-outer-sni-dnat
     - apps/DaemonSet/kube-system/regional-origin-dnat
     - apps/Deployment/kube-system/kube-api-overseas-relay
     - apps/Deployment/kube-system/zerotier-planet
@@ -99,13 +101,14 @@ spec:
     - core/ConfigMap/kube-system/podcidr-fabric-inventory
     - core/ConfigMap/kube-system/podcidr-fabric-reconciler
     - core/ConfigMap/kube-system/public-mesh-podcidr
+    - core/ConfigMap/kube-system/r640-outer-sni-dnat
     - core/Service/kube-system/kube-api-overseas-relay
     - core/Service/kube-system/kube-dns
     - core/ServiceAccount/kube-system/control-dns-reachability
     - core/ServiceAccount/kube-system/host-network-controller
     - gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary
   inventory:
-    digest: sha256:8e1c3a1124a5276c0d489c14462e1df5cf3c47de1859dbcc5daa3632a41f045e
+    digest: sha256:faa65fbb2465192cafeabab474886eb53b2c2121bce0415f594b6ba00a158663
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

@@ -263,7 +263,7 @@ public_forward_deployment = next((doc for doc in public_forward_documents
 public_forward_revision = (((public_forward_deployment or {}).get("spec", {}).get("template", {})
                             .get("metadata", {}).get("annotations", {}))
                            .get("networking.re8ch.com/config-revision"))
-if public_forward_revision != "kube-api-return-v2":
+if public_forward_revision != "outer-sni-v1":
     errors.append("RouterOS public forward controller must roll out its current config revision")
 try:
     public_forward_spec = json.loads((public_forward_config or {}).get("data", {}).get("desired.json", "{}"))
@@ -272,6 +272,10 @@ try:
         errors.append("RouterOS public forwards must include only the reviewed kube-api rule")
     if public_forward_spec.get("gatewayVip") != "10.251.0.4":
         errors.append("RouterOS kube-api forward must target the Cilium Gateway VIP")
+    if public_forward_spec.get("outerSniBackend") != "192.168.88.251":
+        errors.append("RouterOS outer SNI forward must target R640 LAN authority")
+    if public_forward_spec.get("outerSniPort") != "10443":
+        errors.append("RouterOS outer SNI forward must use the dedicated host port")
     if public_forward_spec.get("returnAnchorComment") != "defconf: masquerade after symmetric rules":
         errors.append("RouterOS kube-api return must precede the default masquerade rule")
 except (TypeError, ValueError):
