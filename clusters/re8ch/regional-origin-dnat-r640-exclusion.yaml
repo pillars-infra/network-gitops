@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: regional-origin-dnat
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: regional-origin-dnat
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: regional-origin-dnat
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: regional-origin-dnat
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: networking.re8ch.com/public-edge
+                    operator: Exists
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: [r640]
+      containers:
+        - name: reconciler
+          image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
+          imagePullPolicy: IfNotPresent
+          command: [/usr/bin/sh, /config/reconcile.sh]
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          readinessProbe:
+            exec:
+              command: [/usr/bin/nsenter, -t, "1", -n, chroot, /host, /usr/sbin/nft, list, table, ip, re8ch_regional_origin]
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: script
+              mountPath: /config
+              readOnly: true
+            - name: host-root
+              mountPath: /host
+              readOnly: true
+            - name: cilium-run
+              mountPath: /var/run/cilium
+              readOnly: true
+      hostNetwork: true
+      hostPID: true
+      priorityClassName: system-node-critical
+      terminationGracePeriodSeconds: 10
+      tolerations:
+        - operator: Exists
+      volumes:
+        - name: script
+          configMap:
+            name: regional-origin-dnat-script
+            defaultMode: 365
+        - name: host-root
+          hostPath:
+            path: /
+            type: Directory
+        - name: cilium-run
+          hostPath:
+            path: /var/run/cilium
+            type: Directory

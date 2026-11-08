@@ -63,6 +63,7 @@ spec:
     - re8ch-gateway-canary
     - re8ch-service-public-gateway
     - re8ch-service-vip
+    - regional-origin-dnat
     - zerotier-planet
     forceConflictObjects:
     - apps/DaemonSet/kube-system/control-api-source
@@ -71,6 +72,7 @@ spec:
     - apps/DaemonSet/kube-system/host-network-controller
     - apps/DaemonSet/kube-system/podcidr-fabric-reconciler
     - apps/DaemonSet/kube-system/public-mesh-podcidr-reconciler
+    - apps/DaemonSet/kube-system/regional-origin-dnat
     - apps/Deployment/kube-system/kube-api-overseas-relay
     - apps/Deployment/kube-system/zerotier-planet
     - cert-manager.io/Certificate/kube-system/access-subdomains
@@ -103,7 +105,7 @@ spec:
     - core/ServiceAccount/kube-system/host-network-controller
     - gateway.networking.k8s.io/Gateway/kube-system/re8ch-gateway-canary
   inventory:
-    digest: sha256:a9ec0b73cfb54a411e6282e9ad4fa16b1151abb0d2188b6e105dfd560dd9ee04
+    digest: sha256:8e1c3a1124a5276c0d489c14462e1df5cf3c47de1859dbcc5daa3632a41f045e
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300
