@@ -176,30 +176,22 @@ if "kube-api-overseas-relay.yaml" not in cluster_resources:
     errors.append("production root must reconcile the overseas kube API relay")
 kube_api_documents = [d for d in yaml.safe_load_all(
     (root / "clusters/re8ch/kube-api-public.yaml").read_text()) if d]
-public_gateway = next((doc for doc in documents if doc.get("kind") == "Gateway"
-                       and doc.get("metadata", {}).get("namespace") == "kube-system"
-                       and doc.get("metadata", {}).get("name") == "re8ch-gateway-canary"), None)
-kube_api_listener = next((listener for listener in (public_gateway or {}).get("spec", {}).get("listeners", [])
-                          if listener.get("name") == "kube-api-service-tls"), None)
-if kube_api_listener != {
-        "allowedRoutes": {"namespaces": {"from": "All"}},
-        "hostname": "kube-api.service.re8ch.com", "name": "kube-api-service-tls",
-        "port": 443, "protocol": "TLS", "tls": {"mode": "Passthrough"}}:
-    errors.append("public Gateway must expose exact kube API SNI passthrough on port 443")
 if any(doc.get("kind") == "TCPRoute" for doc in kube_api_documents):
     errors.append("legacy public kube API TCPRoute must be retired")
-api_https_route = next((doc for doc in kube_api_documents if doc.get("kind") == "TLSRoute"
+api_https_route = next((doc for doc in kube_api_documents if doc.get("kind") == "HTTPRoute"
                         and doc.get("metadata", {}).get("name") == "kube-api-service"), None)
 if ((api_https_route or {}).get("spec", {}).get("hostnames") != ["kube-api.service.re8ch.com"] or
         (api_https_route or {}).get("spec", {}).get("parentRefs") !=
-        [{"name": "re8ch-gateway-canary", "sectionName": "kube-api-service-tls"}] or
+        [{"name": "re8ch-gateway-canary", "sectionName": "service-wildcard-https"}] or
         ((api_https_route or {}).get("spec", {}).get("rules") or [{}])[0].get("backendRefs") !=
         [{"name": "kube-api-observer-proxy", "port": 6443}]):
-    errors.append("public kube API TLSRoute must use the dedicated SNI passthrough listener")
+    errors.append("public kube API HTTPRoute must use the service wildcard listener")
 if (root / "clusters/re8ch/gateway-kube-api-patch.yaml").exists():
     errors.append("legacy public kube API Gateway listener patch must be retired")
-if any(doc.get("kind") == "BackendTLSPolicy" for doc in kube_api_documents):
-    errors.append("TLS passthrough must not terminate and re-originate kube API TLS")
+api_backend_tls = next((doc for doc in kube_api_documents if doc.get("kind") == "BackendTLSPolicy"), None)
+if ((api_backend_tls or {}).get("spec", {}).get("validation", {}).get("hostname") !=
+        "k3s-api.internal.re8ch.com"):
+    errors.append("public kube API upstream must validate the internal K3s certificate")
 if any(doc.get("kind") == "ReferenceGrant" for doc in kube_api_documents):
     errors.append("public kube API route must not retain the obsolete cross-namespace grant")
 if any(doc.get("kind") == "Ingress" for doc in kube_api_documents):

@@ -27,7 +27,8 @@ spec:
     - apps/Deployment
     - core/ConfigMap
     - core/Service
-    - gateway.networking.k8s.io/TLSRoute
+    - gateway.networking.k8s.io/BackendTLSPolicy
+    - gateway.networking.k8s.io/HTTPRoute
     objectNames:
     - kube-api-observer-proxy
     - kube-api-service
@@ -35,9 +36,10 @@ spec:
     - apps/Deployment/kube-system/kube-api-observer-proxy
     - core/ConfigMap/kube-system/kube-api-observer-proxy
     - core/Service/kube-system/kube-api-observer-proxy
-    - gateway.networking.k8s.io/TLSRoute/kube-system/kube-api-service
+    - gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy
+    - gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service
   inventory:
-    digest: sha256:f7b778c04cac23ccc30690020b5fcd1f2e20f920b8074d31d2c18355d9e337a7
+    digest: sha256:f028a21138cf2675b1bb6a2b6bc6a13692fecb988454a3d4640edbee34fba357
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

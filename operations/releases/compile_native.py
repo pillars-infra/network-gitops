@@ -20,7 +20,8 @@ KUBE_API_RELEASE_OBJECTS={
     'core/ConfigMap/kube-system/kube-api-observer-proxy',
     'apps/Deployment/kube-system/kube-api-observer-proxy',
     'core/Service/kube-system/kube-api-observer-proxy',
-    'gateway.networking.k8s.io/TLSRoute/kube-system/kube-api-service',
+    'gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy',
+    'gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service',
 }
 OBSERVED_READINESS_RELEASES={
     'networking-helm-cilium-kube-system',
