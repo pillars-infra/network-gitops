@@ -217,6 +217,7 @@ jobs:
       - name: Acquire exact OIDC identity
         env:
           EXECUTOR_AUDIENCE: '${{ needs.validate.outputs.audience }}'
+          KUBE_API_CA_PEM: '${{ secrets.KUBE_API_CA_PEM }}'
         run: |
           set -euo pipefail
           curl -fsS --get -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" --data-urlencode "audience=$EXECUTOR_AUDIENCE" \
@@ -224,7 +225,11 @@ jobs:
           token="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["value"])' "$RUNNER_TEMP/oidc.json")"
           echo "::add-mask::$token"
           kubeconfig="$RUNNER_TEMP/executor.kubeconfig"
-          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://kube-api.service.re8ch.com
+          ca_file="$RUNNER_TEMP/kube-api-ca.pem"
+          printf '%s\n' "$KUBE_API_CA_PEM" > "$ca_file"
+          chmod 600 "$ca_file"
+          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://kube-api.service.re8ch.com \
+            --certificate-authority="$ca_file" --embed-certs=true
           kubectl config --kubeconfig "$kubeconfig" set-credentials release-executor --token="$token"
           kubectl config --kubeconfig "$kubeconfig" set-context release-executor --cluster=re8ch-main --user=release-executor
           kubectl config --kubeconfig "$kubeconfig" use-context release-executor
@@ -330,6 +335,7 @@ jobs:
       - name: Acquire exact OIDC identity
         env:
           EXECUTOR_AUDIENCE: '${{ needs.validate.outputs.audience }}'
+          KUBE_API_CA_PEM: '${{ secrets.KUBE_API_CA_PEM }}'
         run: |
           set -euo pipefail
           curl -fsS --get -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" --data-urlencode "audience=$EXECUTOR_AUDIENCE" \
@@ -337,7 +343,11 @@ jobs:
           token="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["value"])' "$RUNNER_TEMP/oidc.json")"
           echo "::add-mask::$token"
           kubeconfig="$RUNNER_TEMP/executor.kubeconfig"
-          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://kube-api.service.re8ch.com
+          ca_file="$RUNNER_TEMP/kube-api-ca.pem"
+          printf '%s\n' "$KUBE_API_CA_PEM" > "$ca_file"
+          chmod 600 "$ca_file"
+          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://kube-api.service.re8ch.com \
+            --certificate-authority="$ca_file" --embed-certs=true
           kubectl config --kubeconfig "$kubeconfig" set-credentials release-executor --token="$token"
           kubectl config --kubeconfig "$kubeconfig" set-context release-executor --cluster=re8ch-main --user=release-executor
           kubectl config --kubeconfig "$kubeconfig" use-context release-executor
