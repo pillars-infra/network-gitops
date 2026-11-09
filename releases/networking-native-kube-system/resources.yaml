@@ -550,12 +550,10 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: networking.re8ch.com/public-edge
-                operator: Exists
               - key: kubernetes.io/hostname
-                operator: NotIn
+                operator: In
                 values:
-                - r640
+                - domain-ex
       containers:
       - command:
         - /usr/bin/sh
