@@ -21,11 +21,9 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
-                  - key: networking.re8ch.com/public-edge
-                    operator: Exists
                   - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values: [r640]
+                    operator: In
+                    values: [domain-ex]
       containers:
         - name: reconciler
           image: quay.io/cilium/cilium-ci:latest@sha256:19ff540fa2927047d4935d5c1b173818225cc288c20a55d0bdb8748ea8adbb26
