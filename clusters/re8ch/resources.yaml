@@ -27007,3 +27007,81 @@ spec:
     - {name: dns, port: 53, protocol: UDP, targetPort: 53}
     - {name: dns-tcp, port: 53, protocol: TCP, targetPort: 53}
     - {name: metrics, port: 9153, protocol: TCP, targetPort: 9153}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mihomos-node-configs
+  namespace: egress-fabric
+data:
+  cn.yaml: |
+    mixed-port: 17891
+    external-controller: 0.0.0.0:19090
+    allow-lan: true
+    mode: rule
+    rule-providers:
+      cn-ip: {type: file, behavior: classical, path: /etc/mihomo/rules/cn-ip-rules.yaml}
+    proxies:
+      - {name: OVERSEAS-LA, type: socks5, server: 10.250.0.104, port: 1080}
+      - {name: OVERSEAS-LA-2, type: socks5, server: 10.250.0.220, port: 1080}
+      - {name: OVERSEAS-FLK, type: socks5, server: 10.250.0.105, port: 1080}
+    proxy-groups:
+      - {name: GLOBAL, type: fallback, proxies: [OVERSEAS-LA, OVERSEAS-LA-2, OVERSEAS-FLK], url: "https://www.gstatic.com/generate_204", interval: 30, lazy: false}
+      - {name: GITHUB, type: fallback, proxies: [OVERSEAS-LA, OVERSEAS-LA-2, OVERSEAS-FLK], url: "https://github.com/login/oauth/access_token", interval: 30, lazy: false}
+      - {name: GHCR, type: fallback, proxies: [OVERSEAS-LA, OVERSEAS-LA-2, OVERSEAS-FLK], url: "https://ghcr.io/v2/", interval: 30, lazy: false}
+    rules: ["IP-CIDR,10.0.0.0/8,DIRECT,no-resolve", "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve", "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve", "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve", "DOMAIN,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ghcr.io,GHCR", "DOMAIN-SUFFIX,pkg-containers.githubusercontent.com,GHCR", "DOMAIN-SUFFIX,github.com,GITHUB", "DOMAIN-SUFFIX,githubusercontent.com,GITHUB", "DOMAIN-SUFFIX,cn,DIRECT", "RULE-SET,cn-ip,DIRECT", "MATCH,GLOBAL"]
+  global.yaml: |
+    mixed-port: 17891
+    external-controller: 0.0.0.0:19090
+    allow-lan: true
+    mode: rule
+    ipv6: false
+    rule-providers:
+      cn-ip: {type: file, behavior: classical, path: /etc/mihomo/rules/cn-ip-rules.yaml}
+    proxies:
+      - {name: CN-FABRIC, type: socks5, server: mihomos-cn-exit.egress-fabric.svc.cluster.local, port: 1080}
+    proxy-groups:
+      - {name: CN, type: fallback, proxies: [CN-FABRIC], url: "https://connectivitycheck.gstatic.com/generate_204", interval: 30, lazy: false}
+    rules: ["IP-CIDR,10.0.0.0/8,DIRECT,no-resolve", "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve", "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve", "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve", "DOMAIN,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,cn,CN", "RULE-SET,cn-ip,CN", "MATCH,DIRECT"]
+  exit.yaml: |
+    mixed-port: 1080
+    external-controller: 127.0.0.1:19091
+    allow-lan: true
+    bind-address: "0.0.0.0"
+    mode: direct
+    rules: ["MATCH,DIRECT"]
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: mihomos-node-cn
+  namespace: egress-fabric
+spec:
+  updateStrategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 0, maxUnavailable: 1}}
+  selector: {matchLabels: {app.kubernetes.io/name: mihomos-node-cn}}
+  template:
+    metadata:
+      annotations: {networking.re8ch.com/proxy-members: "overseas-la,overseas-la-2,overseas-flk"}
+      labels: {app.kubernetes.io/name: mihomos-node-cn, app.kubernetes.io/component: node-proxy}
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      priorityClassName: system-node-critical
+      nodeSelector: {networking.re8ch.com/geo: cn}
+      tolerations: [{operator: Exists}]
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, fsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: mihomo
+          image: docker.io/metacubex/mihomo:v1.19.29@sha256:e1d7dadaa9368a52d420d65007e0e0d87cb148d292faa67326eda3fef5757f59
+          imagePullPolicy: IfNotPresent
+          args: [-d, /etc/mihomo]
+          ports: [{name: mixed, containerPort: 17891}, {name: controller, containerPort: 19090}]
+          readinessProbe: {httpGet: {path: /version, port: controller}, periodSeconds: 5}
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 25m, memory: 32Mi}, limits: {cpu: 250m, memory: 256Mi}}
+          volumeMounts:
+            - {name: config, mountPath: /etc/mihomo/config.yaml, subPath: cn.yaml, readOnly: true}
+            - {name: cn-rules, mountPath: /etc/mihomo/rules, readOnly: true}
+      volumes:
+        - {name: config, configMap: {name: mihomos-node-configs}}
+        - {name: cn-rules, configMap: {name: mihomos-cn-ip-rules}}

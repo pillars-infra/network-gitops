@@ -656,9 +656,11 @@
       "contract": "contracts/networking-native-egress-fabric.yaml",
       "namespace": "egress-fabric",
       "inventory": [
+        "apps/DaemonSet/egress-fabric/mihomos-node-cn",
         "apps/Deployment/egress-fabric/mihomo-node-labeler",
         "core/ConfigMap/egress-fabric/identity-egress-config",
         "core/ConfigMap/egress-fabric/mihomo-node-labeler-code-k4fm8c7g7t",
+        "core/ConfigMap/egress-fabric/mihomos-node-configs",
         "core/ConfigMap/egress-fabric/re8ch-geodb-snapshot",
         "core/ConfigMap/egress-fabric/route-path-controller-code",
         "core/Service/egress-fabric/identity-egress",
@@ -674,6 +676,21 @@
         "policy/PodDisruptionBudget/egress-fabric/identity-egress"
       ],
       "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "daemonsets"
+          ],
+          "resourceNames": [
+            "mihomos-node-cn"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
         {
           "apiGroups": [
             "apps"
@@ -699,6 +716,7 @@
           "resourceNames": [
             "identity-egress-config",
             "mihomo-node-labeler-code-k4fm8c7g7t",
+            "mihomos-node-configs",
             "re8ch-geodb-snapshot",
             "route-path-controller-code"
           ],
