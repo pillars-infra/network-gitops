@@ -24,6 +24,7 @@ spec:
     requireExisting: true
     fieldManager: re8ch-release/networking-native-egress-fabric
     resources:
+    - apps/DaemonSet
     - apps/Deployment
     - core/ConfigMap
     - core/Service
@@ -39,15 +40,19 @@ spec:
     - mihomo-node-labeler
     - mihomo-node-labeler-code-k4fm8c7g7t
     - mihomos-byoc-egress
+    - mihomos-node-cn
+    - mihomos-node-configs
     - path-controller
     - re8ch-geodb-snapshot
     - route-path-controller-code
     - service-zone-agent-mobile-egress-mobile-egress-control
     - service-zone-agent-network-policy-public
     forceConflictObjects:
+    - apps/DaemonSet/egress-fabric/mihomos-node-cn
     - apps/Deployment/egress-fabric/mihomo-node-labeler
     - core/ConfigMap/egress-fabric/identity-egress-config
     - core/ConfigMap/egress-fabric/mihomo-node-labeler-code-k4fm8c7g7t
+    - core/ConfigMap/egress-fabric/mihomos-node-configs
     - core/ConfigMap/egress-fabric/re8ch-geodb-snapshot
     - core/ConfigMap/egress-fabric/route-path-controller-code
     - core/Service/egress-fabric/identity-egress
@@ -62,7 +67,7 @@ spec:
     - networking.k8s.io/NetworkPolicy/egress-fabric/identity-egress
     - policy/PodDisruptionBudget/egress-fabric/identity-egress
   inventory:
-    digest: sha256:143805b81f3dfe3fe7ec66230a61fd5cf7295f8fd3898a57e5c5ca6b3584b45b
+    digest: sha256:f4a12c6f88560035b2bdd8344c66018f1c93f9f675917c6376de8b6b52dfd8e5
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300
