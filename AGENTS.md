@@ -6,7 +6,8 @@
 - The production root is `clusters/re8ch`.
 - Read the service-backend public network authority inventory before changing R640 delivery.
 - Build, publish and reconcile through the existing cloud SSA workflow and immutable artifacts.
-- Local Flux controllers are retired. Retained Flux manifests are inputs, not permission to restore a writer.
+- Local Flux writers are permanently retired and forbidden. Never create, restore, scale, restart, repair, proxy or grant RBAC to Source, Kustomize, Helm, Notification, image automation, compatibility or domain Flux controllers.
+- Retained Flux CRDs and manifests are historical/migration inputs only. GitHub webhooks/Actions plus the bounded cloud SSA executor are the sole delivery path, including emergency recovery.
 - Verify real accepted state or server preflight; a merged PR alone is not runtime adoption evidence.
 
 - Before using RE8CH self-service or platform tools, read [docs/RE8CH-TOOLS.md](docs/RE8CH-TOOLS.md) and discover the current authenticated catalog.

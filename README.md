@@ -17,10 +17,13 @@ Public desired-state authority for RE8CH Gateway, DNS, Cilium, and cross-cluster
 
 GitHub Actions builds and signs immutable release artifacts. The bounded SSA
 executor applies reviewed contracts and replays accepted digests from the cloud.
-Local Flux controllers are retired and must not be restored as a fallback.
-Retained Flux resources describe historical inputs; they do not authorize a
-second runtime writer. Source publication and successful runtime adoption are
-separate facts, verified through workflow results and accepted-state evidence.
+Local Flux writers are permanently retired and forbidden. They must not be
+created, restored, scaled, restarted, repaired, proxied or authorized as a
+fallback. Retained Flux APIs and manifests are historical/migration inputs only;
+they do not authorize a second runtime writer. GitHub webhooks/Actions plus the
+bounded cloud SSA executor are the sole delivery and recovery path. Source
+publication and successful runtime adoption are separate facts, verified
+through workflow results and accepted-state evidence.
 
 ## Cilium authority and R640 Gateway recovery
 
