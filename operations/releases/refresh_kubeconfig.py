@@ -2,6 +2,7 @@
 """Renew the current executor credential without passing secrets in process argv."""
 import os
 import argparse
+import base64
 from pathlib import Path
 import tempfile
 
@@ -35,8 +36,13 @@ def refresh() -> None:
 def initialize() -> None:
     """Create the fixed cluster config privately, then use the guarded OIDC client."""
     path = Path(os.environ['KUBECONFIG'])
+    ca = os.environ['KUBE_API_CA_PEM']
+    if not ca.strip():
+        raise Rejected('missing Kubernetes API CA')
     config = {'apiVersion':'v1','kind':'Config',
-              'clusters':[{'name':'re8ch-main','cluster':{'server':'https://kube-api.service.re8ch.com'}}],
+              'clusters':[{'name':'re8ch-main','cluster':{
+                  'server':'https://kube-api.service.re8ch.com',
+                  'certificate-authority-data':base64.b64encode(ca.encode()).decode()}}],
               'users':[{'name':'release-executor','user':{}}],
               'contexts':[{'name':'release-executor','context':{'cluster':'re8ch-main','user':'release-executor'}}],
               'current-context':'release-executor'}
