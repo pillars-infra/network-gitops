@@ -40,6 +40,8 @@ jobs:
         with: {version: v1.33.1}
       - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2' 'jsonschema>=4.23'
       - name: Prepare private read identity
+        env:
+          KUBE_API_CA_PEM: '${{ secrets.KUBE_API_CA_PEM }}'
         run: |
           set -euo pipefail
           export KUBECONFIG="$RUNNER_TEMP/reconcile-select.kubeconfig"
