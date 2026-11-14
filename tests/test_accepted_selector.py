@@ -82,6 +82,9 @@ def test_empty_matrix_is_explicitly_skipped_and_execution_rechecks_state():
     assert workflow['jobs']['reconcile']['if']=="needs.select.outputs.has-accepted == 'true'"
     assert 'SOPS_AGE_KEY' not in yaml.safe_dump(workflow['jobs']['select'])
     assert 'id-token' in workflow['jobs']['select']['permissions']
+    acquire=next(step for step in workflow['jobs']['reconcile']['steps'] if step.get('name')=='Acquire exact OIDC identity and prove denials')
+    assert acquire['env']['KUBE_API_CA_PEM']=='${{ secrets.KUBE_API_CA_PEM }}'
+    assert '--certificate-authority=' in acquire['run'] and '--embed-certs=true' in acquire['run']
     assert any('accepted-bundle --configmap' in step.get('run','') for step in workflow['jobs']['reconcile']['steps'])
     assert workflow['jobs']['selection-status']['steps'][0]['run'].rstrip().endswith('exit 1')
 
