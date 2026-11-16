@@ -3,160 +3,51 @@
 <!-- gitops-status:start -->
 [![Reconcile](https://github.com/pillars-infra/network-gitops/actions/workflows/networking-reconcile.yml/badge.svg?branch=main)](https://github.com/pillars-infra/network-gitops/actions/workflows/networking-reconcile.yml?query=branch%3Amain)
 [![Contract validation](https://github.com/pillars-infra/network-gitops/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/pillars-infra/network-gitops/actions/workflows/validate.yml?query=branch%3Amain)
-
-These live badges show the latest workflow result on `main`, including scheduled
-and manual runs. Reconcile runs can cover a single release; a passing badge is
-not proof that every release is healthy or that SSA changed an object. Open the
-run for its release scope, accepted digest, comparison, apply and health results.
-The [domain observation Project](https://github.com/orgs/pillars-infra/projects/1) retains release-level evidence;
-receipt dispatch and governance checks do not replace runtime health verification.
-Private workflow badges require repository access.
 <!-- gitops-status:end -->
 
-Public desired-state authority for RE8CH Gateway, DNS, Cilium, and cross-cluster network configuration. Open-source networking products remain in their own organizations.
+Reviewed desired state for RE8CH Gateway, DNS, Cilium and cross-cluster
+networking. GitHub holds accepted intent and immutable artifacts; Kubernetes
+holds runtime state. GitHub Actions and the bounded cloud SSA executor form the
+permanently selected write path. Local Flux writers are forbidden.
 
-GitHub Actions builds and signs immutable release artifacts. The bounded SSA
-executor applies reviewed contracts and replays accepted digests from the cloud.
-Local Flux writers are permanently retired and forbidden. They must not be
-created, restored, scaled, restarted, repaired, proxied or authorized as a
-fallback. Retained Flux APIs and manifests are historical/migration inputs only;
-they do not authorize a second runtime writer. GitHub webhooks/Actions plus the
-bounded cloud SSA executor are the sole delivery and recovery path. Source
-publication and successful runtime adoption are separate facts, verified
-through workflow results and accepted-state evidence.
+## Context chain
 
-## Cilium authority and R640 Gateway recovery
+```text
+Project → parent Issue → Issue → branch/worktree → signed commits → PR
+        → checks → accepted artifact → runtime evidence → Project status
+```
 
-`networking-helm-cilium-kube-system` adopts resources of the existing
-`kube-system/cilium` release; it does not install a second release. The vendored chart and every
-runtime image are digest locked. Cilium CRDs remain owned by the main platform
-guardrail.
+Use [the Project context template](.github/PROJECT_CONTEXT_TEMPLATE.md). Runtime
+output, recovery timelines and traffic-probe narratives belong in Issues, the
+[Wiki](https://github.com/pillars-infra/network-gitops/wiki), or observability.
 
-The R640 recovery completed in two reviewed stages:
+## Authority
 
-1. Upgrade only the Cilium operator to the deterministic HTTPRoute ordering
-   commit, keep the agent image unchanged, and move R640 from iptables
-   masquerading to eBPF masquerading while retaining native XDP.
-2. Restart only the R640 Cilium pod, verify Gateway/CEC stability and both the
-   VIP and public endpoint, then remove the temporary proxy-return iptables
-   guard after eBPF masquerading became authoritative.
+- Production composition: `clusters/re8ch`
+- Native contracts: `operations/releases/compile_native.py`
+- Helm contracts: `operations/releases/compile_helm.py`
+- Accepted replay: `.github/workflows/networking-reconcile.yml`
+- New publication: `.github/workflows/static-release.yml`
 
-The `cilium-gateway-cec-update-freeze` admission policy is not part of desired
-state. The freeze and the temporary proxy-return iptables guard were deleted
-after the fixed operator, R640 agent and real traffic probes succeeded. The cloud
-network executor is not authorized to administer arbitrary admission policy.
+The service-backend public-mesh inventory defines R640 public authority. Read its
+authenticated topology contract for public IP, route, Gateway, listener, DNAT,
+eBGP, overlay or dummy-interface work.
 
-## Steady-state invariants
+Existing resources use exact inventories, resource-version preconditions and
+bounded field ownership. Images, charts and compiled artifacts remain digest
+locked. Runtime acceptance combines artifact verification, server preflight,
+accepted state and actual endpoint evidence.
 
-- The cloud Cilium contract is the only adoption path for the existing
-  `kube-system/cilium` resources; do not start a second Helm/Flux writer.
-- The vendored chart and all images are immutable and digest locked.
-- Chart versions and archive digests are locked for cloud compilation.
-  `rollOutCiliumPods` remains disabled.
-- An offline worker does not fail or roll back an otherwise converged Cilium
-  upgrade. Per-node health is monitored separately.
-- R640 retains native XDP and eBPF masquerading on `eno2np1`. Its
-  CiliumNodeConfig explicitly clears the inherited legacy
-  `egress-masquerade-interfaces` value.
-- `Gateway Programmed=True` is not a traffic probe. Acceptance requires stable
-  CEC content plus TLS/HTTP checks through both `10.251.0.4` and the public
-  authority `223.159.210.222`.
-- Emergency live controls must either become reviewed desired state or be
-  removed after recovery. They may not become permanent out-of-band patches.
+## Working here
 
-The incident evidence, commands and ownership decisions are recorded in
+1. Start from current `github/main` in an Issue-specific `codex/*` worktree.
+2. Keep one concern in the worktree and closing PR.
+3. Build each source revision once and reuse its signed digest.
+4. Record checks and sanitized runtime evidence in the Issue.
+5. Update Project status after the corresponding evidence is verified.
+
+Comments explain network invariants, ownership boundaries and external
+contracts. Issues and Wiki carry examples, investigations and Kubernetes output.
+
+References: [`docs/RE8CH-TOOLS.md`](docs/RE8CH-TOOLS.md),
 [`docs/r640-cilium-gateway-recovery-2026-10-19.md`](docs/r640-cilium-gateway-recovery-2026-10-19.md).
-
-## Cloud native release execution
-
-`operations/releases/compile_native.py` projects the existing Kustomize root into
-27 namespace-scoped ReleaseContracts. Regenerate after desired-state edits and
-run `--check` in CI. `native-authority.json` contains exact inventories, bounded
-get/patch RBAC and empty state ConfigMaps for the central bootstrap owner.
-Adoption does not grant create/delete and pruning is disabled. Role and
-RoleBinding objects remain platform-owned under `platformBootstrap`; this
-executor receives no bind/escalate privilege.
-
-The `static-release` workflow reuses the service-backend SSA bundle/executor and
-the accepted-digest replay port in agent-gitops at commit
-`29bbf035b9aa1f8069becf526e7de8d73e095727`. Publish once with `mode=publish`,
-then use `mode=reconcile` to verify and replay the accepted immutable digest.
-`force_takeover` is restricted to the exact contract inventory; stop the previous
-Flux writer before adoption. Protected environment approval, signed provenance,
-server dry-run, durable state and optimistic concurrency remain enforced.
-
-Eight SOPS ConfigMaps are included as ciphertext. `SOPS_AGE_KEY` is provisioned
-into protected execute/preflight steps and the fixed Advanced Fabric compiler.
-Ordinary publication never receives the key. The executor
-verifies the signed bundle, decrypts the ConfigMap in memory before adding audit
-annotations (preserving SOPS MAC verification), checks plaintext parity and exact
-identity, and sends plaintext only through kubectl stdin. Sensitive stderr and
-command failures are redacted. Missing explicit key provisioning fails closed;
-runner-local default key discovery is not used. Secret objects remain forbidden.
-
-`dry_run=true` now preflights the same signed artifact and exact inventory through
-the executor without changing durable accepted state. Use `mode=publish` for a
-new release; `mode=reconcile` requires a previously healthy accepted artifact.
-
-Secret objects, platform-owned bootstrap/RBAC/CRDs, unpinned images and unsupported
-cluster network pools remain explicit in the omission ledgers. Encrypted Helm
-values use the protected compilation path below. No local Flux writer is needed.
-
-Use `mode=reuse`, `reuse_digest` and `reuse_source_commit` to preflight or accept a
-previously published artifact before any accepted state exists. The workflow
-verifies the certificate's build SHA and compares the entire current contract and
-source closure with that ancestor commit; it never rebuilds in reuse mode.
-`mode=reconcile` selects the accepted artifact from durable state instead.
-
-## Cloud Helm rendering
-
-`compile_helm.py` uses the existing pinned chart digests, source HelmRelease
-values and Kustomize post-renderers. The lock binds chart archive hashes, Helm
-v4.2.3 and the observed Kubernetes capability version. CI verifies cached chart
-bytes before reuse and reproduces the reviewed snapshots; reconcile later pulls
-the signed compiled OCI artifact without downloading/rendering Helm again.
-
-Four charts (Cilium, PublicEdge, Among Clusters agent/hub) project 47 namespaced
-runtime objects into six bounded contracts. `helm-authority.json` holds exact
-bootstrap/RBAC manifests separately. Existing Cilium TLS Secrets are preserved,
-not regenerated into public artifacts. Hook/one-shot operations are excluded
-from periodic reconcile.
-
-Advanced Fabric uses a separate fixed protected compile step for its encrypted
-HelmRelease and inventory ConfigMap. It renders the same pinned chart and reviewed
-Kustomize overlays, excludes hooks and platform bootstrap resources, and encrypts
-22 existing runtime objects before ordinary OCI signing. Only object identities
-remain visible; no decrypted resources are uploaded. The executor verifies the
-artifact before decrypting and validates the exact identities and image pins.
-
-Initial Advanced Fabric adoption additionally checks the restricted topology
-source digest and live spec parity against the SSA resourceVersion precondition.
-Any difference or concurrent change blocks adoption; diagnostics expose only
-fixed-category counts. This check runs for both server preflight and execution.
-After a healthy acceptance, reconcile may repair drift while still validating the
-source pin. Exact platform-owned diagnostic RBAC grants only GET on
-`ops/restricted-topology-context`.
-
-All native and Helm adoption contracts set `authorization.requireExisting=true`.
-The executor fetches each object's resourceVersion and supplies it as an SSA
-precondition for both dry-run and apply, including rollback. Missing objects
-fail closed; this adoption path cannot recreate a deleted object. Explicit new
-resource creation remains a separate publication authority.
-
-## Accepted artifact reconciliation
-
-`networking-reconcile.yml` runs on relevant main changes and twice hourly. It reads each release's durable accepted state, skips releases without acceptance, verifies the publisher signature, and replays that exact healthy digest through the existing SSA executor. It never builds, publishes, changes an inventory, requests force, or migrates a contract. Publication and first adoption retain the protected `static-release.yml` workflow. Both workflows share per-contract concurrency.
-
-The separate `release-reconciler-networking` Environment needs `KUBE_API_CA_PEM` and `SOPS_AGE_KEY`. Its OIDC audience is `https://kube-api.re8ch.com/release-reconciler-networking`, restricted to this repository's main `networking-reconcile.yml` workflow. Platform provisioning maps it to the existing exact networking permissions; no new Kubernetes grants are required. The SOPS key is available only during accepted execution, never an artifact or log. Provision this identity before enabling successful automatic runtime execution.
-
-## Independent SSA and Observe actions
-
-Reconcile reports SSA execution and runtime observation separately. The SSA step
-validates authorization and the signed accepted artifact, performs server-side
-dry-run and apply, then records `outcome: applied` and `acceptedDigest`. It does
-not claim a healthy runtime. The following read-only Observe step publishes a
-separate observation artifact and records healthy, degraded or unknown health.
-Runtime health does not fail SSA, lock the release or trigger rollback. Signature,
-authorization, field ownership and API write failures remain execution failures.
-Legacy `healthyDigest` is only a fallback for older accepted records; new replay
-authorization uses the explicitly accepted digest without inventing health proof.
