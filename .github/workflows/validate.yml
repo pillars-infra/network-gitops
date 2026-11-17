@@ -3,6 +3,15 @@ on:
   pull_request:
   push:
     branches: [main]
+    paths-ignore:
+      - site/**
+      - README.md
+      - AGENTS.md
+      - docs/**
+      - .github/ISSUE_TEMPLATE/**
+      - .github/pull_request_template.md
+      - .github/PROJECT_CONTEXT_TEMPLATE.md
+      - .github/workflows/pages.yml
 permissions:
   contents: read
 concurrency:
