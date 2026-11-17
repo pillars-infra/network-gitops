@@ -15,6 +15,16 @@ Private workflow badges require repository access.
 
 Public desired-state authority for RE8CH Gateway, DNS, Cilium, and cross-cluster network configuration. Open-source networking products remain in their own organizations.
 
+## Project context
+
+The [sanitized static context site](https://pillars-infra.github.io/network-gitops/)
+is the public discovery surface. Cross-organization dependencies use fully
+qualified references described in
+[`docs/CROSS-ORGANIZATION-CONTEXT.md`](docs/CROSS-ORGANIZATION-CONTEXT.md).
+Runtime narratives remain in [Discussions](https://github.com/pillars-infra/network-gitops/discussions),
+the [Wiki](https://github.com/pillars-infra/network-gitops/wiki) and observability
+backends. Authenticated authority sources retain topology and endpoint details.
+
 GitHub Actions builds and signs immutable release artifacts. The bounded SSA
 executor applies reviewed contracts and replays accepted digests from the cloud.
 Local Flux writers are permanently retired and forbidden. They must not be

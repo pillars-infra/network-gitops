@@ -1,0 +1,23 @@
+name: Cross-organization context
+description: Propose work connected to another repository or organization.
+title: "context: "
+body:
+  - type: input
+    id: parent
+    attributes:
+      label: Parent or upstream context
+      description: Use owner/repository#number or a canonical GitHub URL.
+      placeholder: re8ch/service-backend#2883
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence links
+      description: Link checks, deployments, Wiki, Discussions or observability.
