@@ -27,6 +27,7 @@ OBSERVED_READINESS_RELEASES={
     'networking-helm-cilium-kube-system',
     'networking-native-kube-system',
 }
+EXTERNAL_NATIVE_RELEASES={'networking-native-atlantic-bootstrap'}
 
 def classify(document):
     if 'sops' in document:
@@ -99,7 +100,8 @@ def main():
         else:path.parent.mkdir(parents=True,exist_ok=True);path.write_text(content)
     existing={str(p.relative_to(ROOT)) for p in (ROOT/'contracts').glob('networking-native-*.yaml')}
     existing|={str(p.relative_to(ROOT)) for p in (ROOT/'releases').glob('networking-native-*/*') if p.is_file()}
-    obsolete=sorted(existing-set(files))
+    obsolete=sorted(name for name in existing-set(files)
+                    if not any(f'/{release}' in name for release in EXTERNAL_NATIVE_RELEASES))
     if args.check:stale.extend(obsolete)
     else:
         for name in obsolete:(ROOT/name).unlink()

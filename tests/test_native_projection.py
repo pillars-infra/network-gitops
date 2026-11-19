@@ -7,6 +7,7 @@ import yaml
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'operations/releases'))
 from compile_native import KUBE_API_RELEASE_OBJECTS, classify, project
+import profile
 from profile import validate_contract
 
 def obj(kind='ConfigMap',namespace='demo'):
@@ -41,8 +42,21 @@ def test_namespaces_are_separate_and_adoption_does_not_grant_create_delete():
 def test_every_checked_in_contract_is_canonical_and_profile_bound():
     for p in (ROOT/'contracts').glob('networking-native-*.yaml'):
         result=validate_contract(Path('contracts')/p.name)
-        assert result['audience'].endswith('/release-executor-networking')
+        assert result['audience'].endswith('/'+result['environment'])
         with pytest.raises(ValueError):validate_contract(p)
+
+def test_atlantic_contract_uses_separate_execution_identity():
+    result=validate_contract(Path('contracts/networking-native-atlantic-bootstrap.yaml'))
+    assert result['cluster']=='re8ch-atlantic'
+    assert result['environment']=='release-executor-networking-atlantic'
+
+def test_unknown_target_cluster_is_rejected(monkeypatch):
+    path=ROOT/'contracts/networking-native-atlantic-bootstrap.yaml'
+    value=yaml.safe_load(path.read_text())
+    value['spec']['target']['cluster']='unknown'
+    monkeypatch.setattr(profile.yaml,'safe_load',lambda _: value)
+    with pytest.raises(ValueError,match='unsupported networking target cluster'):
+        validate_contract(Path('contracts')/path.name)
 
 
 def test_rbac_is_platform_owned_without_executor_inventory():
