@@ -40,25 +40,44 @@ spec:
     - mihomo-node-labeler
     - mihomo-node-labeler-code-k4fm8c7g7t
     - mihomos-byoc-egress
+    - mihomos-cn-exit
+    - mihomos-cn-ip-rules
+    - mihomos-global-exit
+    - mihomos-global-exit-overseas-flk
+    - mihomos-global-exit-overseas-la
+    - mihomos-global-exit-overseas-la-2
     - mihomos-node-cn
     - mihomos-node-configs
+    - mihomos-node-global
+    - mihomos-status-agent
     - path-controller
     - re8ch-geodb-snapshot
     - route-path-controller-code
     - service-zone-agent-mobile-egress-mobile-egress-control
     - service-zone-agent-network-policy-public
     forceConflictObjects:
+    - apps/DaemonSet/egress-fabric/mihomos-cn-exit
+    - apps/DaemonSet/egress-fabric/mihomos-global-exit
     - apps/DaemonSet/egress-fabric/mihomos-node-cn
+    - apps/DaemonSet/egress-fabric/mihomos-node-global
+    - apps/DaemonSet/egress-fabric/mihomos-status-agent
     - apps/Deployment/egress-fabric/mihomo-node-labeler
     - core/ConfigMap/egress-fabric/identity-egress-config
     - core/ConfigMap/egress-fabric/mihomo-node-labeler-code-k4fm8c7g7t
+    - core/ConfigMap/egress-fabric/mihomos-cn-ip-rules
     - core/ConfigMap/egress-fabric/mihomos-node-configs
+    - core/ConfigMap/egress-fabric/mihomos-status-agent
     - core/ConfigMap/egress-fabric/re8ch-geodb-snapshot
     - core/ConfigMap/egress-fabric/route-path-controller-code
     - core/Service/egress-fabric/identity-egress
     - core/Service/egress-fabric/identity-egress-control-plane
     - core/Service/egress-fabric/identity-egress-gitops
     - core/Service/egress-fabric/mihomos-byoc-egress
+    - core/Service/egress-fabric/mihomos-cn-exit
+    - core/Service/egress-fabric/mihomos-global-exit
+    - core/Service/egress-fabric/mihomos-global-exit-overseas-flk
+    - core/Service/egress-fabric/mihomos-global-exit-overseas-la
+    - core/Service/egress-fabric/mihomos-global-exit-overseas-la-2
     - core/Service/egress-fabric/path-controller
     - core/ServiceAccount/egress-fabric/mihomo-node-labeler
     - core/ServiceAccount/egress-fabric/path-controller
@@ -67,7 +86,7 @@ spec:
     - networking.k8s.io/NetworkPolicy/egress-fabric/identity-egress
     - policy/PodDisruptionBudget/egress-fabric/identity-egress
   inventory:
-    digest: sha256:f4a12c6f88560035b2bdd8344c66018f1c93f9f675917c6376de8b6b52dfd8e5
+    digest: sha256:0fcfa8d496bf65fe478e104e740702c4736923425fc780b7db3dae3afbf280e4
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300
