@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atlantic-cluster-profile
+  namespace: atlantic-system
+data:
+  clusterID: re8ch-atlantic
+  role: edge-delivery
+  executionMode: github-cloud-ssa
+  coordinationMode: among-clusters-signed-summary
+  serverRegion: eu-north
+  serverZone: hel1
+  podCIDR: 10.72.0.0/16
+  serviceCIDR: 10.44.0.0/16
+  failurePolicy: shed-nonessential-traffic

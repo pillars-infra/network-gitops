@@ -12,6 +12,13 @@ WORKFLOW = '.github/workflows/static-release.yml'
 ENVIRONMENT = 'release-executor-networking'
 AUDIENCE = 'https://kube-api.re8ch.com/release-executor-networking'
 SIGNER = f'https://github.com/{REPOSITORY}/{WORKFLOW}@refs/heads/main'
+EXECUTION_PROFILES = {
+    're8ch': {'environment': ENVIRONMENT, 'audience': AUDIENCE},
+    're8ch-atlantic': {
+        'environment': 'release-executor-networking-atlantic',
+        'audience': 'https://kube-api.re8ch.com/release-executor-networking-atlantic',
+    },
+}
 
 def validate_contract(path):
     resolved = path.resolve()
@@ -21,7 +28,11 @@ def validate_contract(path):
     spec = contract['spec']; name = contract['metadata']['name']
     if str(path) != f'contracts/{name}.yaml' or not name.startswith(('networking-native-','networking-helm-')):
         raise ValueError('use canonical networking contract path')
-    expected = dict(repository=REPOSITORY, workflow=WORKFLOW, ref='refs/heads/main', environment=ENVIRONMENT, audience=AUDIENCE, signer=SIGNER, issuer='https://token.actions.githubusercontent.com')
+    cluster = spec['target']['cluster']
+    if cluster not in EXECUTION_PROFILES:
+        raise ValueError('unsupported networking target cluster')
+    execution = EXECUTION_PROFILES[cluster]
+    expected = dict(repository=REPOSITORY, workflow=WORKFLOW, ref='refs/heads/main', environment=execution['environment'], audience=execution['audience'], signer=SIGNER, issuer='https://token.actions.githubusercontent.com')
     if spec['authorityDomain'] != 'networking' or spec['provenance'] != expected:
         raise ValueError('unexpected networking execution identity')
     if name.startswith('networking-native-'):
@@ -38,7 +49,7 @@ def validate_contract(path):
             raise ValueError('Helm projection differs from reviewed render')
     if spec['source'] != expected_source:
         raise ValueError('source must be the reviewed projection')
-    return {'release-id': name, 'namespace': spec['target']['namespace'], 'domain':'networking', 'environment':ENVIRONMENT, 'audience':AUDIENCE, 'kubernetes-group':'re8ch:release-executor:networking', 'signer':SIGNER}
+    return {'release-id': name, 'namespace': spec['target']['namespace'], 'cluster':cluster, 'domain':'networking', 'environment':execution['environment'], 'audience':execution['audience'], 'kubernetes-group':'re8ch:release-executor:networking', 'signer':SIGNER}
 
 REPLAY_WORKFLOW = '.github/workflows/networking-reconcile.yml'
 REPLAY_ENVIRONMENT = 'release-reconciler-networking'
@@ -56,6 +67,10 @@ def replay_matrix():
     for path in sorted((ROOT/'contracts').glob('networking-*.yaml')):
         relative=path.relative_to(ROOT)
         profile=validate_contract(relative)
+        # Atlantic is an autonomous edge execution domain. It has no access to
+        # the main-cluster replay identity and is reconciled by its own release.
+        if profile['cluster'] != 're8ch':
+            continue
         # The local Flux namespace was removed; its retained encrypted input
         # cannot have an accepted runtime state to replay.
         if profile['namespace']=='flux-network-system':

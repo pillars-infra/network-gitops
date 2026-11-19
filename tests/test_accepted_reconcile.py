@@ -38,6 +38,7 @@ def test_matrix_and_workflow_have_no_publishing_inputs(monkeypatch):
     matrix=replay_matrix()
     assert len(matrix)==34
     assert all(p['audience']==REPLAY_AUDIENCE for p in matrix)
+    assert all(p['cluster']=='re8ch' for p in matrix)
     text=(ROOT/'.github/workflows/networking-reconcile.yml').read_text()
     workflow=yaml.safe_load(text)
     triggers=workflow.get('on',workflow.get(True))
