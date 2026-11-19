@@ -12,6 +12,7 @@ resources:
   - regional-origin-dnat-r640-exclusion.yaml
   - r640-outer-sni-dnat.yaml
   - multi-pool
+  - mihomos-authority-resources.yaml
 patches:
   - path: advanced-fabric-control-plane-offload.yaml
     target:
@@ -20,6 +21,19 @@ patches:
       kind: HelmRelease
       namespace: flux-network-system
       name: advanced-fabric
+  - path: mihomos-node-configs-patch.yaml
+    target:
+      version: v1
+      kind: ConfigMap
+      namespace: egress-fabric
+      name: mihomos-node-configs
+  - path: mihomos-node-cn-patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: DaemonSet
+      namespace: egress-fabric
+      name: mihomos-node-cn
   - path: routeros-transit-control-plane-offload.yaml
     target:
       group: apps
