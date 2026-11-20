@@ -3493,7 +3493,7 @@ data:
     mode: rule\nrule-providers:\n  cn-ip: {type: file, behavior: classical, path:\
     \ /etc/mihomo/rules/cn-ip-rules.yaml}\nproxies:\n  - {name: OVERSEAS-LA, type:\
     \ socks5, server: mihomos-global-exit-overseas-la.egress-fabric.svc.cluster.local,\
-    \ port: 1080}\n  - {name: OVERSEAS-LA-2, type: socks5, server: mihomos-global-exit-overseas-la-2.egress-fabric.svc.cluster.local,\
+    \ port: 1080}\n  - {name: OVERSEAS-LA-2, type: socks5, server: mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local,\
     \ port: 1080}\n  - {name: OVERSEAS-FLK, type: socks5, server: mihomos-global-exit-overseas-flk.egress-fabric.svc.cluster.local,\
     \ port: 1080}\nproxy-groups:\n  - name: GLOBAL\n    type: fallback\n    proxies:\
     \ [OVERSEAS-LA, OVERSEAS-LA-2, OVERSEAS-FLK]\n    url: \"https://www.gstatic.com/generate_204\"\
@@ -23237,6 +23237,19 @@ spec:
     targetPort: socks
   selector:
     app.kubernetes.io/name: mihomos-global-exit
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mihomos-global-exit-atlantic
+  namespace: egress-fabric
+spec:
+  externalName: among-clusters-gateway.among-clusters.svc.cluster.local
+  ports:
+  - name: socks
+    port: 1080
+    targetPort: 1080
+  type: ExternalName
 ---
 apiVersion: v1
 kind: Service

@@ -12,7 +12,7 @@ data:
       cn-ip: {type: file, behavior: classical, path: /etc/mihomo/rules/cn-ip-rules.yaml}
     proxies:
       - {name: OVERSEAS-LA, type: socks5, server: mihomos-global-exit-overseas-la.egress-fabric.svc.cluster.local, port: 1080}
-      - {name: OVERSEAS-LA-2, type: socks5, server: mihomos-global-exit-overseas-la-2.egress-fabric.svc.cluster.local, port: 1080}
+      - {name: OVERSEAS-LA-2, type: socks5, server: mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local, port: 1080}
       - {name: OVERSEAS-FLK, type: socks5, server: mihomos-global-exit-overseas-flk.egress-fabric.svc.cluster.local, port: 1080}
     proxy-groups:
       - name: GLOBAL
