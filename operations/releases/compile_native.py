@@ -36,6 +36,7 @@ EXTERNAL_NATIVE_RELEASES={
     'networking-native-atlantic-among-clusters',
     'networking-native-atlantic-mihomo-global-exit',
     'networking-native-atlantic-personal-access',
+    'networking-native-atlantic-kubernetes-advertisement',
 }
 
 def classify(document):

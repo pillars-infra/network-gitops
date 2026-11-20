@@ -44,8 +44,6 @@ spec:
       app.kubernetes.io/name: among-clusters-agent
   template:
     metadata:
-      annotations:
-        networking.re8ch.com/service-routes-digest: sha256:1a20d67fb76ba03748f9c2311a1b0788f3e7d2aa95f3ddde830a4284317de60f
       labels:
         app.kubernetes.io/name: among-clusters-agent
     spec:
@@ -100,7 +98,7 @@ metadata:
   name: among-clusters-service-routes
   namespace: among-clusters
 data:
-  exports.json: '[{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","target":"mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local:1080","targetPeers":["re8ch-main"]},{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/default/service/kubernetes","target":"kubernetes.default.svc.cluster.local:443","targetPeers":["re8ch-main"]}]'
+  exports.json: '[]'
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
