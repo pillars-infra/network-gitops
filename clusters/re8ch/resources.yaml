@@ -25159,6 +25159,8 @@ spec:
         kubernetes.io/hostname: r640
       peerBundleSecret: among-clusters-peer-bundle
       peerIdentities:
+        re8ch-atlantic:
+        - spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
         re8ch-artc:
         - spiffe://artc.byoc/cluster/artc
         re8ch-qwen:
@@ -25202,6 +25204,8 @@ spec:
       kubernetes.io/os: linux
       scheduling.re8ch.com/service-plane: core
     peerConfirmations:
+    - bundleDigest: sha256:78cd3c8048e21eb80468fbb003f7e03ef7120e7b55eddd6f508d6f2bb22f82f9
+      peerRef: re8ch-atlantic
     - bundleDigest: sha256:1ca3850085419fd4cb099a0922452e1c1d2ba044396fe64f920f63fd78123357
       peerRef: re8ch-qwen
     - bundleDigest: sha256:72dbab1a10af9585ff65e652c0a26240275f3a7cda3206d1aead6ebf5bf71a8e
