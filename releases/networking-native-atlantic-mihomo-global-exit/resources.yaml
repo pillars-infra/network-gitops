@@ -106,8 +106,12 @@ spec:
     - {port: 1080, protocol: TCP}
   egress:
   - to:
-    - ipBlock:
-        cidr: 10.44.0.10/32
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
     ports:
     - {port: 53, protocol: TCP}
     - {port: 53, protocol: UDP}
