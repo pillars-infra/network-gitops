@@ -32,8 +32,10 @@ spec:
         app.kubernetes.io/name: mihomos-global-exit-atlantic
         app.kubernetes.io/part-of: mihomos-cluster
     spec:
-      hostNetwork: true
-      dnsPolicy: Default
+      # Keep the SOCKS listener on the pod network. Egress is still SNATed by
+      # the LA node, while the public node address no longer exposes port 1080.
+      hostNetwork: false
+      dnsPolicy: ClusterFirst
       nodeSelector:
         networking.re8ch.com/mihomo-exit: enabled
       tolerations:
