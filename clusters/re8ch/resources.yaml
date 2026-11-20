@@ -20859,6 +20859,33 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: atlantic-kubernetes-import
+  namespace: among-clusters
+spec:
+  ports:
+  - name: kubernetes
+    port: 6443
+    protocol: TCP
+    targetPort: atlantic-k8s
+  selector:
+    app.kubernetes.io/name: among-clusters-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: re8ch-atlantic-default-kubernetes-re8ch-atlantic
+  namespace: byoc-pilot
+spec:
+  externalName: atlantic-kubernetes-import.among-clusters.svc.cluster.local
+  ports:
+  - name: kubernetes
+    port: 6443
+    protocol: TCP
+  type: ExternalName
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: artc-default-kubernetes-re8ch-artc
   namespace: byoc-pilot
 spec:
@@ -22585,6 +22612,8 @@ spec:
       - port: '22240'
         protocol: TCP
       - port: '23768'
+        protocol: TCP
+      - port: '33768'
         protocol: TCP
   endpointSelector:
     matchLabels:
@@ -25166,6 +25195,12 @@ spec:
         serviceIdentity: spiffe://artc.byoc/ns/default/service/kubernetes
         sessionOnly: true
       - expectedSPIFFEID: spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
+        listen: :33768
+        name: atlantic-k8s
+        port: 33768
+        serviceIdentity: spiffe://atlantic.re8ch.com/ns/default/service/kubernetes
+        sessionOnly: true
+      - expectedSPIFFEID: spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
         listen: :1080
         name: atl-exit
         port: 1080
@@ -26543,6 +26578,28 @@ kind: ManagedAccessGrant
 metadata:
   labels:
     app.kubernetes.io/part-of: among-clusters
+  name: re8ch-atlantic-headlamp-admin
+  namespace: byoc-pilot
+spec:
+  advertisementRef: re8ch-atlantic-default-kubernetes
+  approved: true
+  expiresAt: '2027-11-20T23:59:59Z'
+  peerRef: re8ch-atlantic
+  revoked: false
+  rules:
+  - apiGroups:
+    - '*'
+    resources:
+    - '*'
+    verbs:
+    - '*'
+  scope: Cluster
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: ManagedAccessGrant
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
   name: artc-codex-admin
   namespace: artchais
 spec:
@@ -26830,6 +26887,27 @@ spec:
   suspended: false
   transports:
   - quic-mtls
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: PeerPolicy
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-atlantic-kubernetes-api
+  namespace: byoc-pilot
+spec:
+  directions:
+  - export
+  maxAdvertisements: 1
+  peerSelector:
+    matchNames:
+    - re8ch-atlantic
+  ports:
+  - 443
+  protocols:
+  - kubernetes-api
+  serviceClasses:
+  - kubernetes.control-plane
 ---
 apiVersion: peering.re8ch.com/v1alpha1
 kind: PeerPolicy

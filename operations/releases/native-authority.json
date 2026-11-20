@@ -125,6 +125,7 @@
       "inventory": [
         "cilium.io/CiliumNetworkPolicy/among-clusters/among-clusters-gateway-mihomos-host-egress",
         "core/Service/among-clusters/artc-kubernetes-import",
+        "core/Service/among-clusters/atlantic-kubernetes-import",
         "core/Service/among-clusters/qwen-kubernetes-import",
         "gateway.networking.k8s.io/HTTPRoute/among-clusters/service-zone-among-clusters-among-clusters-ingest",
         "networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-gateway-mihomos-egress"
@@ -154,6 +155,7 @@
           ],
           "resourceNames": [
             "artc-kubernetes-import",
+            "atlantic-kubernetes-import",
             "qwen-kubernetes-import"
           ],
           "verbs": [
@@ -325,17 +327,20 @@
       "inventory": [
         "core/Service/byoc-pilot/artc-default-kubernetes-re8ch-artc",
         "core/Service/byoc-pilot/qwen-default-kubernetes-re8ch-qwen",
+        "core/Service/byoc-pilot/re8ch-atlantic-default-kubernetes-re8ch-atlantic",
         "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-artc",
         "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-qwen",
         "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-sijie",
         "peering.re8ch.com/ManagedAccessGrant/byoc-pilot/artc-headlamp-admin",
         "peering.re8ch.com/ManagedAccessGrant/byoc-pilot/qwen-headlamp-admin",
+        "peering.re8ch.com/ManagedAccessGrant/byoc-pilot/re8ch-atlantic-headlamp-admin",
         "peering.re8ch.com/Peer/byoc-pilot/re8ch-artc",
         "peering.re8ch.com/Peer/byoc-pilot/re8ch-atlantic",
         "peering.re8ch.com/Peer/byoc-pilot/re8ch-qwen",
         "peering.re8ch.com/Peer/byoc-pilot/re8ch-sijie",
         "peering.re8ch.com/PeerPolicy/byoc-pilot/artc-kubernetes-api",
         "peering.re8ch.com/PeerPolicy/byoc-pilot/qwen-kubernetes-api",
+        "peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-atlantic-kubernetes-api",
         "peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-mihomos-egress"
       ],
       "rules": [
@@ -348,7 +353,8 @@
           ],
           "resourceNames": [
             "artc-default-kubernetes-re8ch-artc",
-            "qwen-default-kubernetes-re8ch-qwen"
+            "qwen-default-kubernetes-re8ch-qwen",
+            "re8ch-atlantic-default-kubernetes-re8ch-atlantic"
           ],
           "verbs": [
             "get",
@@ -381,7 +387,8 @@
           ],
           "resourceNames": [
             "artc-headlamp-admin",
-            "qwen-headlamp-admin"
+            "qwen-headlamp-admin",
+            "re8ch-atlantic-headlamp-admin"
           ],
           "verbs": [
             "get",
@@ -398,6 +405,7 @@
           "resourceNames": [
             "artc-kubernetes-api",
             "qwen-kubernetes-api",
+            "re8ch-atlantic-kubernetes-api",
             "re8ch-mihomos-egress"
           ],
           "verbs": [

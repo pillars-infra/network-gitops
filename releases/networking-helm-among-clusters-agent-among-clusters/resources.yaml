@@ -142,7 +142,7 @@ spec:
         - name: EXPORTS_FILE
           value: /routes/exports.json
         - name: IMPORTS_JSON
-          value: '[{"expectedSPIFFEID":"spiffe://qwen.byoc/cluster/qwen","listen":":22240","name":"qwen-k8s","port":22240,"serviceIdentity":"spiffe://qwen.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://artc.byoc/cluster/artc","listen":":23768","name":"artc-k8s","port":23768,"serviceIdentity":"spiffe://artc.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":1080","name":"atl-exit","port":1080,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","sessionOnly":true}]'
+          value: '[{"expectedSPIFFEID":"spiffe://qwen.byoc/cluster/qwen","listen":":22240","name":"qwen-k8s","port":22240,"serviceIdentity":"spiffe://qwen.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://artc.byoc/cluster/artc","listen":":23768","name":"artc-k8s","port":23768,"serviceIdentity":"spiffe://artc.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":33768","name":"atlantic-k8s","port":33768,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":1080","name":"atl-exit","port":1080,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","sessionOnly":true}]'
         - name: PEER_SESSIONS_JSON
           value: '[]'
         - name: PEER_IDENTITIES_JSON
@@ -159,6 +159,9 @@ spec:
           protocol: TCP
         - containerPort: 23768
           name: artc-k8s
+          protocol: TCP
+        - containerPort: 33768
+          name: atlantic-k8s
           protocol: TCP
         - containerPort: 1080
           name: atl-exit
@@ -229,6 +232,10 @@ spec:
     port: 23768
     protocol: TCP
     targetPort: artc-k8s
+  - name: atlantic-k8s
+    port: 33768
+    protocol: TCP
+    targetPort: atlantic-k8s
   - name: atl-exit
     port: 1080
     protocol: TCP
@@ -299,6 +306,8 @@ spec:
     - port: 22240
       protocol: TCP
     - port: 23768
+      protocol: TCP
+    - port: 33768
       protocol: TCP
     - port: 1080
       protocol: TCP
