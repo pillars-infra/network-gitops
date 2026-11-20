@@ -113,6 +113,82 @@ spec:
       - {name: tls, secret: {secretName: access-re8ch-com-tls}}
       - {name: work, emptyDir: {}}
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: personal-access-atlantic-my-kul
+  namespace: egress-fabric
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: personal-access-atlantic
+      access.re8ch.com/region: my-kul
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: personal-access-atlantic
+        app.kubernetes.io/part-of: personal-access
+        access.re8ch.com/region: my-kul
+    spec:
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/hostname: overseas-kl
+      tolerations:
+      - operator: Exists
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+      - name: render-users
+        image: python:3.12-alpine@sha256:d09d15e60962ca365d1cd544a48773bac9d33f2fb1b00f2aa0deec78ade7dc31
+        command: [/bin/sh, -ec]
+        args:
+        - >-
+          awk '/^__ANYTLS_USERS__$|^__HYSTERIA2_USERS__$/{while((getline line < "/credentials/users.yaml")>0)
+          print line; close("/credentials/users.yaml"); next} {print}' /base/config.yaml |
+          sed "s/__CONTROLLER_SECRET__/$(cat /controller/secret)/" > /work/config.yaml
+        resources:
+          requests: {cpu: 5m, memory: 8Mi}
+          limits: {cpu: 100m, memory: 64Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: base, mountPath: /base, readOnly: true}
+        - {name: credentials, mountPath: /credentials, readOnly: true}
+        - {name: controller, mountPath: /controller, readOnly: true}
+        - {name: work, mountPath: /work}
+      containers:
+      - name: mihomo
+        image: docker.io/metacubex/mihomo:v1.19.29@sha256:e1d7dadaa9368a52d420d65007e0e0d87cb148d292faa67326eda3fef5757f59
+        args: [-d, /etc/mihomo]
+        ports:
+        - {name: anytls, containerPort: 24443, hostPort: 24443, protocol: TCP}
+        - {name: hysteria2, containerPort: 24444, hostPort: 24444, protocol: UDP}
+        readinessProbe: {tcpSocket: {port: anytls}, periodSeconds: 5, timeoutSeconds: 2}
+        livenessProbe: {tcpSocket: {port: anytls}, periodSeconds: 15, timeoutSeconds: 2}
+        resources:
+          requests: {cpu: 25m, memory: 64Mi}
+          limits: {cpu: 500m, memory: 512Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: work, mountPath: /etc/mihomo/config.yaml, subPath: config.yaml, readOnly: true}
+        - {name: tls, mountPath: /etc/mihomo/tls, readOnly: true}
+      volumes:
+      - {name: base, configMap: {name: personal-access-atlantic}}
+      - {name: credentials, secret: {secretName: personal-access-users}}
+      - {name: controller, secret: {secretName: access-controller-api, items: [{key: controller-secret, path: secret}]}}
+      - {name: tls, secret: {secretName: access-re8ch-com-tls}}
+      - {name: work, emptyDir: {}}
+---
 apiVersion: v1
 kind: Service
 metadata:
