@@ -126,6 +126,10 @@ spec:
     ports:
     - {protocol: TCP, port: 1080}
   - to:
+    - ipBlock: {cidr: 179.253.231.159/32}
+    ports:
+    - {protocol: TCP, port: 1080}
+  - to:
     - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: kube-system
