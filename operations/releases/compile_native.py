@@ -35,6 +35,7 @@ EXTERNAL_NATIVE_RELEASES={
     'networking-native-atlantic-bootstrap',
     'networking-native-atlantic-among-clusters',
     'networking-native-atlantic-mihomo-global-exit',
+    'networking-native-atlantic-personal-access',
 }
 
 def classify(document):
