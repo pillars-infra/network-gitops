@@ -1,0 +1,56 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-atlantic-personal-access
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch-atlantic
+    namespace: egress-fabric
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-atlantic-personal-access
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking-atlantic
+    audience: https://kube-api.re8ch.com/release-executor-networking-atlantic
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-native-atlantic-personal-access
+    resources:
+    - apps/Deployment
+    - core/ConfigMap
+    - core/Service
+    - networking.k8s.io/NetworkPolicy
+    objectNames:
+    - personal-access-atlantic
+    forceConflictObjects:
+    - apps/Deployment/egress-fabric/personal-access-atlantic
+    - core/ConfigMap/egress-fabric/personal-access-atlantic
+    - core/Service/egress-fabric/personal-access-atlantic
+    - networking.k8s.io/NetworkPolicy/egress-fabric/personal-access-atlantic
+  inventory:
+    digest: sha256:88cb401dbdf8fe24304a11f6220bd6499659089cae97914b35e8c6febc9c49cc
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []
+    healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      namespace: egress-fabric
+      name: personal-access-atlantic
+      jsonPointer: /status/readyReplicas
+      equals: 1

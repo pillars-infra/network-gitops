@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: personal-access-atlantic
+  namespace: egress-fabric
+data:
+  config.yaml: |
+    allow-lan: false
+    mode: rule
+    log-level: warning
+    external-controller: 127.0.0.1:9090
+    secret: __CONTROLLER_SECRET__
+    proxies:
+      - name: ATLANTIC-LOCAL-EGRESS
+        type: socks5
+        server: mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local
+        port: 1080
+        udp: true
+    listeners:
+      - name: access-anytls
+        type: anytls
+        listen: 0.0.0.0
+        port: 24443
+        users:
+    __ANYTLS_USERS__
+        certificate: /etc/mihomo/tls/tls.crt
+        private-key: /etc/mihomo/tls/tls.key
+        proxy: ATLANTIC-LOCAL-EGRESS
+      - name: access-hysteria2
+        type: hysteria2
+        listen: 0.0.0.0
+        port: 24444
+        users:
+    __HYSTERIA2_USERS__
+        up: 1000
+        down: 1000
+        certificate: /etc/mihomo/tls/tls.crt
+        private-key: /etc/mihomo/tls/tls.key
+        proxy: ATLANTIC-LOCAL-EGRESS
+    rules: ["MATCH,ATLANTIC-LOCAL-EGRESS"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: personal-access-atlantic
+  namespace: egress-fabric
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: personal-access-atlantic
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: personal-access-atlantic
+        app.kubernetes.io/part-of: personal-access
+    spec:
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/hostname: overseas-la
+      tolerations:
+      - operator: Exists
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+      - name: render-users
+        image: python:3.12-alpine@sha256:d09d15e60962ca365d1cd544a48773bac9d33f2fb1b00f2aa0deec78ade7dc31
+        command: [/bin/sh, -ec]
+        args:
+        - >-
+          awk '/^__ANYTLS_USERS__$|^__HYSTERIA2_USERS__$/{while((getline line < "/credentials/users.yaml")>0)
+          print line; close("/credentials/users.yaml"); next} {print}' /base/config.yaml |
+          sed "s/__CONTROLLER_SECRET__/$(cat /controller/secret)/" > /work/config.yaml
+        resources:
+          requests: {cpu: 5m, memory: 8Mi}
+          limits: {cpu: 100m, memory: 64Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: base, mountPath: /base, readOnly: true}
+        - {name: credentials, mountPath: /credentials, readOnly: true}
+        - {name: controller, mountPath: /controller, readOnly: true}
+        - {name: work, mountPath: /work}
+      containers:
+      - name: mihomo
+        image: docker.io/metacubex/mihomo:v1.19.29@sha256:e1d7dadaa9368a52d420d65007e0e0d87cb148d292faa67326eda3fef5757f59
+        args: [-d, /etc/mihomo]
+        ports:
+        - {name: anytls, containerPort: 24443, hostPort: 24443, protocol: TCP}
+        - {name: hysteria2, containerPort: 24444, hostPort: 24444, protocol: UDP}
+        readinessProbe: {tcpSocket: {port: anytls}, periodSeconds: 5, timeoutSeconds: 2}
+        livenessProbe: {tcpSocket: {port: anytls}, periodSeconds: 15, timeoutSeconds: 2}
+        resources:
+          requests: {cpu: 25m, memory: 64Mi}
+          limits: {cpu: 500m, memory: 512Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: work, mountPath: /etc/mihomo/config.yaml, subPath: config.yaml, readOnly: true}
+        - {name: tls, mountPath: /etc/mihomo/tls, readOnly: true}
+      volumes:
+      - {name: base, configMap: {name: personal-access-atlantic}}
+      - {name: credentials, secret: {secretName: personal-access-users}}
+      - {name: controller, secret: {secretName: access-controller-api, items: [{key: controller-secret, path: secret}]}}
+      - {name: tls, secret: {secretName: access-re8ch-com-tls}}
+      - {name: work, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: personal-access-atlantic
+  namespace: egress-fabric
+spec:
+  selector:
+    app.kubernetes.io/name: personal-access-atlantic
+  ports:
+  - {name: anytls, port: 24443, targetPort: anytls, protocol: TCP}
+  - {name: hysteria2, port: 24444, targetPort: hysteria2, protocol: UDP}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: personal-access-atlantic
+  namespace: egress-fabric
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: personal-access-atlantic
+  policyTypes: [Ingress, Egress]
+  ingress:
+  - from:
+    - ipBlock: {cidr: 0.0.0.0/0}
+    ports:
+    - {port: 24443, protocol: TCP}
+    - {port: 24444, protocol: UDP}
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels: {kubernetes.io/metadata.name: kube-system}
+      podSelector:
+        matchLabels: {k8s-app: kube-dns}
+    ports:
+    - {port: 53, protocol: TCP}
+    - {port: 53, protocol: UDP}
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: mihomos-global-exit-atlantic
+    ports:
+    - {port: 1080, protocol: TCP}
+    - {port: 1080, protocol: UDP}
