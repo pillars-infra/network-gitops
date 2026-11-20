@@ -81,7 +81,7 @@ spec:
       hostAliases:
       - hostnames:
         - among-clusters.service.re8ch.com
-        ip: 10.251.0.4
+        ip: 10.43.158.127
       nodeSelector:
         kubernetes.io/os: linux
         scheduling.re8ch.com/service-plane: core
