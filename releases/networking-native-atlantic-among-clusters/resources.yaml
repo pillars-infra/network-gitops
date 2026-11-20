@@ -98,7 +98,7 @@ metadata:
   name: among-clusters-service-routes
   namespace: among-clusters
 data:
-  exports.json: '[]'
+  exports.json: '[{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","target":"mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local:1080","targetPeers":["re8ch-main"]},{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/default/service/kubernetes","target":"kubernetes.default.svc.cluster.local:443","targetPeers":["re8ch-main"]}]'
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
