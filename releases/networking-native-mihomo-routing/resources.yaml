@@ -2,13 +2,14 @@ apiVersion: v1
 data:
   cn.yaml: "mixed-port: 17891\nexternal-controller: 0.0.0.0:19090\nallow-lan: true\n\
     mode: rule\nrule-providers:\n  cn-ip: {type: file, behavior: classical, path:\
-    \ /etc/mihomo/rules/cn-ip-rules.yaml}\nproxies:\n  - {name: OVERSEAS-LA, type:\
-    \ socks5, server: mihomos-global-exit-overseas-la.egress-fabric.svc.cluster.local,\
-    \ port: 1080}\n  - {name: OVERSEAS-LA-2, type: socks5, server: mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local,\
+    \ /etc/mihomo/rules/cn-ip-rules.yaml}\nproxies:\n  # The LA nodes moved to re8ch-atlantic.\
+    \  Consume their exported Service\n  # through AmongCluster instead of probing\
+    \ the now-empty main-cluster\n  # per-node Service.\n  - {name: ATLANTIC, type:\
+    \ socks5, server: mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local,\
     \ port: 1080}\n  - {name: OVERSEAS-FLK, type: socks5, server: mihomos-global-exit-overseas-flk.egress-fabric.svc.cluster.local,\
     \ port: 1080}\nproxy-groups:\n  - name: GLOBAL\n    type: fallback\n    proxies:\
-    \ [OVERSEAS-LA, OVERSEAS-LA-2, OVERSEAS-FLK]\n    url: \"https://www.gstatic.com/generate_204\"\
-    \n    interval: 600\n    lazy: true\nrules: [\"IP-CIDR,10.0.0.0/8,DIRECT,no-resolve\"\
+    \ [ATLANTIC, OVERSEAS-FLK]\n    url: \"https://www.gstatic.com/generate_204\"\n\
+    \    interval: 600\n    lazy: true\nrules: [\"IP-CIDR,10.0.0.0/8,DIRECT,no-resolve\"\
     , \"IP-CIDR,100.64.0.0/10,DIRECT,no-resolve\", \"IP-CIDR,172.16.0.0/12,DIRECT,no-resolve\"\
     , \"IP-CIDR,192.168.0.0/16,DIRECT,no-resolve\", \"DOMAIN,ipinfo.io,DIRECT\", \"\
     DOMAIN-SUFFIX,ipinfo.io,DIRECT\", \"DOMAIN-SUFFIX,ghcr.io,GLOBAL\", \"DOMAIN-SUFFIX,pkg-containers.githubusercontent.com,GLOBAL\"\
