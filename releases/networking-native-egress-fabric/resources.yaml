@@ -23252,7 +23252,7 @@ spec:
   publishNotReadyAddresses: false
   selector:
     app.kubernetes.io/name: mihomos-global-exit
-    kubernetes.io/hostname: overseas-flk
+    topology.kubernetes.io/region: de-fsn
 ---
 apiVersion: v1
 kind: Service
@@ -23268,7 +23268,7 @@ spec:
   publishNotReadyAddresses: false
   selector:
     app.kubernetes.io/name: mihomos-global-exit
-    kubernetes.io/hostname: overseas-la
+    topology.kubernetes.io/region: us-ca
 ---
 apiVersion: v1
 kind: Service

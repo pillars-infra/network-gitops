@@ -5940,7 +5940,7 @@ spec:
   publishNotReadyAddresses: false
   selector:
     app.kubernetes.io/name: mihomos-global-exit
-    kubernetes.io/hostname: overseas-la
+    topology.kubernetes.io/region: us-ca
   ports: [{name: socks, port: 1080, targetPort: socks}]
 ---
 # Source: mihomos-cluster/templates/dataplane.yaml
@@ -5964,7 +5964,7 @@ spec:
   publishNotReadyAddresses: false
   selector:
     app.kubernetes.io/name: mihomos-global-exit
-    kubernetes.io/hostname: overseas-flk
+    topology.kubernetes.io/region: de-fsn
   ports: [{name: socks, port: 1080, targetPort: socks}]
 ---
 # Source: mihomos-cluster/templates/dataplane.yaml
