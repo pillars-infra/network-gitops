@@ -44,6 +44,8 @@ spec:
       app.kubernetes.io/name: among-clusters-agent
   template:
     metadata:
+      annotations:
+        networking.re8ch.com/service-routes-digest: sha256:1a20d67fb76ba03748f9c2311a1b0788f3e7d2aa95f3ddde830a4284317de60f
       labels:
         app.kubernetes.io/name: among-clusters-agent
     spec:
