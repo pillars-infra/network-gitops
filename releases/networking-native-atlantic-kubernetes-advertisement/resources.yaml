@@ -8,7 +8,7 @@ metadata:
   annotations:
     peering.re8ch.com/protocol: tcp
     peering.re8ch.com/service-class: kubernetes-api
-    peering.re8ch.com/policy-ref: re8ch-main-only
+    peering.re8ch.com/policy-ref: re8ch-atlantic-kubernetes-api
     peering.re8ch.com/target-peers: re8ch-main
     peering.re8ch.com/port-name: https
     peering.re8ch.com/ttl-seconds: "300"
