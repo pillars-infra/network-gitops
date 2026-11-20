@@ -1,0 +1,46 @@
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-mihomo-routing
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: egress-fabric
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-mihomo-routing
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: true
+    fieldManager: re8ch-release/networking-native-mihomo-routing
+    resources:
+    - core/ConfigMap
+    - core/Service
+    objectNames:
+    - mihomos-global-exit-atlantic
+    - mihomos-node-configs
+    forceConflictObjects:
+    - core/ConfigMap/egress-fabric/mihomos-node-configs
+    - core/Service/egress-fabric/mihomos-global-exit-atlantic
+  inventory:
+    digest: sha256:b9e1d7111828ab62cd45c6f66b7151bcb39d625b6c055b14cac228d7add88286
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 300
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

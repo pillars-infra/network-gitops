@@ -665,7 +665,6 @@
         "core/ConfigMap/egress-fabric/identity-egress-config",
         "core/ConfigMap/egress-fabric/mihomo-node-labeler-code-k4fm8c7g7t",
         "core/ConfigMap/egress-fabric/mihomos-cn-ip-rules",
-        "core/ConfigMap/egress-fabric/mihomos-node-configs",
         "core/ConfigMap/egress-fabric/mihomos-status-agent",
         "core/ConfigMap/egress-fabric/re8ch-geodb-snapshot",
         "core/ConfigMap/egress-fabric/route-path-controller-code",
@@ -675,7 +674,6 @@
         "core/Service/egress-fabric/mihomos-byoc-egress",
         "core/Service/egress-fabric/mihomos-cn-exit",
         "core/Service/egress-fabric/mihomos-global-exit",
-        "core/Service/egress-fabric/mihomos-global-exit-atlantic",
         "core/Service/egress-fabric/mihomos-global-exit-overseas-flk",
         "core/Service/egress-fabric/mihomos-global-exit-overseas-la",
         "core/Service/egress-fabric/mihomos-global-exit-overseas-la-2",
@@ -733,7 +731,6 @@
             "identity-egress-config",
             "mihomo-node-labeler-code-k4fm8c7g7t",
             "mihomos-cn-ip-rules",
-            "mihomos-node-configs",
             "mihomos-status-agent",
             "re8ch-geodb-snapshot",
             "route-path-controller-code"
@@ -773,7 +770,6 @@
             "mihomos-byoc-egress",
             "mihomos-cn-exit",
             "mihomos-global-exit",
-            "mihomos-global-exit-atlantic",
             "mihomos-global-exit-overseas-flk",
             "mihomos-global-exit-overseas-la",
             "mihomos-global-exit-overseas-la-2",
@@ -1491,6 +1487,71 @@
         "metadata": {
           "name": "ssa-state-networking-native-mail-system",
           "namespace": "mail-system"
+        },
+        "data": {}
+      }
+    },
+    {
+      "releaseId": "networking-native-mihomo-routing",
+      "contract": "contracts/networking-native-mihomo-routing.yaml",
+      "namespace": "egress-fabric",
+      "inventory": [
+        "core/ConfigMap/egress-fabric/mihomos-node-configs",
+        "core/Service/egress-fabric/mihomos-global-exit-atlantic"
+      ],
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "mihomos-node-configs"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "services"
+          ],
+          "resourceNames": [
+            "mihomos-global-exit-atlantic"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-mihomo-routing"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        }
+      ],
+      "stateConfigMap": {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "ssa-state-networking-native-mihomo-routing",
+          "namespace": "egress-fabric"
         },
         "data": {}
       }
