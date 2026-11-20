@@ -30,6 +30,7 @@ OBSERVED_READINESS_RELEASES={
 EXTERNAL_NATIVE_RELEASES={
     'networking-native-atlantic-bootstrap',
     'networking-native-atlantic-among-clusters',
+    'networking-native-atlantic-mihomo-global-exit',
 }
 
 def classify(document):
