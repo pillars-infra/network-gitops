@@ -70,7 +70,8 @@ spec:
         - name: INVITATION_ID
           valueFrom: {secretKeyRef: {name: among-clusters-invitation, key: invitation-id, optional: true}}
         - {name: GATEWAY_ENDPOINT, value: ''}
-        - {name: PEER_CONFIRMATIONS, value: '[]'}
+        - name: PEER_CONFIRMATIONS
+          value: '[{"bundleDigest":"sha256:1c033ad2260b1064dd46705361dce35d1c47e8332864a88d239a90b5ffa557e8","peerRef":"re8ch-atlantic"}]'
         - {name: LINK_OBSERVATIONS, value: '[]'}
         - {name: PEER_BUNDLE_FILE, value: /peer-bundles/ca.crt}
         - {name: KUBERNETES_TLS_SERVER_NAME, value: kubernetes.default.svc}
