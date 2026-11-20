@@ -27,7 +27,10 @@ OBSERVED_READINESS_RELEASES={
     'networking-helm-cilium-kube-system',
     'networking-native-kube-system',
 }
-EXTERNAL_NATIVE_RELEASES={'networking-native-atlantic-bootstrap'}
+EXTERNAL_NATIVE_RELEASES={
+    'networking-native-atlantic-bootstrap',
+    'networking-native-atlantic-among-clusters',
+}
 
 def classify(document):
     if 'sops' in document:
