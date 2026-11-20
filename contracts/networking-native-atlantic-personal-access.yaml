@@ -30,13 +30,15 @@ spec:
     - networking.k8s.io/NetworkPolicy
     objectNames:
     - personal-access-atlantic
+    - personal-access-atlantic-my-kul
     forceConflictObjects:
     - apps/Deployment/egress-fabric/personal-access-atlantic
+    - apps/Deployment/egress-fabric/personal-access-atlantic-my-kul
     - core/ConfigMap/egress-fabric/personal-access-atlantic
     - core/Service/egress-fabric/personal-access-atlantic
     - networking.k8s.io/NetworkPolicy/egress-fabric/personal-access-atlantic
   inventory:
-    digest: sha256:88cb401dbdf8fe24304a11f6220bd6499659089cae97914b35e8c6febc9c49cc
+    digest: sha256:68e060fad741ce67596f2a5ce33914602cf7de8da71c7eba4278ac7fb007b111
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300
@@ -52,5 +54,11 @@ spec:
       kind: Deployment
       namespace: egress-fabric
       name: personal-access-atlantic
+      jsonPointer: /status/readyReplicas
+      equals: 1
+    - apiVersion: apps/v1
+      kind: Deployment
+      namespace: egress-fabric
+      name: personal-access-atlantic-my-kul
       jsonPointer: /status/readyReplicas
       equals: 1
