@@ -33,16 +33,18 @@ spec:
     - among-clusters-agent
     - among-clusters-gateway
     - among-clusters-service-routes
+    - among-clusters-approval-re8ch-atlantic-headlamp-admin
     forceConflictObjects:
     - apps/Deployment/among-clusters/among-clusters-agent
     - apps/Deployment/among-clusters/among-clusters-gateway
     - core/ConfigMap/among-clusters/among-clusters-service-routes
+    - core/ConfigMap/among-clusters/among-clusters-approval-re8ch-atlantic-headlamp-admin
     - core/Service/among-clusters/among-clusters-gateway
     - core/ServiceAccount/among-clusters/among-clusters-agent
     - networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-agent
     - networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-gateway
   inventory:
-    digest: sha256:01f33647fa2aa79b7339419f1757180d83c37932884623d4cd4f4b24b2b4752b
+    digest: sha256:5a7393f0b71899c66c89e146b927d8b58063bfe9859bdd50f58685bd4a98d9c6
   lifecycle:
     prune: false
     healthTimeoutSeconds: 180

@@ -61,6 +61,7 @@ spec:
         - {name: TENANT, value: byoc-pilot}
         - {name: TRUST_DOMAIN, value: atlantic.re8ch.com}
         - {name: HUB_ENDPOINT, value: 'https://among-clusters.service.re8ch.com'}
+        - {name: BROKER_ENDPOINT, value: 'https://among-clusters.service.re8ch.com/broker'}
         - {name: SYNC_INTERVAL, value: 5m}
         - {name: IDENTITY_SECRET, value: among-clusters-agent-identity}
         - name: POD_NAMESPACE
@@ -99,6 +100,16 @@ metadata:
   namespace: among-clusters
 data:
   exports.json: '[]'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: among-clusters-approval-re8ch-atlantic-headlamp-admin
+  namespace: among-clusters
+data:
+  approved: "true"
+  generation: "1"
+  grantRef: re8ch-atlantic-headlamp-admin
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
