@@ -97,7 +97,7 @@ metadata:
   name: among-clusters-service-routes
   namespace: among-clusters
 data:
-  exports.json: '[{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","target":"mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local:1080","targetPeers":["re8ch-main"]}]'
+  exports.json: '[]'
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -162,7 +162,8 @@ spec:
         env:
         - {name: LISTEN_ADDRESS, value: ':8443'}
         - {name: LISTENER_ENABLED, value: 'false'}
-        - {name: EXPORTS_JSON, value: '[]'}
+        - name: EXPORTS_JSON
+          value: '[{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","target":"mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local:1080","targetPeers":["re8ch-main"]}]'
         - {name: EXPORTS_FILE, value: /routes/exports.json}
         - name: IMPORTS_JSON
           value: '[{"listen":":17891","serviceIdentity":"spiffe://re8ch.internal/ns/egress-fabric/service/mihomos-byoc-egress","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true}]'
