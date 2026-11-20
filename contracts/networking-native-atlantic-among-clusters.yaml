@@ -25,16 +25,24 @@ spec:
     fieldManager: re8ch-release/networking-native-atlantic-among-clusters
     resources:
     - apps/Deployment
+    - core/ConfigMap
+    - core/Service
     - core/ServiceAccount
     - networking.k8s.io/NetworkPolicy
     objectNames:
     - among-clusters-agent
+    - among-clusters-gateway
+    - among-clusters-service-routes
     forceConflictObjects:
     - apps/Deployment/among-clusters/among-clusters-agent
+    - apps/Deployment/among-clusters/among-clusters-gateway
+    - core/ConfigMap/among-clusters/among-clusters-service-routes
+    - core/Service/among-clusters/among-clusters-gateway
     - core/ServiceAccount/among-clusters/among-clusters-agent
     - networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-agent
+    - networking.k8s.io/NetworkPolicy/among-clusters/among-clusters-gateway
   inventory:
-    digest: sha256:256ade13309069c4339fede3f9b139f3770c12e9f656eb6255855ac7c296fac5
+    digest: sha256:01f33647fa2aa79b7339419f1757180d83c37932884623d4cd4f4b24b2b4752b
   lifecycle:
     prune: false
     healthTimeoutSeconds: 180
@@ -50,5 +58,11 @@ spec:
       kind: Deployment
       namespace: among-clusters
       name: among-clusters-agent
+      jsonPointer: /status/availableReplicas
+      equals: 1
+    - apiVersion: apps/v1
+      kind: Deployment
+      namespace: among-clusters
+      name: among-clusters-gateway
       jsonPointer: /status/availableReplicas
       equals: 1
