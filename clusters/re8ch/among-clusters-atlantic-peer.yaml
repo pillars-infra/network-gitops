@@ -1,0 +1,15 @@
+apiVersion: peering.re8ch.com/v1alpha1
+kind: Peer
+metadata:
+  name: re8ch-atlantic
+  namespace: byoc-pilot
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+    networking.re8ch.com/authority: github-cloud-ssa
+spec:
+  invitationRef: re8ch-atlantic-bootstrap
+  localIdentityRef: re8ch
+  remoteIdentityRef: re8ch-atlantic
+  suspended: false
+  transports:
+  - quic-mtls

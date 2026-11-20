@@ -331,6 +331,7 @@
         "peering.re8ch.com/ManagedAccessGrant/byoc-pilot/artc-headlamp-admin",
         "peering.re8ch.com/ManagedAccessGrant/byoc-pilot/qwen-headlamp-admin",
         "peering.re8ch.com/Peer/byoc-pilot/re8ch-artc",
+        "peering.re8ch.com/Peer/byoc-pilot/re8ch-atlantic",
         "peering.re8ch.com/Peer/byoc-pilot/re8ch-qwen",
         "peering.re8ch.com/Peer/byoc-pilot/re8ch-sijie",
         "peering.re8ch.com/PeerPolicy/byoc-pilot/artc-kubernetes-api",
@@ -413,6 +414,7 @@
           ],
           "resourceNames": [
             "re8ch-artc",
+            "re8ch-atlantic",
             "re8ch-qwen",
             "re8ch-sijie"
           ],
