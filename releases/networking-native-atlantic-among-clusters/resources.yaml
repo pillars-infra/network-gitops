@@ -196,7 +196,7 @@ spec:
         - name: PEER_SESSIONS_JSON
           value: '[{"endpoint":"223.159.210.222:8443","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch"}]'
         - name: PEER_IDENTITIES_JSON
-          value: '{"re8ch-main":["spiffe://re8ch.internal/cluster/re8ch"]}'
+          value: '{"re8ch-atlantic":["spiffe://re8ch.internal/cluster/re8ch"],"re8ch-main":["spiffe://re8ch.internal/cluster/re8ch"]}'
         ports:
         - {name: main-egress, containerPort: 17891, protocol: TCP}
         securityContext:
