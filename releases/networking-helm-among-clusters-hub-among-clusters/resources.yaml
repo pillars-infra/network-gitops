@@ -23,7 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: hub
-        image: ghcr.io/re8ch/among-clusters@sha256:36065d8d2335e0a447d24a0b07562c859b54cee1cfb1e824e536addfe2d6557a
+        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
         imagePullPolicy: IfNotPresent
         command:
         - /hub
@@ -35,22 +35,8 @@ spec:
               key: token
         - name: MANAGED_ACCESS_ENABLED
           value: 'true'
-        - name: ONBOARDING_PUBLIC_ENDPOINT
-          value: https://among-clusters.service.re8ch.com
-        - name: ONBOARDING_TENANT
-          value: byoc-pilot
-        - name: ONBOARDING_PROVIDER_SPIFFE_ID
-          value: spiffe://re8ch.internal/cluster/re8ch
-        - name: ONBOARDING_PROVIDER_BUNDLE_DIGEST
-          value: sha256:1c033ad2260b1064dd46705361dce35d1c47e8332864a88d239a90b5ffa557e8
-        - name: ONBOARDING_PROVIDER_QUIC_ENDPOINT
-          value: quic://223.159.210.222:8443
-        - name: ONBOARDING_IMAGE_DIGEST
-          value: sha256:3a6b90956f55914d595a9e24d8382b1697a8ef0ad51a65e60b77faa76ed7b692
-        - name: ONBOARDING_CHART_VERSION
-          value: 0.3.25
-        - name: ONBOARDING_PROVIDER_BUNDLE_FILE
-          value: /provider-bundle/bundle.pem
+        - name: RECONCILE_INTERVAL
+          value: 60s
         ports:
         - name: http
           containerPort: 8080
@@ -75,14 +61,6 @@ spec:
           requests:
             cpu: 50m
             memory: 64Mi
-        volumeMounts:
-        - name: provider-bundle
-          mountPath: /provider-bundle
-          readOnly: true
-      volumes:
-      - name: provider-bundle
-        secret:
-          secretName: among-clusters-agent-identity
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -157,14 +135,6 @@ spec:
         path:
           type: ReplacePrefixMatch
           replacePrefixMatch: /
-    backendRefs:
-    - name: among-clusters-credential-broker
-      namespace: credential-broker
-      port: 80
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
     backendRefs:
     - name: among-clusters-credential-broker
       namespace: credential-broker

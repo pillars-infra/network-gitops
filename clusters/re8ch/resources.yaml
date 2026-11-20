@@ -25193,8 +25193,8 @@ spec:
       ip: 10.43.158.127
     hubEndpoint: https://among-clusters.service.re8ch.com
     image:
-      digest: sha256:36065d8d2335e0a447d24a0b07562c859b54cee1cfb1e824e536addfe2d6557a
-      repository: ghcr.io/re8ch/among-clusters
+      digest: sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
+      repository: ghcr.io/among-clusters/among-clusters
     linkObservations: []
     managedAccess:
       enabled: false
@@ -25242,8 +25242,8 @@ spec:
       enabled: true
     hostname: among-clusters.re8ch.com
     image:
-      digest: sha256:36065d8d2335e0a447d24a0b07562c859b54cee1cfb1e824e536addfe2d6557a
-      repository: ghcr.io/re8ch/among-clusters
+      digest: sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
+      repository: ghcr.io/among-clusters/among-clusters
     managedAccess:
       broker:
         hostname: among-clusters.re8ch.com
@@ -25255,9 +25255,9 @@ spec:
       kubernetes.io/os: linux
       scheduling.re8ch.com/service-plane: core
     onboarding:
-      chartVersion: 0.3.25
+      chartVersion: 0.3.29
       enabled: true
-      imageDigest: sha256:3a6b90956f55914d595a9e24d8382b1697a8ef0ad51a65e60b77faa76ed7b692
+      imageDigest: sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
       providerBundleDigest: sha256:1c033ad2260b1064dd46705361dce35d1c47e8332864a88d239a90b5ffa557e8
       providerBundleSecret: among-clusters-agent-identity
       providerQUICEndpoint: quic://223.159.210.222:8443
@@ -26915,8 +26915,8 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:e546d8e9056a85b813488524282727a6135a0cc544f39d2dc5a8afe23bb042a3
-  url: oci://ghcr.io/re8ch/charts/among-clusters-agent
+    digest: sha256:6c8d6deeed701c9a002970600f37088cf897ac479df9b5006b1d7b3e99d1f9b9
+  url: oci://ghcr.io/among-clusters/charts/among-clusters-agent
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
@@ -26927,8 +26927,8 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b
-  url: oci://ghcr.io/re8ch/charts/among-clusters-hub
+    digest: sha256:34b65852375c7ed1da2b4dd599b740257da9d0cee360b1fca64e4a59306c660f
+  url: oci://ghcr.io/among-clusters/charts/among-clusters-hub
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository

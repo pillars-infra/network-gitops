@@ -14,8 +14,8 @@
     },
     "among-clusters-agent": {
       "chart": {
-        "oci": "oci://ghcr.io/re8ch/charts/among-clusters-agent@sha256:e546d8e9056a85b813488524282727a6135a0cc544f39d2dc5a8afe23bb042a3",
-        "sha256": "4a8f58197f0ab4f9e6d727463a2535fa185d3320cc0c4139ebb0af1d50fbb76f"
+        "oci": "oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:6c8d6deeed701c9a002970600f37088cf897ac479df9b5006b1d7b3e99d1f9b9",
+        "sha256": "9c0b28e4b0cb1277b8c7f6ce540dcbb0459d7fbf0cc1aa50b89d4f2c4ad7a9f2"
       },
       "namespace": "among-clusters",
       "releaseName": "among-clusters-agent",
@@ -23,8 +23,8 @@
     },
     "among-clusters-hub": {
       "chart": {
-        "oci": "oci://ghcr.io/re8ch/charts/among-clusters-hub@sha256:43c9c89801afe04bbb97b89933606a086da34d5e9bb6507d1b89ef4653fc541b",
-        "sha256": "3b9416cf5203527f77f06cd90873dde38252c0be3c097da6f1b8e145813dec2c"
+        "oci": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:34b65852375c7ed1da2b4dd599b740257da9d0cee360b1fca64e4a59306c660f",
+        "sha256": "c35be60a1233e2aebcc7eb2a69ea9b2dca45e0f07bc892c3e4c3c706e3df3f50"
       },
       "namespace": "among-clusters",
       "releaseName": "among-clusters-hub",

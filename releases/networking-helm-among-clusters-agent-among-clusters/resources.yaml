@@ -26,6 +26,8 @@ spec:
           value: re8ch.internal
         - name: HUB_ENDPOINT
           value: https://among-clusters.service.re8ch.com
+        - name: SYNC_INTERVAL
+          value: 60s
         - name: IDENTITY_SECRET
           value: among-clusters-agent-identity
         - name: POD_NAMESPACE
@@ -54,7 +56,7 @@ spec:
           value: /peer-bundles/ca.crt
         - name: KUBERNETES_TLS_SERVER_NAME
           value: kubernetes.default.svc
-        image: ghcr.io/re8ch/among-clusters@sha256:36065d8d2335e0a447d24a0b07562c859b54cee1cfb1e824e536addfe2d6557a
+        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
         name: agent
         resources:
           limits:
@@ -145,16 +147,13 @@ spec:
           value: '[]'
         - name: PEER_IDENTITIES_JSON
           value: '{"re8ch-artc":["spiffe://artc.byoc/cluster/artc"],"re8ch-qwen":["spiffe://qwen.byoc/cluster/qwen"],"re8ch-sijie":["spiffe://sijie.byoc/cluster/sijie"]}'
-        image: ghcr.io/re8ch/among-clusters@sha256:36065d8d2335e0a447d24a0b07562c859b54cee1cfb1e824e536addfe2d6557a
+        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
         name: gateway
         ports:
         - containerPort: 8443
           hostPort: 8443
           name: gateway
           protocol: UDP
-        - containerPort: 8080
-          name: readiness
-          protocol: TCP
         - containerPort: 22240
           name: qwen-k8s
           protocol: TCP
@@ -219,10 +218,6 @@ spec:
     port: 8443
     protocol: UDP
     targetPort: gateway
-  - name: readiness
-    port: 8080
-    protocol: TCP
-    targetPort: readiness
   - name: qwen-k8s
     port: 22240
     protocol: TCP
@@ -286,13 +281,6 @@ spec:
         matchLabels:
           kubernetes.io/metadata.name: kube-system
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: among-clusters-agent
-    ports:
-    - port: 8080
-      protocol: TCP
   - ports:
     - port: 8443
       protocol: UDP
