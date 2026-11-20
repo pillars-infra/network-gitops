@@ -43,12 +43,10 @@ spec:
     - mihomos-cn-exit
     - mihomos-cn-ip-rules
     - mihomos-global-exit
-    - mihomos-global-exit-atlantic
     - mihomos-global-exit-overseas-flk
     - mihomos-global-exit-overseas-la
     - mihomos-global-exit-overseas-la-2
     - mihomos-node-cn
-    - mihomos-node-configs
     - mihomos-node-global
     - mihomos-status-agent
     - path-controller
@@ -66,7 +64,6 @@ spec:
     - core/ConfigMap/egress-fabric/identity-egress-config
     - core/ConfigMap/egress-fabric/mihomo-node-labeler-code-k4fm8c7g7t
     - core/ConfigMap/egress-fabric/mihomos-cn-ip-rules
-    - core/ConfigMap/egress-fabric/mihomos-node-configs
     - core/ConfigMap/egress-fabric/mihomos-status-agent
     - core/ConfigMap/egress-fabric/re8ch-geodb-snapshot
     - core/ConfigMap/egress-fabric/route-path-controller-code
@@ -76,7 +73,6 @@ spec:
     - core/Service/egress-fabric/mihomos-byoc-egress
     - core/Service/egress-fabric/mihomos-cn-exit
     - core/Service/egress-fabric/mihomos-global-exit
-    - core/Service/egress-fabric/mihomos-global-exit-atlantic
     - core/Service/egress-fabric/mihomos-global-exit-overseas-flk
     - core/Service/egress-fabric/mihomos-global-exit-overseas-la
     - core/Service/egress-fabric/mihomos-global-exit-overseas-la-2
@@ -88,7 +84,7 @@ spec:
     - networking.k8s.io/NetworkPolicy/egress-fabric/identity-egress
     - policy/PodDisruptionBudget/egress-fabric/identity-egress
   inventory:
-    digest: sha256:5df17f2e0fc5d0a6155e7ecedaf1eb4645fd1cc8e8d6a4c74da41673fdd61c44
+    digest: sha256:9abd6c2d71e3a9b9cc0d562fe036c95c01bcf6b3f6dfee3e7a85a4223b0f51c3
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

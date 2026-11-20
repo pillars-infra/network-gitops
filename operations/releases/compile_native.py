@@ -23,6 +23,10 @@ KUBE_API_RELEASE_OBJECTS={
     'gateway.networking.k8s.io/BackendTLSPolicy/kube-system/kube-api-observer-proxy',
     'gateway.networking.k8s.io/HTTPRoute/kube-system/kube-api-service',
 }
+DEDICATED_NATIVE_RELEASES={
+    'core/ConfigMap/egress-fabric/mihomos-node-configs': 'networking-native-mihomo-routing',
+    'core/Service/egress-fabric/mihomos-global-exit-atlantic': 'networking-native-mihomo-routing',
+}
 OBSERVED_READINESS_RELEASES={
     'networking-helm-cilium-kube-system',
     'networking-native-kube-system',
@@ -57,7 +61,13 @@ def project(documents, prefix="networking-native", source_context=None):
             if reason=='platform-bootstrap-rbac':bootstrap.append(d)
             continue
         namespace=d['metadata']['namespace']
-        name='networking-native-kube-api' if prefix=='networking-native' and object_identity(d) in KUBE_API_RELEASE_OBJECTS else prefix+'-'+namespace
+        identity=object_identity(d)
+        if prefix=='networking-native' and identity in KUBE_API_RELEASE_OBJECTS:
+            name='networking-native-kube-api'
+        elif prefix=='networking-native' and identity in DEDICATED_NATIVE_RELEASES:
+            name=DEDICATED_NATIVE_RELEASES[identity]
+        else:
+            name=prefix+'-'+namespace
         groups[(name,namespace)].append(d)
     files={};releases=[]
     for (name,namespace),objects in sorted(groups.items()):
