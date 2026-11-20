@@ -49,7 +49,7 @@ spec:
         - name: GATEWAY_ENDPOINT
           value: quic://223.159.210.222:8443
         - name: PEER_CONFIRMATIONS
-          value: '[{"bundleDigest":"sha256:1ca3850085419fd4cb099a0922452e1c1d2ba044396fe64f920f63fd78123357","peerRef":"re8ch-qwen"},{"bundleDigest":"sha256:72dbab1a10af9585ff65e652c0a26240275f3a7cda3206d1aead6ebf5bf71a8e","peerRef":"re8ch-artc"},{"bundleDigest":"sha256:5b7c9a2eeb10e11420d73b2000e2e7b859003570a43131c3f2f63b2876e1990f","peerRef":"re8ch-sijie"}]'
+          value: '[{"bundleDigest":"sha256:78cd3c8048e21eb80468fbb003f7e03ef7120e7b55eddd6f508d6f2bb22f82f9","peerRef":"re8ch-atlantic"},{"bundleDigest":"sha256:1ca3850085419fd4cb099a0922452e1c1d2ba044396fe64f920f63fd78123357","peerRef":"re8ch-qwen"},{"bundleDigest":"sha256:72dbab1a10af9585ff65e652c0a26240275f3a7cda3206d1aead6ebf5bf71a8e","peerRef":"re8ch-artc"},{"bundleDigest":"sha256:5b7c9a2eeb10e11420d73b2000e2e7b859003570a43131c3f2f63b2876e1990f","peerRef":"re8ch-sijie"}]'
         - name: LINK_OBSERVATIONS
           value: '[]'
         - name: PEER_BUNDLE_FILE
@@ -146,7 +146,7 @@ spec:
         - name: PEER_SESSIONS_JSON
           value: '[]'
         - name: PEER_IDENTITIES_JSON
-          value: '{"re8ch-artc":["spiffe://artc.byoc/cluster/artc"],"re8ch-qwen":["spiffe://qwen.byoc/cluster/qwen"],"re8ch-sijie":["spiffe://sijie.byoc/cluster/sijie"]}'
+          value: '{"re8ch-artc":["spiffe://artc.byoc/cluster/artc"],"re8ch-atlantic":["spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic"],"re8ch-qwen":["spiffe://qwen.byoc/cluster/qwen"],"re8ch-sijie":["spiffe://sijie.byoc/cluster/sijie"]}'
         image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
         name: gateway
         ports:
