@@ -37,6 +37,7 @@ spec:
     - qwen-headlamp-admin
     - qwen-kubernetes-api
     - re8ch-artc
+    - re8ch-atlantic
     - re8ch-mihomos-egress
     - re8ch-qwen
     - re8ch-sijie
@@ -49,13 +50,14 @@ spec:
     - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/artc-headlamp-admin
     - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/qwen-headlamp-admin
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-artc
+    - peering.re8ch.com/Peer/byoc-pilot/re8ch-atlantic
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-qwen
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-sijie
     - peering.re8ch.com/PeerPolicy/byoc-pilot/artc-kubernetes-api
     - peering.re8ch.com/PeerPolicy/byoc-pilot/qwen-kubernetes-api
     - peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-mihomos-egress
   inventory:
-    digest: sha256:c24837f76d568df3d4b336036c7bf4aa2246069444e9fc9b86a8030ab36938e4
+    digest: sha256:d60705bd33864601b8b99ebff78371561a635c20708c303633ab4d1bd038ffca
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

@@ -13,6 +13,7 @@ resources:
   - r640-outer-sni-dnat.yaml
   - multi-pool
   - mihomos-authority-resources.yaml
+  - among-clusters-atlantic-peer.yaml
 patches:
   - path: advanced-fabric-control-plane-offload.yaml
     target:
