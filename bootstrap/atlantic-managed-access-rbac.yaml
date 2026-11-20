@@ -1,0 +1,54 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: among-clusters-agent-identity
+  namespace: among-clusters
+rules:
+- apiGroups: [""]
+  resources: [secrets]
+  resourceNames: [among-clusters-agent-identity]
+  verbs: [get, update]
+- apiGroups: [""]
+  resources: [secrets]
+  verbs: [create]
+- apiGroups: [""]
+  resources: [configmaps]
+  resourceNames:
+  - among-clusters-service-routes
+  verbs: [get, update]
+- apiGroups: [""]
+  resources: [configmaps]
+  verbs: [create]
+- apiGroups: [""]
+  resources: [configmaps]
+  resourceNames:
+  - among-clusters-approval-re8ch-atlantic-headlamp-admin
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: among-clusters-managed-access-re8ch-atlantic
+rules:
+- apiGroups: [""]
+  resources: [serviceaccounts]
+  verbs: [get, create]
+- apiGroups: [""]
+  resources: [serviceaccounts/token]
+  verbs: [create]
+- apiGroups: [rbac.authorization.k8s.io]
+  resources: [roles, rolebindings, clusterroles, clusterrolebindings]
+  verbs: [get, create, update, bind, escalate]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: among-clusters-managed-access-re8ch-atlantic
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: among-clusters-managed-access-re8ch-atlantic
+subjects:
+- kind: ServiceAccount
+  name: among-clusters-agent
+  namespace: among-clusters
