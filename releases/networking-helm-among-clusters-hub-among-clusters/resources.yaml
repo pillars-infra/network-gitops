@@ -23,7 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: hub
-        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
+        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
         imagePullPolicy: IfNotPresent
         command:
         - /hub

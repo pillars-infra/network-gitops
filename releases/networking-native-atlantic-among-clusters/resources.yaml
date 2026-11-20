@@ -54,7 +54,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
       - name: agent
-        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
+        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
         command: [/agent]
         env:
         - {name: CLUSTER_ID, value: re8ch-atlantic}
@@ -142,7 +142,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
       - name: gateway
-        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
+        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
         command: [/gateway]
         env:
         - {name: LISTEN_ADDRESS, value: ':8443'}

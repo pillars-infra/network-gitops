@@ -56,7 +56,7 @@ spec:
           value: /peer-bundles/ca.crt
         - name: KUBERNETES_TLS_SERVER_NAME
           value: kubernetes.default.svc
-        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
+        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
         name: agent
         resources:
           limits:
@@ -147,7 +147,7 @@ spec:
           value: '[]'
         - name: PEER_IDENTITIES_JSON
           value: '{"re8ch-artc":["spiffe://artc.byoc/cluster/artc"],"re8ch-atlantic":["spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic"],"re8ch-qwen":["spiffe://qwen.byoc/cluster/qwen"],"re8ch-sijie":["spiffe://sijie.byoc/cluster/sijie"]}'
-        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
+        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
         name: gateway
         ports:
         - containerPort: 8443

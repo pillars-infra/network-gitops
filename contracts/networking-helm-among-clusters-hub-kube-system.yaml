@@ -9,10 +9,10 @@ spec:
     namespace: kube-system
   source:
     renderer: kustomize
-    revision: helm-oci@sha256:34b65852375c7ed1da2b4dd599b740257da9d0cee360b1fca64e4a59306c660f
+    revision: helm-oci@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83
     repository: pillars-infra/network-gitops
     path: releases/networking-helm-among-clusters-hub-kube-system
-    chartOCI: oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:34b65852375c7ed1da2b4dd599b740257da9d0cee360b1fca64e4a59306c660f
+    chartOCI: oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83
   provenance:
     repository: pillars-infra/network-gitops
     workflow: .github/workflows/static-release.yml
