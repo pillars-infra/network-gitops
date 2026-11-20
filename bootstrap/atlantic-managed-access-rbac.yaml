@@ -23,6 +23,7 @@ rules:
   resources: [configmaps]
   resourceNames:
   - among-clusters-approval-re8ch-atlantic-headlamp-admin
+  - kube-root-ca.crt
   verbs: [get]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
