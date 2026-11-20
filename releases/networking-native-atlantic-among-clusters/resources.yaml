@@ -54,7 +54,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
       - name: agent
-        image: ghcr.io/re8ch/among-clusters@sha256:3a6b90956f55914d595a9e24d8382b1697a8ef0ad51a65e60b77faa76ed7b692
+        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
         command: [/agent]
         env:
         - {name: CLUSTER_ID, value: re8ch-atlantic}
@@ -90,3 +90,98 @@ spec:
           - serviceAccountToken: {path: token, expirationSeconds: 3600}
           - configMap: {name: kube-root-ca.crt, items: [{key: ca.crt, path: ca.crt}]}
           - downwardAPI: {items: [{path: namespace, fieldRef: {fieldPath: metadata.namespace}}]}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: among-clusters-service-routes
+  namespace: among-clusters
+data:
+  exports.json: '[]'
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: among-clusters-gateway
+  namespace: among-clusters
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-gateway
+  policyTypes: [Ingress, Egress]
+  ingress:
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - {protocol: TCP, port: 17891}
+  egress:
+  - to:
+    - ipBlock: {cidr: 223.159.210.222/32}
+    ports:
+    - {protocol: UDP, port: 8443}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: among-clusters-gateway
+  namespace: among-clusters
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: among-clusters-gateway
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: gateway
+        image: ghcr.io/re8ch/among-clusters@sha256:3a6b90956f55914d595a9e24d8382b1697a8ef0ad51a65e60b77faa76ed7b692
+        command: [/gateway]
+        env:
+        - {name: LISTEN_ADDRESS, value: ':8443'}
+        - {name: LISTENER_ENABLED, value: 'false'}
+        - {name: EXPORTS_JSON, value: '[]'}
+        - {name: EXPORTS_FILE, value: /routes/exports.json}
+        - name: IMPORTS_JSON
+          value: '[{"listen":":17891","serviceIdentity":"spiffe://re8ch.internal/ns/egress-fabric/service/mihomos-byoc-egress","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true}]'
+        - name: PEER_SESSIONS_JSON
+          value: '[{"endpoint":"223.159.210.222:8443","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch"}]'
+        - {name: PEER_IDENTITIES_JSON, value: '{}'}
+        ports:
+        - {name: main-egress, containerPort: 17891, protocol: TCP}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        resources:
+          requests: {cpu: 25m, memory: 32Mi}
+          limits: {cpu: 250m, memory: 128Mi}
+        volumeMounts:
+        - {name: identity, mountPath: /identity, readOnly: true}
+        - {name: service-routes, mountPath: /routes, readOnly: true}
+        - {name: peer-bundles, mountPath: /peer-bundles, readOnly: true}
+      volumes:
+      - name: identity
+        secret: {secretName: among-clusters-agent-identity}
+      - name: service-routes
+        configMap: {name: among-clusters-service-routes}
+      - name: peer-bundles
+        secret: {secretName: among-clusters-peer-bundle}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: among-clusters-gateway
+  namespace: among-clusters
+spec:
+  selector:
+    app.kubernetes.io/name: among-clusters-gateway
+  ports:
+  - {name: main-egress, port: 17891, targetPort: main-egress, protocol: TCP}
