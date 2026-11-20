@@ -38,26 +38,32 @@ spec:
     - qwen-kubernetes-api
     - re8ch-artc
     - re8ch-atlantic
+    - re8ch-atlantic-default-kubernetes-re8ch-atlantic
+    - re8ch-atlantic-headlamp-admin
+    - re8ch-atlantic-kubernetes-api
     - re8ch-mihomos-egress
     - re8ch-qwen
     - re8ch-sijie
     forceConflictObjects:
     - core/Service/byoc-pilot/artc-default-kubernetes-re8ch-artc
     - core/Service/byoc-pilot/qwen-default-kubernetes-re8ch-qwen
+    - core/Service/byoc-pilot/re8ch-atlantic-default-kubernetes-re8ch-atlantic
     - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-artc
     - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-qwen
     - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-sijie
     - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/artc-headlamp-admin
     - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/qwen-headlamp-admin
+    - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/re8ch-atlantic-headlamp-admin
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-artc
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-atlantic
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-qwen
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-sijie
     - peering.re8ch.com/PeerPolicy/byoc-pilot/artc-kubernetes-api
     - peering.re8ch.com/PeerPolicy/byoc-pilot/qwen-kubernetes-api
+    - peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-atlantic-kubernetes-api
     - peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-mihomos-egress
   inventory:
-    digest: sha256:d60705bd33864601b8b99ebff78371561a635c20708c303633ab4d1bd038ffca
+    digest: sha256:8ce22e0f95c4ff7b846a5391909b778d08a583e38951bbde31f0277120e2f786
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

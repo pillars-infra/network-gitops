@@ -36,6 +36,20 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: atlantic-kubernetes-import
+  namespace: among-clusters
+spec:
+  ports:
+  - name: kubernetes
+    port: 6443
+    protocol: TCP
+    targetPort: atlantic-k8s
+  selector:
+    app.kubernetes.io/name: among-clusters-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: qwen-kubernetes-import
   namespace: among-clusters
 spec:
