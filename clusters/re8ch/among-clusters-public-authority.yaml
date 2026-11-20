@@ -5,6 +5,12 @@ metadata:
   namespace: flux-network-system
 spec:
   values:
+    # Preserve the public TLS name while resolving it to the declared Cilium
+    # Gateway VIP from inside the provider cluster. This avoids the RouterOS
+    # public-IP hairpin without weakening HTTPS verification.
+    hostAliases:
+      - ip: 10.251.0.4
+        hostnames: [among-clusters.service.re8ch.com]
     gateway:
       publicAuthority:
         requiredForwardPorts:
