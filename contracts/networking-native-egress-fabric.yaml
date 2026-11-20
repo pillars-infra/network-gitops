@@ -43,6 +43,7 @@ spec:
     - mihomos-cn-exit
     - mihomos-cn-ip-rules
     - mihomos-global-exit
+    - mihomos-global-exit-atlantic
     - mihomos-global-exit-overseas-flk
     - mihomos-global-exit-overseas-la
     - mihomos-global-exit-overseas-la-2
@@ -75,6 +76,7 @@ spec:
     - core/Service/egress-fabric/mihomos-byoc-egress
     - core/Service/egress-fabric/mihomos-cn-exit
     - core/Service/egress-fabric/mihomos-global-exit
+    - core/Service/egress-fabric/mihomos-global-exit-atlantic
     - core/Service/egress-fabric/mihomos-global-exit-overseas-flk
     - core/Service/egress-fabric/mihomos-global-exit-overseas-la
     - core/Service/egress-fabric/mihomos-global-exit-overseas-la-2
@@ -86,7 +88,7 @@ spec:
     - networking.k8s.io/NetworkPolicy/egress-fabric/identity-egress
     - policy/PodDisruptionBudget/egress-fabric/identity-egress
   inventory:
-    digest: sha256:0fcfa8d496bf65fe478e104e740702c4736923425fc780b7db3dae3afbf280e4
+    digest: sha256:5df17f2e0fc5d0a6155e7ecedaf1eb4645fd1cc8e8d6a4c74da41673fdd61c44
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

@@ -25117,6 +25117,21 @@ spec:
           kind: NetworkPolicy
           name: among-clusters-agent
           version: v1
+      - patch: |-
+          - op: add
+            path: /spec/ingress/-
+            value:
+              from:
+              - namespaceSelector:
+                  matchLabels:
+                    kubernetes.io/metadata.name: egress-fabric
+              ports:
+              - {protocol: TCP, port: 1080}
+        target:
+          group: networking.k8s.io
+          kind: NetworkPolicy
+          name: among-clusters-gateway
+          version: v1
   releaseName: among-clusters-agent
   storageNamespace: among-clusters
   targetNamespace: among-clusters
@@ -25149,6 +25164,12 @@ spec:
         name: artc-k8s
         port: 23768
         serviceIdentity: spiffe://artc.byoc/ns/default/service/kubernetes
+        sessionOnly: true
+      - expectedSPIFFEID: spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
+        listen: :1080
+        name: atlantic-global-exit
+        port: 1080
+        serviceIdentity: spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic
         sessionOnly: true
       listener:
         enabled: true

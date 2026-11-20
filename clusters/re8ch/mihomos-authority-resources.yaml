@@ -5955,6 +5955,15 @@ spec:
     kubernetes.io/hostname: overseas-la-2
   ports: [{name: socks, port: 1080, targetPort: socks}]
 ---
+# Atlantic is reached through the authenticated AmongClusters import listener.
+apiVersion: v1
+kind: Service
+metadata: {name: mihomos-global-exit-atlantic, namespace: egress-fabric}
+spec:
+  type: ExternalName
+  externalName: among-clusters-gateway.among-clusters.svc.cluster.local
+  ports: [{name: socks, port: 1080, targetPort: 1080}]
+---
 # Source: mihomos-cluster/templates/dataplane.yaml
 apiVersion: v1
 kind: Service
