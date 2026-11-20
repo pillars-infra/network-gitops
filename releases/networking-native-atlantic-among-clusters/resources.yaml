@@ -142,7 +142,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
       - name: gateway
-        image: ghcr.io/re8ch/among-clusters@sha256:3a6b90956f55914d595a9e24d8382b1697a8ef0ad51a65e60b77faa76ed7b692
+        image: ghcr.io/among-clusters/among-clusters@sha256:74711881ad1160df8b31e8d196b3ba92ff158222757a0bb31aae0bc960ce66f9
         command: [/gateway]
         env:
         - {name: LISTEN_ADDRESS, value: ':8443'}
