@@ -37,6 +37,15 @@ spec:
               - op: add
                 path: /spec/template/spec/containers/0/env/-
                 value: {name: KUBERNETES_SERVICE_PORT_HTTPS, value: "6443"}
+          - target:
+              group: apps
+              version: v1
+              kind: Deployment
+              name: among-clusters-gateway
+            patch: |-
+              - op: replace
+                path: /spec/template/spec/containers/0/env/2/value
+                value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"kubernetes.default.svc.cluster.local:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.251.0.4:443","targetPeers":["re8ch-atlantic"]}]'
   values:
     # The post-rendered workload talks directly to the co-located hub Service;
     # this chart value remains only as the stable upstream chart input.
