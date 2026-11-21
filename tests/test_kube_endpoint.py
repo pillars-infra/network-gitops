@@ -23,6 +23,7 @@ def test_select_fails_over_and_persists_selected_endpoint(tmp_path, monkeypatch)
 
     def run(argv, **kwargs):
         config = yaml.safe_load((tmp_path / "config").read_text())
+        assert "token" not in config["users"][0]["user"]
         endpoint = config["clusters"][0]["cluster"]["server"]
         attempts.append(endpoint)
         return SimpleNamespace(returncode=0 if endpoint.endswith("159:443") else 1)
@@ -34,6 +35,7 @@ def test_select_fails_over_and_persists_selected_endpoint(tmp_path, monkeypatch)
     assert attempts == kube_endpoint.ENDPOINTS["re8ch"][:2]
     persisted = yaml.safe_load((tmp_path / "config").read_text())
     assert persisted["clusters"][0]["cluster"]["server"] == selected
+    assert persisted["users"][0]["user"]["token"] == "token"
 
 
 def test_select_treats_timeout_as_failover(tmp_path, monkeypatch):

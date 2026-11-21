@@ -61,6 +61,7 @@ def base_config(cluster: str, token: str, ca_pem: str) -> dict:
 
 def select(path: Path, config: dict, cluster: str) -> str:
     failures = []
+    token = config["users"][0]["user"].pop("token", None)
     for endpoint in ENDPOINTS.get(cluster, []):
         config["clusters"][0]["cluster"]["server"] = endpoint
         _write(path, config)
@@ -76,6 +77,9 @@ def select(path: Path, config: dict, cluster: str) -> str:
             failures.append(endpoint)
             continue
         if result.returncode == 0:
+            if token is not None:
+                config["users"][0]["user"]["token"] = token
+                _write(path, config)
             print(f"selected Kubernetes endpoint: {endpoint}")
             return endpoint
         failures.append(endpoint)
