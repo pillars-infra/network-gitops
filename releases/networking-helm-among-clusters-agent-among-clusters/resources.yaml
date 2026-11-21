@@ -153,32 +153,7 @@ spec:
           value: '{"re8ch-artc":["spiffe://artc.byoc/cluster/artc"],"re8ch-atlantic":["spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic"],"re8ch-qwen":["spiffe://qwen.byoc/cluster/qwen"],"re8ch-sijie":["spiffe://sijie.byoc/cluster/sijie"]}'
         image: ghcr.io/among-clusters/among-clusters@sha256:a80367067b256d0c2989485a0926a9a669affed89f224b6f0adb4cf18bf9be05
         name: gateway
-        ports:
-        - containerPort: 8443
-          hostPort: 8443
-          name: gateway
-          protocol: UDP
-        - containerPort: 22240
-          name: qwen-k8s
-          protocol: TCP
-        - containerPort: 23768
-          name: artc-k8s
-          protocol: TCP
-        - containerPort: 33768
-          name: atlantic-k8s
-          protocol: TCP
-        - containerPort: 1080
-          name: atl-exit
-          protocol: TCP
-        - containerPort: 18080
-          name: atl-mail-web
-          protocol: TCP
-        - containerPort: 18081
-          name: atl-mail-idp
-          protocol: TCP
-        - containerPort: 18082
-          name: atl-mail-admin
-          protocol: TCP
+        ports: []
         resources:
           limits:
             cpu: 250m
@@ -233,35 +208,35 @@ spec:
   - name: gateway
     port: 8443
     protocol: UDP
-    targetPort: gateway
+    targetPort: 8443
   - name: qwen-k8s
     port: 22240
     protocol: TCP
-    targetPort: qwen-k8s
+    targetPort: 22240
   - name: artc-k8s
     port: 23768
     protocol: TCP
-    targetPort: artc-k8s
+    targetPort: 23768
   - name: atlantic-k8s
     port: 33768
     protocol: TCP
-    targetPort: atlantic-k8s
+    targetPort: 33768
   - name: atl-exit
     port: 1080
     protocol: TCP
-    targetPort: atl-exit
+    targetPort: 1080
   - name: atl-mail-web
     port: 18080
     protocol: TCP
-    targetPort: atl-mail-web
+    targetPort: 18080
   - name: atl-mail-idp
     port: 18081
     protocol: TCP
-    targetPort: atl-mail-idp
+    targetPort: 18081
   - name: atl-mail-admin
     port: 18082
     protocol: TCP
-    targetPort: atl-mail-admin
+    targetPort: 18082
   selector:
     app.kubernetes.io/name: among-clusters-gateway
   type: ClusterIP
