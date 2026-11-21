@@ -109,7 +109,7 @@
         "path": "releases/networking-helm-among-clusters-agent-among-clusters",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8"
       },
-      "renderedSHA256": "4e6e9845cff710c3553680616de4093ec4407b6793ca61aa41c9ce5ca57faea6"
+      "renderedSHA256": "e3b0ebd2e1525e0c45ff6987cf9535f1c77fdd885d943c7e483e5b6e6194c45b"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-among-clusters",
