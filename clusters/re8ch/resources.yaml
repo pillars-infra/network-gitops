@@ -20665,15 +20665,90 @@ data:
         - '%cc.kube-api.service.re8ch.com'
         - '%cn.kube-api.service.re8ch.com'
         - global.kube-api.service.re8ch.com
-  pdns.conf: 'launch=geoip,bind
+  dns-router.py: |
+    import socket
+    import struct
+    import threading
+
+    BIND = ("127.0.0.1", 5300)
+    GEO = ("127.0.0.1", 5301)
+    GEO_NAME = "kube-api.service.re8ch.com"
+
+    def qname(packet):
+        labels = []
+        offset = 12
+        while offset < len(packet):
+            length = packet[offset]
+            offset += 1
+            if length == 0:
+                return ".".join(labels).lower()
+            if length & 0xC0 or offset + length > len(packet):
+                return ""
+            labels.append(packet[offset:offset + length].decode("ascii", "ignore"))
+            offset += length
+        return ""
+
+    def backend(packet):
+        return GEO if qname(packet) == GEO_NAME else BIND
+
+    def udp_query(listener, packet, client):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as upstream:
+                upstream.settimeout(3)
+                upstream.sendto(packet, backend(packet))
+                response, _ = upstream.recvfrom(65535)
+                listener.sendto(response, client)
+        except OSError:
+            pass
+
+    def udp_server():
+        listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("0.0.0.0", 53))
+        while True:
+            packet, client = listener.recvfrom(65535)
+            threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()
+
+    def read_exact(stream, size):
+        data = b""
+        while len(data) < size:
+            part = stream.recv(size - len(data))
+            if not part:
+                raise ConnectionError
+            data += part
+        return data
+
+    def tcp_client(client):
+        with client:
+            client.settimeout(10)
+            while True:
+                try:
+                    size = struct.unpack("!H", read_exact(client, 2))[0]
+                    packet = read_exact(client, size)
+                    with socket.create_connection(backend(packet), timeout=3) as upstream:
+                        upstream.sendall(struct.pack("!H", size) + packet)
+                        reply_size = struct.unpack("!H", read_exact(upstream, 2))[0]
+                        reply = read_exact(upstream, reply_size)
+                    client.sendall(struct.pack("!H", reply_size) + reply)
+                except (OSError, ConnectionError, struct.error):
+                    return
+
+    def tcp_server():
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("0.0.0.0", 53))
+        listener.listen(128)
+        while True:
+            client, _ = listener.accept()
+            threading.Thread(target=tcp_client, args=(client,), daemon=True).start()
+
+    threading.Thread(target=udp_server, daemon=True).start()
+    tcp_server()
+  pdns.conf: 'launch=bind
 
     bind-config=/etc/powerdns/named.conf
 
-    geoip-zones-file=/etc/powerdns/geoip.yaml
-
-    geoip-database-files=/usr/share/GeoIP/GeoIP.dat,/usr/share/GeoIP/GeoIPv6.dat
-
-    local-port=53
+    local-port=5300
 
     secondary=yes
 
@@ -22166,7 +22241,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/authority-source-revision: independent-cn-eu-v1
+        networking.re8ch.com/authority-source-revision: geo-authority-router-v1
       labels:
         app.kubernetes.io/name: powerdns-cloud-authorities
     spec:
@@ -22181,10 +22256,7 @@ spec:
                 - 'true'
       containers:
       - args:
-        - "# Bind only the primary NIC; systemd-resolved owns loopback :53.\naddr=$(hostname\
-          \ -I | awk '{print $1}')\ntest -n \"$addr\"\nexec /usr/local/sbin/pdns_server\
-          \ --daemon=no --guardian=no \\\n  --config-dir=/etc/powerdns --local-address=\"\
-          $addr\"\n"
+        - "exec /usr/local/sbin/pdns_server --daemon=no --guardian=no \\\n  --config-dir=/etc/powerdns --local-address=127.0.0.1\n"
         command:
         - sh
         - -ec
@@ -22197,13 +22269,6 @@ spec:
             - test -S /var/run/pdns/pdns.controlsocket
           periodSeconds: 30
         name: pdns-auth
-        ports:
-        - containerPort: 53
-          name: dns-udp
-          protocol: UDP
-        - containerPort: 53
-          name: dns-tcp
-          protocol: TCP
         readinessProbe:
           exec:
             command:
@@ -22226,6 +22291,74 @@ spec:
           readOnly: true
         - mountPath: /var/lib/powerdns
           name: data
+      - args:
+        - "mkdir -p /tmp/pdns-geo\nexec /usr/local/sbin/pdns_server --daemon=no --guardian=no \\\n  --config-dir=/tmp/pdns-geo --launch=geoip \\\n  --geoip-zones-file=/etc/powerdns/geoip.yaml \\\n  --geoip-database-files=/usr/share/GeoIP/GeoIP.dat,/usr/share/GeoIP/GeoIPv6.dat \\\n  --local-address=127.0.0.1 --local-port=5301 \\\n  --socket-dir=/tmp/pdns-geo --disable-syslog=yes --edns-subnet-processing=yes \\\n  --version-string=anonymous\n"
+        command:
+        - sh
+        - -ec
+        image: docker.io/powerdns/pdns-auth-49:4.9.17@sha256:b554df74bbde1afa7caedad4af9c91378be6d46d05807d089b3c7c443002e684
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - test -S /tmp/pdns-geo/pdns.controlsocket
+          periodSeconds: 30
+        name: pdns-geo
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - test -S /tmp/pdns-geo/pdns.controlsocket
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 150m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/powerdns
+          name: config
+          readOnly: true
+      - args:
+        - /etc/powerdns/dns-router.py
+        command:
+        - python3
+        image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+        livenessProbe:
+          tcpSocket:
+            port: 53
+          periodSeconds: 30
+        name: dns-router
+        ports:
+        - containerPort: 53
+          name: dns-udp
+          protocol: UDP
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 53
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 150m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/powerdns
+          name: config
+          readOnly: true
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       initContainers:

@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/authority-source-revision: independent-cn-eu-v1
+        networking.re8ch.com/authority-source-revision: geo-authority-router-v1
       labels:
         app.kubernetes.io/name: powerdns-cloud-authorities
     spec:
@@ -25,10 +25,8 @@ spec:
                 - 'true'
       containers:
       - args:
-        - "# Bind only the primary NIC; systemd-resolved owns loopback :53.\naddr=$(hostname\
-          \ -I | awk '{print $1}')\ntest -n \"$addr\"\nexec /usr/local/sbin/pdns_server\
-          \ --daemon=no --guardian=no \\\n  --config-dir=/etc/powerdns --local-address=\"\
-          $addr\"\n"
+        - "exec /usr/local/sbin/pdns_server --daemon=no --guardian=no \\\n  --config-dir=/etc/powerdns\
+          \ --local-address=127.0.0.1\n"
         command:
         - sh
         - -ec
@@ -41,13 +39,6 @@ spec:
             - test -S /var/run/pdns/pdns.controlsocket
           periodSeconds: 30
         name: pdns-auth
-        ports:
-        - containerPort: 53
-          name: dns-udp
-          protocol: UDP
-        - containerPort: 53
-          name: dns-tcp
-          protocol: TCP
         readinessProbe:
           exec:
             command:
@@ -70,6 +61,78 @@ spec:
           readOnly: true
         - mountPath: /var/lib/powerdns
           name: data
+      - args:
+        - "mkdir -p /tmp/pdns-geo\nexec /usr/local/sbin/pdns_server --daemon=no --guardian=no\
+          \ \\\n  --config-dir=/tmp/pdns-geo --launch=geoip \\\n  --geoip-zones-file=/etc/powerdns/geoip.yaml\
+          \ \\\n  --geoip-database-files=/usr/share/GeoIP/GeoIP.dat,/usr/share/GeoIP/GeoIPv6.dat\
+          \ \\\n  --local-address=127.0.0.1 --local-port=5301 \\\n  --socket-dir=/tmp/pdns-geo\
+          \ --disable-syslog=yes --edns-subnet-processing=yes \\\n  --version-string=anonymous\n"
+        command:
+        - sh
+        - -ec
+        image: docker.io/powerdns/pdns-auth-49:4.9.17@sha256:b554df74bbde1afa7caedad4af9c91378be6d46d05807d089b3c7c443002e684
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - test -S /tmp/pdns-geo/pdns.controlsocket
+          periodSeconds: 30
+        name: pdns-geo
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - test -S /tmp/pdns-geo/pdns.controlsocket
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 150m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/powerdns
+          name: config
+          readOnly: true
+      - args:
+        - /etc/powerdns/dns-router.py
+        command:
+        - python3
+        image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+        livenessProbe:
+          periodSeconds: 30
+          tcpSocket:
+            port: 53
+        name: dns-router
+        ports:
+        - containerPort: 53
+          name: dns-udp
+          protocol: UDP
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        readinessProbe:
+          periodSeconds: 10
+          tcpSocket:
+            port: 53
+        resources:
+          limits:
+            cpu: 150m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/powerdns
+          name: config
+          readOnly: true
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       initContainers:
@@ -279,6 +342,39 @@ spec:
 ---
 apiVersion: v1
 data:
+  dns-router.py: "import socket\nimport struct\nimport threading\n\nBIND = (\"127.0.0.1\"\
+    , 5300)\nGEO = (\"127.0.0.1\", 5301)\nGEO_NAME = \"kube-api.service.re8ch.com\"\
+    \n\ndef qname(packet):\n    labels = []\n    offset = 12\n    while offset < len(packet):\n\
+    \        length = packet[offset]\n        offset += 1\n        if length == 0:\n\
+    \            return \".\".join(labels).lower()\n        if length & 0xC0 or offset\
+    \ + length > len(packet):\n            return \"\"\n        labels.append(packet[offset:offset\
+    \ + length].decode(\"ascii\", \"ignore\"))\n        offset += length\n    return\
+    \ \"\"\n\ndef backend(packet):\n    return GEO if qname(packet) == GEO_NAME else\
+    \ BIND\n\ndef udp_query(listener, packet, client):\n    try:\n        with socket.socket(socket.AF_INET,\
+    \ socket.SOCK_DGRAM) as upstream:\n            upstream.settimeout(3)\n      \
+    \      upstream.sendto(packet, backend(packet))\n            response, _ = upstream.recvfrom(65535)\n\
+    \            listener.sendto(response, client)\n    except OSError:\n        pass\n\
+    \ndef udp_server():\n    listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n\
+    \    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    listener.bind((\"\
+    0.0.0.0\", 53))\n    while True:\n        packet, client = listener.recvfrom(65535)\n\
+    \        threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()\n\
+    \ndef read_exact(stream, size):\n    data = b\"\"\n    while len(data) < size:\n\
+    \        part = stream.recv(size - len(data))\n        if not part:\n        \
+    \    raise ConnectionError\n        data += part\n    return data\n\ndef tcp_client(client):\n\
+    \    with client:\n        client.settimeout(10)\n        while True:\n      \
+    \      try:\n                size = struct.unpack(\"!H\", read_exact(client, 2))[0]\n\
+    \                packet = read_exact(client, size)\n                with socket.create_connection(backend(packet),\
+    \ timeout=3) as upstream:\n                    upstream.sendall(struct.pack(\"\
+    !H\", size) + packet)\n                    reply_size = struct.unpack(\"!H\",\
+    \ read_exact(upstream, 2))[0]\n                    reply = read_exact(upstream,\
+    \ reply_size)\n                client.sendall(struct.pack(\"!H\", reply_size)\
+    \ + reply)\n            except (OSError, ConnectionError, struct.error):\n   \
+    \             return\n\ndef tcp_server():\n    listener = socket.socket(socket.AF_INET,\
+    \ socket.SOCK_STREAM)\n    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,\
+    \ 1)\n    listener.bind((\"0.0.0.0\", 53))\n    listener.listen(128)\n    while\
+    \ True:\n        client, _ = listener.accept()\n        threading.Thread(target=tcp_client,\
+    \ args=(client,), daemon=True).start()\n\nthreading.Thread(target=udp_server,\
+    \ daemon=True).start()\ntcp_server()\n"
   geoip.yaml: "domains:\n- domain: kube-api.service.re8ch.com\n  ttl: 30\n  records:\n\
     \    kube-api.service.re8ch.com:\n    - soa: ns-domain-ex.re8ch.com hostmaster.re8ch.com\
     \ 2026112101 60 60 86400 30\n    - ns: ns-domain-ex.re8ch.com\n    - ns: ns-zan.re8ch.com\n\
@@ -310,15 +406,11 @@ data:
     masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
 
     '
-  pdns.conf: 'launch=geoip,bind
+  pdns.conf: 'launch=bind
 
     bind-config=/etc/powerdns/named.conf
 
-    geoip-zones-file=/etc/powerdns/geoip.yaml
-
-    geoip-database-files=/usr/share/GeoIP/GeoIP.dat,/usr/share/GeoIP/GeoIPv6.dat
-
-    local-port=53
+    local-port=5300
 
     secondary=yes
 
