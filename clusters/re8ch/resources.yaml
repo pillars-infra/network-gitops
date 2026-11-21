@@ -27494,26 +27494,36 @@ data:
     rule-providers:
       cn-ip: {type: file, behavior: classical, path: /etc/mihomo/rules/cn-ip-rules.yaml}
     proxies:
-      - {name: OVERSEAS-LA, type: socks5, server: 10.250.0.104, port: 1080}
-      - {name: OVERSEAS-LA-2, type: socks5, server: 10.250.0.220, port: 1080}
-      - {name: OVERSEAS-FLK, type: socks5, server: 10.250.0.105, port: 1080}
+      # Consume overseas exits through the AmongCluster service exports. The LA
+      # agents are no longer main-cluster nodes and must not be addressed by
+      # their former pod-network identities.
+      - {name: ATLANTIC, type: socks5, server: mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local, port: 1080}
+      - {name: OVERSEAS-FLK, type: socks5, server: mihomos-global-exit-overseas-flk.egress-fabric.svc.cluster.local, port: 1080}
     proxy-groups:
-      - {name: GLOBAL, type: fallback, proxies: [OVERSEAS-LA, OVERSEAS-LA-2, OVERSEAS-FLK], url: "https://www.gstatic.com/generate_204", interval: 30, lazy: false}
-      - {name: GITHUB, type: fallback, proxies: [OVERSEAS-LA, OVERSEAS-LA-2, OVERSEAS-FLK], url: "https://github.com/login/oauth/access_token", interval: 30, lazy: false}
-      - {name: GHCR, type: fallback, proxies: [OVERSEAS-LA, OVERSEAS-LA-2, OVERSEAS-FLK], url: "https://ghcr.io/v2/", interval: 30, lazy: false}
-    rules: ["IP-CIDR,10.0.0.0/8,DIRECT,no-resolve", "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve", "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve", "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve", "DOMAIN,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ghcr.io,GHCR", "DOMAIN-SUFFIX,pkg-containers.githubusercontent.com,GHCR", "DOMAIN-SUFFIX,github.com,GITHUB", "DOMAIN-SUFFIX,githubusercontent.com,GITHUB", "DOMAIN-SUFFIX,cn,DIRECT", "RULE-SET,cn-ip,DIRECT", "MATCH,GLOBAL"]
+      - {name: GLOBAL, type: fallback, proxies: [ATLANTIC, OVERSEAS-FLK], url: "https://www.gstatic.com/generate_204", interval: 600, lazy: true}
+    rules: ["IP-CIDR,10.0.0.0/8,DIRECT,no-resolve", "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve", "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve", "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve", "IP-CIDR,179.255.126.104/32,DIRECT,no-resolve", "IP-CIDR,179.253.231.159/32,DIRECT,no-resolve", "IP-CIDR,2.28.106.230/32,DIRECT,no-resolve", "IP-CIDR,2.29.219.31/32,DIRECT,no-resolve", "IP-CIDR,198.20.153.89/32,DIRECT,no-resolve", "DOMAIN,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ghcr.io,GLOBAL", "DOMAIN-SUFFIX,pkg-containers.githubusercontent.com,GLOBAL", "DOMAIN-SUFFIX,github.com,GLOBAL", "DOMAIN-SUFFIX,githubusercontent.com,GLOBAL", "DOMAIN-SUFFIX,cn,DIRECT", "RULE-SET,cn-ip,DIRECT", "MATCH,GLOBAL"]
   global.yaml: |
     mixed-port: 17891
     external-controller: 0.0.0.0:19090
     allow-lan: true
     mode: rule
     ipv6: false
+    dns:
+      enable: true
+      ipv6: false
+      enhanced-mode: redir-host
+      default-nameserver: [1.1.1.1, 8.8.8.8]
+      nameserver:
+        - https://1.1.1.1/dns-query#DIRECT
+        - https://dns.google/dns-query#DIRECT
+      nameserver-policy:
+        "+.cn": [https://dns.alidns.com/dns-query#DIRECT, https://doh.pub/dns-query#DIRECT]
     rule-providers:
       cn-ip: {type: file, behavior: classical, path: /etc/mihomo/rules/cn-ip-rules.yaml}
     proxies:
       - {name: CN-FABRIC, type: socks5, server: mihomos-cn-exit.egress-fabric.svc.cluster.local, port: 1080}
     proxy-groups:
-      - {name: CN, type: fallback, proxies: [CN-FABRIC], url: "https://connectivitycheck.gstatic.com/generate_204", interval: 30, lazy: false}
+      - {name: CN, type: fallback, proxies: [CN-FABRIC], url: "https://connect.rom.miui.com/generate_204", interval: 600, lazy: true}
     rules: ["IP-CIDR,10.0.0.0/8,DIRECT,no-resolve", "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve", "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve", "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve", "DOMAIN,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,cn,CN", "RULE-SET,cn-ip,CN", "MATCH,DIRECT"]
   exit.yaml: |
     mixed-port: 1080
