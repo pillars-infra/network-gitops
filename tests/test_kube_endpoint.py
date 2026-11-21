@@ -26,7 +26,7 @@ def test_select_fails_over_and_persists_selected_endpoint(tmp_path, monkeypatch)
         assert "token" not in config["users"][0]["user"]
         endpoint = config["clusters"][0]["cluster"]["server"]
         attempts.append(endpoint)
-        return SimpleNamespace(returncode=0 if endpoint.endswith("159:443") else 1)
+        return SimpleNamespace(returncode=0 if endpoint.endswith("159:443") else 1, stderr="")
 
     monkeypatch.setattr(kube_endpoint.subprocess, "run", run)
     config = kube_endpoint.base_config("re8ch", "token", "ca")
@@ -46,8 +46,23 @@ def test_select_treats_timeout_as_failover(tmp_path, monkeypatch):
         calls += 1
         if calls == 1:
             raise kube_endpoint.subprocess.TimeoutExpired(argv, kwargs["timeout"])
-        return SimpleNamespace(returncode=0)
+        return SimpleNamespace(returncode=0, stderr="")
 
     monkeypatch.setattr(kube_endpoint.subprocess, "run", run)
     config = kube_endpoint.base_config("re8ch", "token", "ca")
     assert kube_endpoint.select(tmp_path / "config", config, "re8ch") == "https://179.253.231.159:443"
+
+
+def test_select_reports_bounded_transport_failures(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        kube_endpoint.subprocess,
+        "run",
+        lambda argv, **kwargs: SimpleNamespace(returncode=1, stderr="certificate rejected " * 100),
+    )
+    config = kube_endpoint.base_config("re8ch-atlantic", "token", "ca")
+    try:
+        kube_endpoint.select(tmp_path / "config", config, "re8ch-atlantic")
+    except Exception as error:
+        message = str(error)
+    assert "certificate rejected" in message
+    assert len(message) < 400
