@@ -2,13 +2,13 @@
 """Renew the current executor credential without passing secrets in process argv."""
 import os
 import argparse
-import base64
 from pathlib import Path
 import tempfile
 
 import yaml
 
 from ssa_executor import Executor, Rejected
+from kube_endpoint import base_config, select
 
 
 def refresh() -> None:
@@ -31,6 +31,11 @@ def refresh() -> None:
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
+    current = config.get('current-context')
+    contexts = [item for item in config.get('contexts', []) if item.get('name') == current]
+    cluster = contexts[0].get('context', {}).get('cluster') if len(contexts) == 1 else None
+    if cluster in {'re8ch', 're8ch-main', 're8ch-atlantic'}:
+        select(path, config, cluster)
 
 
 def initialize() -> None:
@@ -39,14 +44,7 @@ def initialize() -> None:
     ca = os.environ['KUBE_API_CA_PEM']
     if not ca.strip():
         raise Rejected('missing Kubernetes API CA')
-    config = {'apiVersion':'v1','kind':'Config',
-              'clusters':[{'name':'re8ch-main','cluster':{
-                  'server':'https://223.159.210.222',
-                  'tls-server-name':'kube-api.service.re8ch.com',
-                  'certificate-authority-data':base64.b64encode(ca.encode()).decode()}}],
-              'users':[{'name':'release-executor','user':{}}],
-              'contexts':[{'name':'release-executor','context':{'cluster':'re8ch-main','user':'release-executor'}}],
-              'current-context':'release-executor'}
+    config = base_config('re8ch-main', '', ca)
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, 'w') as handle:
         yaml.safe_dump(config, handle, sort_keys=False)

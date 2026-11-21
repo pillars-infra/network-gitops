@@ -120,20 +120,15 @@ jobs:
           KUBE_API_CA_PEM: '${{ secrets.KUBE_API_CA_PEM }}'
           RELEASE_ID: '${{ matrix.release-id }}'
           TARGET_NAMESPACE: '${{ matrix.namespace }}'
+          TARGET_CLUSTER: re8ch-main
         run: |
           set -euo pipefail
           curl -fsS --get -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" --data-urlencode "audience=$EXECUTOR_AUDIENCE" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL" > "$RUNNER_TEMP/oidc.json"
           token="$(jq -r .value "$RUNNER_TEMP/oidc.json")"; echo "::add-mask::$token"
           kubeconfig="$RUNNER_TEMP/executor.kubeconfig"
-          printf '%s' "$KUBE_API_CA_PEM" > "$RUNNER_TEMP/re8ch-ca.crt"
-          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --server=https://223.159.210.222 \
-            --certificate-authority="$RUNNER_TEMP/re8ch-ca.crt" --embed-certs=true
-          kubectl config --kubeconfig "$kubeconfig" set-cluster re8ch-main --tls-server-name=kube-api.service.re8ch.com
-          kubectl config --kubeconfig "$kubeconfig" set-credentials release-executor --token="$token"
-          kubectl config --kubeconfig "$kubeconfig" set-context release-executor --cluster=re8ch-main --user=release-executor
-          kubectl config --kubeconfig "$kubeconfig" use-context release-executor
           export KUBECONFIG="$kubeconfig"
+          EXECUTOR_TOKEN="$token" python operations/releases/kube_endpoint.py
           state_name="$(python operations/releases/operation_materialize.py state-name --release-id "$RELEASE_ID")"
           test "$(kubectl auth can-i patch "configmap/$state_name" -n "$TARGET_NAMESPACE")" = yes
           for denied in "create configmaps -n $TARGET_NAMESPACE" "get secrets -n $TARGET_NAMESPACE" \
