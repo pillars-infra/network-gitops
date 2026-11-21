@@ -20693,8 +20693,53 @@ data:
     def backend(packet):
         return GEO if qname(packet) == GEO_NAME else BIND
 
+    def skip_name(packet, offset):
+        while offset < len(packet):
+            length = packet[offset]
+            if length & 0xC0:
+                return offset + 2
+            offset += 1
+            if length == 0:
+                return offset
+            offset += length
+        raise ValueError
+
+    def add_source_ecs(packet, client_ip):
+        try:
+            address = socket.inet_aton(client_ip)
+            qd, an, ns, ar = struct.unpack("!HHHH", packet[4:12])
+            offset = 12
+            for _ in range(qd):
+                offset = skip_name(packet, offset) + 4
+            for _ in range(an + ns):
+                offset = skip_name(packet, offset)
+                rdlength = struct.unpack("!H", packet[offset + 8:offset + 10])[0]
+                offset += 10 + rdlength
+            option = struct.pack("!HHHBB", 8, 7, 1, 24, 0) + address[:3]
+            for _ in range(ar):
+                record = skip_name(packet, offset)
+                record_type = struct.unpack("!H", packet[record:record + 2])[0]
+                rdlength = struct.unpack("!H", packet[record + 8:record + 10])[0]
+                rdata = record + 10
+                end = rdata + rdlength
+                if record_type == 41:
+                    cursor = rdata
+                    while cursor + 4 <= end:
+                        code, length = struct.unpack("!HH", packet[cursor:cursor + 4])
+                        if code == 8:
+                            return packet
+                        cursor += 4 + length
+                    return (packet[:record + 8] + struct.pack("!H", rdlength + len(option))
+                            + packet[rdata:end] + option + packet[end:])
+                offset = end
+            opt = b"\0" + struct.pack("!HHIH", 41, 1232, 0, len(option)) + option
+            return packet[:10] + struct.pack("!H", ar + 1) + packet[12:] + opt
+        except (OSError, ValueError, struct.error):
+            return packet
+
     def udp_query(listener, packet, client):
         try:
+            packet = add_source_ecs(packet, client[0])
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as upstream:
                 upstream.settimeout(3)
                 upstream.sendto(packet, backend(packet))
@@ -20720,15 +20765,16 @@ data:
             data += part
         return data
 
-    def tcp_client(client):
+    def tcp_client(client, client_ip):
         with client:
             client.settimeout(10)
             while True:
                 try:
                     size = struct.unpack("!H", read_exact(client, 2))[0]
                     packet = read_exact(client, size)
+                    packet = add_source_ecs(packet, client_ip)
                     with socket.create_connection(backend(packet), timeout=3) as upstream:
-                        upstream.sendall(struct.pack("!H", size) + packet)
+                        upstream.sendall(struct.pack("!H", len(packet)) + packet)
                         reply_size = struct.unpack("!H", read_exact(upstream, 2))[0]
                         reply = read_exact(upstream, reply_size)
                     client.sendall(struct.pack("!H", reply_size) + reply)
@@ -20741,8 +20787,8 @@ data:
         listener.bind((LISTEN_ADDRESS, 53))
         listener.listen(128)
         while True:
-            client, _ = listener.accept()
-            threading.Thread(target=tcp_client, args=(client,), daemon=True).start()
+            client, address = listener.accept()
+            threading.Thread(target=tcp_client, args=(client, address[0]), daemon=True).start()
 
     threading.Thread(target=udp_server, daemon=True).start()
     tcp_server()
