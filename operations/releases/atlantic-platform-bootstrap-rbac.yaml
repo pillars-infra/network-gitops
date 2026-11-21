@@ -1,6 +1,54 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: github-cloud-ssa-atlantic-among-clusters
+  namespace: among-clusters
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [among-clusters-agent, among-clusters-gateway]
+    verbs: [get, patch]
+  - apiGroups: [apps]
+    resources: [daemonsets]
+    resourceNames: [among-clusters-edge]
+    verbs: [get, patch]
+  - apiGroups: ['']
+    resources: [configmaps]
+    resourceNames:
+      - among-clusters-approval-re8ch-atlantic-headlamp-admin
+      - among-clusters-edge-sni
+      - ssa-state-networking-native-atlantic-among-clusters
+    verbs: [get, patch]
+  - apiGroups: ['']
+    resources: [services]
+    resourceNames: [among-clusters-gateway]
+    verbs: [get, patch]
+  - apiGroups: ['']
+    resources: [serviceaccounts]
+    resourceNames: [among-clusters-agent]
+    verbs: [get, patch]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    resourceNames: [among-clusters-agent, among-clusters-edge, among-clusters-gateway]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-cloud-ssa-atlantic-among-clusters
+  namespace: among-clusters
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: github-cloud-ssa-atlantic-among-clusters
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: github:repo:pillars-infra@334604858/network-gitops@1435935851:environment:release-executor-networking-atlantic
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: github-cloud-ssa-atlantic-mihomo-global-exit
   namespace: egress-fabric
 rules:
