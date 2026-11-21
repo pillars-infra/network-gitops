@@ -1,0 +1,47 @@
+- op: add
+  path: /spec/values/gateway/imports/-
+  value:
+    expectedSPIFFEID: spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
+    listen: :18080
+    name: atl-mail-web
+    port: 18080
+    serviceIdentity: spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-webmail
+    sessionOnly: true
+- op: add
+  path: /spec/values/gateway/imports/-
+  value:
+    expectedSPIFFEID: spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
+    listen: :18081
+    name: atl-mail-idp
+    port: 18081
+    serviceIdentity: spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-idp
+    sessionOnly: true
+- op: add
+  path: /spec/values/gateway/imports/-
+  value:
+    expectedSPIFFEID: spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
+    listen: :18082
+    name: atl-mail-admin
+    port: 18082
+    serviceIdentity: spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-management
+    sessionOnly: true
+- op: add
+  path: /spec/postRenderers/0/kustomize/patches/-
+  value:
+    target:
+      group: networking.k8s.io
+      version: v1
+      kind: NetworkPolicy
+      name: among-clusters-gateway
+    patch: |-
+      - op: add
+        path: /spec/ingress/-
+        value:
+          from:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: mail-system
+          ports:
+            - {protocol: TCP, port: 18080}
+            - {protocol: TCP, port: 18081}
+            - {protocol: TCP, port: 18082}
