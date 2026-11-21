@@ -18,6 +18,13 @@ def test_main_endpoint_order_and_tls_identity():
     assert config["clusters"][0]["cluster"]["tls-server-name"] == "kube-api.service.re8ch.com"
 
 
+def test_atlantic_mux_waits_for_fragmented_client_hello():
+    manifest = (Path(__file__).resolve().parents[1] / "releases" / "networking-native-atlantic-among-clusters" / "resources.yaml").read_text()
+    assert "tcp-request inspect-delay 5s" in manifest
+    assert "tcp-request content accept if { req.ssl_hello_type 1 }" in manifest
+    assert "reject unless { req.ssl_hello_type 1 }" not in manifest
+
+
 def test_select_fails_over_and_persists_selected_endpoint(tmp_path, monkeypatch):
     attempts = []
 
