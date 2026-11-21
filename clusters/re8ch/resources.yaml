@@ -20666,6 +20666,7 @@ data:
         - '%cn.kube-api.service.re8ch.com'
         - global.kube-api.service.re8ch.com
   dns-router.py: |
+    import os
     import socket
     import struct
     import threading
@@ -20673,6 +20674,7 @@ data:
     BIND = ("127.0.0.1", 5300)
     GEO = ("127.0.0.1", 5301)
     GEO_NAME = "kube-api.service.re8ch.com"
+    LISTEN_ADDRESS = os.environ["LISTEN_ADDRESS"]
 
     def qname(packet):
         labels = []
@@ -20704,7 +20706,7 @@ data:
     def udp_server():
         listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind(("0.0.0.0", 53))
+        listener.bind((LISTEN_ADDRESS, 53))
         while True:
             packet, client = listener.recvfrom(65535)
             threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()
@@ -20736,7 +20738,7 @@ data:
     def tcp_server():
         listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind(("0.0.0.0", 53))
+        listener.bind((LISTEN_ADDRESS, 53))
         listener.listen(128)
         while True:
             client, _ = listener.accept()
@@ -22329,6 +22331,11 @@ spec:
         - /etc/powerdns/dns-router.py
         command:
         - python3
+        env:
+        - name: LISTEN_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
         livenessProbe:
           tcpSocket:
