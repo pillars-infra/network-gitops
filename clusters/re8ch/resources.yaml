@@ -22335,13 +22335,6 @@ spec:
             port: 53
           periodSeconds: 30
         name: dns-router
-        ports:
-        - containerPort: 53
-          name: dns-udp
-          protocol: UDP
-        - containerPort: 53
-          name: dns-tcp
-          protocol: TCP
         readinessProbe:
           tcpSocket:
             port: 53
