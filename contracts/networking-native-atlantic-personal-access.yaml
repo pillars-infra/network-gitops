@@ -43,7 +43,7 @@ spec:
     - core/Service/egress-fabric/personal-access-atlantic
     - networking.k8s.io/NetworkPolicy/egress-fabric/personal-access-atlantic
   inventory:
-    digest: sha256:68e060fad741ce67596f2a5ce33914602cf7de8da71c7eba4278ac7fb007b111
+    digest: sha256:875a42d3e24dcf51d8b5647ff0b41a1be6807103f42ad5ece997d8514f39dda5
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300
