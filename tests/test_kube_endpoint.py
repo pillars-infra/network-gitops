@@ -30,7 +30,7 @@ def test_select_fails_over_and_persists_selected_endpoint(tmp_path, monkeypatch)
 
     def run(argv, **kwargs):
         config = yaml.safe_load((tmp_path / "config").read_text())
-        assert "token" not in config["users"][0]["user"]
+        assert config["users"][0]["user"]["token"] == "token"
         endpoint = config["clusters"][0]["cluster"]["server"]
         attempts.append(endpoint)
         return SimpleNamespace(returncode=0 if endpoint.endswith("159:443") else 1, stderr="")
