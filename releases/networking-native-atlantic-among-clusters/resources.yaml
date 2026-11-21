@@ -116,9 +116,9 @@ data:
       use_backend main_kube_api if { req.ssl_sni -i kube-api.re8ch.com kube-api.service.re8ch.com }
       default_backend main_public_edge
     backend main_kube_api
-      server local 127.0.0.1:16443 check inter 2s fall 2 rise 2
+      server gateway among-clusters-gateway.among-clusters.svc.cluster.local:16443 check inter 2s fall 2 rise 2
     backend main_public_edge
-      server local 127.0.0.1:16445 check inter 2s fall 2 rise 2
+      server gateway among-clusters-gateway.among-clusters.svc.cluster.local:16445 check inter 2s fall 2 rise 2
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -146,9 +146,12 @@ spec:
     ports:
     - {protocol: TCP, port: 17891}
   - from:
-    - ipBlock: {cidr: 0.0.0.0/0}
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: among-clusters-edge
     ports:
-    - {protocol: TCP, port: 8444}
+    - {protocol: TCP, port: 16443}
+    - {protocol: TCP, port: 16445}
   egress:
   - to:
     - ipBlock: {cidr: 223.159.210.222/32}
@@ -196,30 +199,23 @@ metadata:
   name: among-clusters-gateway
   namespace: among-clusters
 spec:
-  # One generic PublicEdge ingress per Atlantic node. The stream remains
-  # opaque TLS; the main Cilium Gateway retains certificate and SNI authority.
-  replicas: 5
+  # A peer identity owns exactly one authenticated hub session. Public ingress
+  # is fanned out separately by the node-local edge DaemonSet below.
+  replicas: 1
   strategy:
     type: RollingUpdate
-    rollingUpdate: {maxUnavailable: 1, maxSurge: 0}
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
   selector:
     matchLabels:
       app.kubernetes.io/name: among-clusters-gateway
   template:
     metadata:
       annotations:
-        networking.re8ch.com/haproxy-config-sha256: 5135ad52574b87d3e8e40bf4b82be9621358069f5aceff94106331cf6d906dfd
+        networking.re8ch.com/haproxy-config-sha256: 7b3e57de0f77800f2e635f617724ed3c68444480806e829a83eb88e118bc7085
       labels:
         app.kubernetes.io/name: among-clusters-gateway
     spec:
       automountServiceAccountToken: false
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: among-clusters-gateway
-            topologyKey: kubernetes.io/hostname
       tolerations:
       - key: dedicated
         operator: Equal
@@ -259,6 +255,40 @@ spec:
         - {name: identity, mountPath: /identity, readOnly: true}
         - {name: service-routes, mountPath: /routes, readOnly: true}
         - {name: peer-bundles, mountPath: /peer-bundles, readOnly: true}
+      volumes:
+      - name: identity
+        secret: {secretName: among-clusters-agent-identity}
+      - name: service-routes
+        configMap: {name: among-clusters-service-routes}
+      - name: peer-bundles
+        secret: {secretName: among-clusters-peer-bundle}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: among-clusters-edge
+  namespace: among-clusters
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-edge
+  template:
+    metadata:
+      annotations:
+        networking.re8ch.com/haproxy-config-sha256: 7b3e57de0f77800f2e635f617724ed3c68444480806e829a83eb88e118bc7085
+      labels:
+        app.kubernetes.io/name: among-clusters-edge
+    spec:
+      automountServiceAccountToken: false
+      tolerations:
+      - key: dedicated
+        operator: Equal
+        value: overseas-edge
+        effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
       - name: edge-sni
         image: docker.io/library/haproxy@sha256:7816a9801a6846b912bc37e48529808e2fa87c3c47992441940f68e393ebcfeb
         args: [-W, -db, -f, /usr/local/etc/haproxy/haproxy.cfg]
@@ -279,14 +309,39 @@ spec:
         volumeMounts:
         - {name: edge-sni, mountPath: /usr/local/etc/haproxy, readOnly: true}
       volumes:
-      - name: identity
-        secret: {secretName: among-clusters-agent-identity}
-      - name: service-routes
-        configMap: {name: among-clusters-service-routes}
-      - name: peer-bundles
-        secret: {secretName: among-clusters-peer-bundle}
       - name: edge-sni
         configMap: {name: among-clusters-edge-sni}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: among-clusters-edge
+  namespace: among-clusters
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-edge
+  policyTypes: [Ingress, Egress]
+  ingress:
+  - from:
+    - ipBlock: {cidr: 0.0.0.0/0}
+    ports:
+    - {protocol: TCP, port: 8444}
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: among-clusters-gateway
+    ports:
+    - {protocol: TCP, port: 16443}
+    - {protocol: TCP, port: 16445}
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - {protocol: UDP, port: 53}
+    - {protocol: TCP, port: 53}
 ---
 apiVersion: v1
 kind: Service
