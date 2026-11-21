@@ -73,6 +73,10 @@ def project(documents, prefix="networking-native", source_context=None):
             name=prefix+'-'+namespace
         groups[(name,namespace)].append(d)
     files={};releases=[]
+    # This singleton ConfigMap is itself the bootstrap authority consumed by
+    # networking controllers.  Unlike ordinary adopted native objects, the
+    # protected release must be able to recreate it after accidental deletion.
+    recreatable_releases={'networking-native-flux-network-system'}
     for (name,namespace),objects in sorted(groups.items()):
         objects.sort(key=object_identity);folder=f'releases/{name}'
         inventory=sorted(object_identity(o) for o in objects)
@@ -82,7 +86,7 @@ def project(documents, prefix="networking-native", source_context=None):
             'authorityDomain':'networking','target':{'cluster':'re8ch','namespace':namespace},
             'source':{'renderer':'kustomize','revision':'github-main-reviewed','repository':REPOSITORY,'path':folder,**(source_context or {})},
             'provenance':{'repository':REPOSITORY,'workflow':WORKFLOW,'ref':'refs/heads/main','environment':ENVIRONMENT,'audience':AUDIENCE,'signer':SIGNER,'issuer':'https://token.actions.githubusercontent.com'},
-            'authorization':{'requireExisting':True,'fieldManager':'re8ch-release/'+name,'resources':sorted({api_group(o['apiVersion'])+'/'+o['kind'] for o in objects}),'objectNames':sorted({o['metadata']['name'] for o in objects}),'forceConflictObjects':inventory},
+            'authorization':{'requireExisting':name not in recreatable_releases,'fieldManager':'re8ch-release/'+name,'resources':sorted({api_group(o['apiVersion'])+'/'+o['kind'] for o in objects}),'objectNames':sorted({o['metadata']['name'] for o in objects}),'forceConflictObjects':inventory},
             'inventory':{'digest':digest(canonical(inventory))},
             'lifecycle':lifecycle}}
         rendered=yaml.safe_dump_all(objects,sort_keys=False)
@@ -93,10 +97,15 @@ def project(documents, prefix="networking-native", source_context=None):
         permissions=defaultdict(set)
         for o in objects:permissions[(api_group(o['apiVersion']),PLURALS.get(o['kind'],o['kind'].lower()+'s'))].add(o['metadata']['name'])
         rules=[{'apiGroups':['' if group=='core' else group],'resources':[resource],'resourceNames':sorted(names),'verbs':['get','patch']} for (group,resource),names in sorted(permissions.items())]
+        if name in recreatable_releases:
+            # Kubernetes cannot authorize create by resourceName because the
+            # object does not exist yet.  The signed ReleaseContract supplies
+            # the exact-name guard before this namespace-scoped verb is used.
+            rules.append({'apiGroups':[''],'resources':['configmaps'],'verbs':['create']})
         state=state_configmap_name(name)
         rules.append({'apiGroups':[''],'resources':['configmaps'],'resourceNames':[state],'verbs':['get','patch']})
         releases.append({'releaseId':name,'contract':f'contracts/{name}.yaml','namespace':namespace,'inventory':inventory,'rules':rules,'stateConfigMap':{'apiVersion':'v1','kind':'ConfigMap','metadata':{'name':state,'namespace':namespace},'data':{}}})
-    ledger={'version':1,'source':'clusters/re8ch','executionGroup':'re8ch:release-executor:networking','verbsNote':'Existing-object adoption uses get/patch only; create/delete, Secret reads, impersonation and token minting are not granted. Role/RoleBinding objects remain platform-owned and are listed under platformBootstrap; no bind/escalate authority is requested.','releases':releases,'platformBootstrap':sorted(bootstrap,key=object_identity),'omitted':sorted(omitted,key=lambda x:x['identity'])}
+    ledger={'version':1,'source':'clusters/re8ch','executionGroup':'re8ch:release-executor:networking','verbsNote':'Existing-object adoption uses get/patch only. The singleton cluster-node-inventory bootstrap release also receives create so it can recover its exact reviewed ConfigMap; its contract still constrains namespace, kind and object name. Delete, Secret reads, impersonation and token minting are not granted. Role/RoleBinding objects remain platform-owned and are listed under platformBootstrap; no bind/escalate authority is requested.','releases':releases,'platformBootstrap':sorted(bootstrap,key=object_identity),'omitted':sorted(omitted,key=lambda x:x['identity'])}
     files['operations/releases/native-authority.json']=json.dumps(ledger,indent=2)+'\n'
     return files,ledger
 

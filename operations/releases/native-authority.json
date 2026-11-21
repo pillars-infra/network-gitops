@@ -2,7 +2,7 @@
   "version": 1,
   "source": "clusters/re8ch",
   "executionGroup": "re8ch:release-executor:networking",
-  "verbsNote": "Existing-object adoption uses get/patch only; create/delete, Secret reads, impersonation and token minting are not granted. Role/RoleBinding objects remain platform-owned and are listed under platformBootstrap; no bind/escalate authority is requested.",
+  "verbsNote": "Existing-object adoption uses get/patch only. The singleton cluster-node-inventory bootstrap release also receives create so it can recover its exact reviewed ConfigMap; its contract still constrains namespace, kind and object name. Delete, Secret reads, impersonation and token minting are not granted. Role/RoleBinding objects remain platform-owned and are listed under platformBootstrap; no bind/escalate authority is requested.",
   "releases": [
     {
       "releaseId": "networking-native-advfab-system",
@@ -885,6 +885,17 @@
           "verbs": [
             "get",
             "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "create"
           ]
         },
         {
