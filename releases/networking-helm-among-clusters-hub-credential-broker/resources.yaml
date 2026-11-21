@@ -22,7 +22,7 @@ spec:
           value: http://among-clusters-hub.among-clusters.svc
         - name: CREDENTIAL_NAMESPACE
           value: credential-broker
-        image: ghcr.io/among-clusters/among-clusters@sha256:a2bc6ddfdc009afb7106db74b95b8022adbc535c45bfc1e409d00aa81cd47c4a
+        image: ghcr.io/among-clusters/among-clusters@sha256:a80367067b256d0c2989485a0926a9a669affed89f224b6f0adb4cf18bf9be05
         name: broker
         ports:
         - containerPort: 8080
