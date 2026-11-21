@@ -25530,7 +25530,7 @@ spec:
       ip: 10.251.0.4
     hubEndpoint: https://among-clusters.service.re8ch.com
     image:
-      digest: sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
+      digest: sha256:a2bc6ddfdc009afb7106db74b95b8022adbc535c45bfc1e409d00aa81cd47c4a
       repository: ghcr.io/among-clusters/among-clusters
     linkObservations: []
     managedAccess:
@@ -25581,7 +25581,7 @@ spec:
       enabled: true
     hostname: among-clusters.re8ch.com
     image:
-      digest: sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
+      digest: sha256:a2bc6ddfdc009afb7106db74b95b8022adbc535c45bfc1e409d00aa81cd47c4a
       repository: ghcr.io/among-clusters/among-clusters
     managedAccess:
       broker:
@@ -25596,7 +25596,7 @@ spec:
     onboarding:
       chartVersion: 0.3.30
       enabled: true
-      imageDigest: sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
+      imageDigest: sha256:a2bc6ddfdc009afb7106db74b95b8022adbc535c45bfc1e409d00aa81cd47c4a
       providerBundleDigest: sha256:1c033ad2260b1064dd46705361dce35d1c47e8332864a88d239a90b5ffa557e8
       providerBundleSecret: among-clusters-agent-identity
       providerQUICEndpoint: quic://223.159.210.222:8443
