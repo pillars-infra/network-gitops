@@ -37,6 +37,7 @@ EXTERNAL_NATIVE_RELEASES={
     'networking-native-atlantic-mihomo-global-exit',
     'networking-native-atlantic-personal-access',
     'networking-native-atlantic-kubernetes-advertisement',
+    'networking-native-atlantic-mail-system',
 }
 
 def classify(document):
