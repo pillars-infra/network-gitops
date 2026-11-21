@@ -40,6 +40,51 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: github-cloud-ssa-atlantic-mail-system
+  namespace: mail-system
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [stalwart-webmail]
+    verbs: [get, patch]
+  - apiGroups: [apps]
+    resources: [statefulsets]
+    resourceNames: [stalwart-flk, stalwart-idp-flk]
+    verbs: [get, patch]
+  - apiGroups: ['']
+    resources: [configmaps]
+    resourceNames:
+      - stalwart-config
+      - stalwart-idp-config
+      - ssa-state-networking-native-atlantic-mail-system
+    verbs: [get, patch]
+  - apiGroups: ['']
+    resources: [services]
+    resourceNames:
+      - stalwart
+      - stalwart-direct-mail
+      - stalwart-headless
+      - stalwart-idp
+      - stalwart-webmail
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-cloud-ssa-atlantic-mail-system
+  namespace: mail-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: github-cloud-ssa-atlantic-mail-system
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: github:repo:pillars-infra@334604858/network-gitops@1435935851:environment:release-executor-networking-atlantic
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: github-cloud-ssa-atlantic-personal-access
   namespace: egress-fabric
 rules:
