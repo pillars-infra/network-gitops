@@ -216,7 +216,7 @@ spec:
           value: '{"re8ch-atlantic":["spiffe://re8ch.internal/cluster/re8ch"],"re8ch-main":["spiffe://re8ch.internal/cluster/re8ch"]}'
         ports:
         - {name: main-egress, containerPort: 17891, protocol: TCP}
-        - {name: main-kube-api, containerPort: 16443, hostPort: 443, protocol: TCP}
+        - {name: main-kube-api, containerPort: 16443, protocol: TCP}
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true

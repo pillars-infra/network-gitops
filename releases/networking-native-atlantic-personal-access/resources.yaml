@@ -233,3 +233,111 @@ spec:
     ports:
     - {port: 1080, protocol: TCP}
     - {port: 1080, protocol: UDP}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: main-anytls-tunnel
+  namespace: egress-fabric
+data:
+  config.yaml: |
+    allow-lan: false
+    mode: rule
+    log-level: warning
+    proxies:
+      - {name: MAIN-ACCESS, type: anytls, server: access.re8ch.com, port: 443, password: __PASSWORD__, sni: access.re8ch.com, skip-cert-verify: false, client-fingerprint: chrome, idle-session-check-interval: 15, idle-session-timeout: 60, min-idle-session: 1}
+      - {name: MAIN-BACKUP, type: anytls, server: backup.access.re8ch.com, port: 443, password: __PASSWORD__, sni: backup.access.re8ch.com, skip-cert-verify: false, client-fingerprint: chrome, idle-session-check-interval: 15, idle-session-timeout: 60, min-idle-session: 1}
+      - {name: MAIN-DIRECT-CN, type: anytls, server: direct-cn.access.re8ch.com, port: 443, password: __PASSWORD__, sni: direct-cn.access.re8ch.com, skip-cert-verify: false, client-fingerprint: chrome, idle-session-check-interval: 15, idle-session-timeout: 60, min-idle-session: 1}
+      - {name: MAIN-ROUTE-KL, type: anytls, server: route-kl.access.re8ch.com, port: 443, password: __PASSWORD__, sni: route-kl.access.re8ch.com, skip-cert-verify: false, client-fingerprint: chrome, idle-session-check-interval: 15, idle-session-timeout: 60, min-idle-session: 1}
+    proxy-groups:
+      - name: MAIN-ANYTLS
+        type: fallback
+        proxies: [MAIN-ACCESS, MAIN-BACKUP, MAIN-DIRECT-CN, MAIN-ROUTE-KL]
+        url: https://cp.cloudflare.com/generate_204
+        interval: 60
+        lazy: false
+    tunnels:
+      - network: [tcp]
+        address: 0.0.0.0:16444
+        target: 10.43.0.1:443
+        proxy: MAIN-ANYTLS
+    rules: ["MATCH,MAIN-ANYTLS"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: main-anytls-tunnel
+  namespace: egress-fabric
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: main-anytls-tunnel}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: main-anytls-tunnel}
+    spec:
+      nodeSelector: {kubernetes.io/hostname: overseas-flk}
+      tolerations: [{operator: Exists}]
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, fsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+      - name: render
+        image: docker.io/library/alpine@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659
+        command: [/bin/sh, -ec]
+        args:
+        - >-
+          password="$(awk 'NF >= 2 {print $2; exit}' /credentials/users.yaml)";
+          test -n "$password";
+          sed "s|__PASSWORD__|$password|g" /base/config.yaml > /work/config.yaml
+        securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+        volumeMounts:
+        - {name: base, mountPath: /base, readOnly: true}
+        - {name: credentials, mountPath: /credentials, readOnly: true}
+        - {name: work, mountPath: /work}
+      containers:
+      - name: mihomo
+        image: docker.io/metacubex/mihomo:v1.19.29@sha256:e1d7dadaa9368a52d420d65007e0e0d87cb148d292faa67326eda3fef5757f59
+        args: [-d, /etc/mihomo]
+        ports: [{name: kube-api, containerPort: 16444, hostPort: 443, protocol: TCP}]
+        readinessProbe: {tcpSocket: {port: kube-api}, periodSeconds: 3, timeoutSeconds: 1}
+        livenessProbe: {tcpSocket: {port: kube-api}, periodSeconds: 15, timeoutSeconds: 1}
+        resources: {requests: {cpu: 25m, memory: 32Mi}, limits: {cpu: 250m, memory: 192Mi}}
+        securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+        volumeMounts:
+        - {name: work, mountPath: /etc/mihomo}
+      volumes:
+      - {name: base, configMap: {name: main-anytls-tunnel}}
+      - {name: credentials, secret: {secretName: personal-access-users}}
+      - {name: work, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: main-anytls-tunnel
+  namespace: egress-fabric
+spec:
+  selector: {app.kubernetes.io/name: main-anytls-tunnel}
+  ports: [{name: kube-api, port: 16444, targetPort: kube-api, protocol: TCP}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: main-anytls-tunnel
+  namespace: egress-fabric
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: main-anytls-tunnel}
+  policyTypes: [Ingress, Egress]
+  ingress:
+  - from: [{ipBlock: {cidr: 0.0.0.0/0}}]
+    ports: [{port: 16444, protocol: TCP}]
+  egress:
+  - to: [{ipBlock: {cidr: 0.0.0.0/0}}]
+    ports: [{port: 443, protocol: TCP}]
+  - to:
+    - namespaceSelector:
+        matchLabels: {kubernetes.io/metadata.name: kube-system}
+      podSelector:
+        matchLabels: {k8s-app: kube-dns}
+    ports: [{port: 53, protocol: TCP}, {port: 53, protocol: UDP}]
