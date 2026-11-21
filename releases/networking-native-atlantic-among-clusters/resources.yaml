@@ -114,7 +114,6 @@ data:
       bind :8444
       tcp-request inspect-delay 5s
       tcp-request content accept if { req.ssl_hello_type 1 }
-      tcp-request content reject unless { req.ssl_hello_type 1 }
       use_backend main_kube_api if { req.ssl_sni -i kube-api.re8ch.com kube-api.service.re8ch.com }
       default_backend main_public_edge
     backend main_kube_api
