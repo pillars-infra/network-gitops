@@ -126,6 +126,10 @@ spec:
     - namespaceSelector: {}
     ports:
     - {protocol: TCP, port: 17891}
+  - from:
+    - ipBlock: {cidr: 0.0.0.0/0}
+    ports:
+    - {protocol: TCP, port: 16443}
   egress:
   - to:
     - ipBlock: {cidr: 223.159.210.222/32}
@@ -185,7 +189,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       nodeSelector:
-        networking.re8ch.com/mihomo-exit: enabled
+        kubernetes.io/hostname: overseas-flk
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
@@ -200,13 +204,14 @@ spec:
           value: '[{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","target":"mihomos-global-exit-atlantic.egress-fabric.svc.cluster.local:1080","targetPeers":["re8ch-main"]},{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/default/service/kubernetes","target":"kubernetes.default.svc.cluster.local:443","targetPeers":["re8ch-main"]},{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-webmail","target":"stalwart-webmail.mail-system.svc.cluster.local:80","targetPeers":["re8ch-main"]},{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-idp","target":"stalwart-idp.mail-system.svc.cluster.local:8080","targetPeers":["re8ch-main"]},{"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-management","target":"stalwart.mail-system.svc.cluster.local:8080","targetPeers":["re8ch-main"]}]'
         - {name: EXPORTS_FILE, value: /routes/exports.json}
         - name: IMPORTS_JSON
-          value: '[{"listen":":17891","serviceIdentity":"spiffe://re8ch.internal/ns/egress-fabric/service/mihomos-byoc-egress","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true}]'
+          value: '[{"listen":":17891","serviceIdentity":"spiffe://re8ch.internal/ns/egress-fabric/service/mihomos-byoc-egress","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true},{"listen":":16443","serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true}]'
         - name: PEER_SESSIONS_JSON
           value: '[{"endpoint":"223.159.210.222:8443","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch"}]'
         - name: PEER_IDENTITIES_JSON
           value: '{"re8ch-atlantic":["spiffe://re8ch.internal/cluster/re8ch"],"re8ch-main":["spiffe://re8ch.internal/cluster/re8ch"]}'
         ports:
         - {name: main-egress, containerPort: 17891, protocol: TCP}
+        - {name: main-kube-api, containerPort: 16443, hostPort: 443, protocol: TCP}
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -236,3 +241,4 @@ spec:
     app.kubernetes.io/name: among-clusters-gateway
   ports:
   - {name: main-egress, port: 17891, targetPort: main-egress, protocol: TCP}
+  - {name: main-kube-api, port: 16443, targetPort: main-kube-api, protocol: TCP}
