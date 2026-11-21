@@ -715,7 +715,7 @@
         "path": "releases/networking-helm-public-edge-manager-regional-routing",
         "chartOCI": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:0137c1015e9cc4d452ef47a288ed5e0e51ca3046ba1581b1ac58c86522e64fab"
       },
-      "renderedSHA256": "f0cb94c5b2d3fcf4d9689ccbcc7f2a92b2e1e46485e8dd22754b8d8e04530ada"
+      "renderedSHA256": "c1cb41c43ead4d4a2dc73e258eb238bb3e6b2c37d92b6ebea7c79d2e6143bfaa"
     }
   ],
   "platformBootstrap": [
@@ -2035,7 +2035,10 @@
         ],
         "region": "de-fsn",
         "serviceClasses": [
-          "api"
+          "api",
+          "db-rw",
+          "web",
+          "service-pilot"
         ]
       }
     },
@@ -2079,7 +2082,10 @@
         ],
         "region": "fi-hel1",
         "serviceClasses": [
-          "api"
+          "api",
+          "db-rw",
+          "web",
+          "service-pilot"
         ]
       }
     },
@@ -2123,7 +2129,10 @@
         ],
         "region": "my-kul",
         "serviceClasses": [
-          "api"
+          "api",
+          "db-rw",
+          "web",
+          "service-pilot"
         ]
       }
     },
@@ -2167,7 +2176,10 @@
         ],
         "region": "us-la-1",
         "serviceClasses": [
-          "api"
+          "api",
+          "db-rw",
+          "web",
+          "service-pilot"
         ]
       }
     },
@@ -2211,7 +2223,10 @@
         ],
         "region": "us-la-2",
         "serviceClasses": [
-          "api"
+          "api",
+          "db-rw",
+          "web",
+          "service-pilot"
         ]
       }
     },

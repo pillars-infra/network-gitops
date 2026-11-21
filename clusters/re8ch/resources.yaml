@@ -25751,7 +25751,7 @@ spec:
         region: us-la-1
         address: 179.255.126.104
         capacityMbps: 1000
-        serviceClasses: [api]
+        serviceClasses: [api, db-rw, web, service-pilot]
       - name: atlantic-la-2
         clusterRef: re8ch-atlantic
         serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
@@ -25760,7 +25760,7 @@ spec:
         region: us-la-2
         address: 179.253.231.159
         capacityMbps: 1000
-        serviceClasses: [api]
+        serviceClasses: [api, db-rw, web, service-pilot]
       - name: atlantic-flk
         clusterRef: re8ch-atlantic
         serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
@@ -25769,7 +25769,7 @@ spec:
         region: de-fsn
         address: 2.28.106.230
         capacityMbps: 400
-        serviceClasses: [api]
+        serviceClasses: [api, db-rw, web, service-pilot]
       - name: atlantic-hel1
         clusterRef: re8ch-atlantic
         serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
@@ -25778,7 +25778,7 @@ spec:
         region: fi-hel1
         address: 2.29.219.31
         capacityMbps: 1000
-        serviceClasses: [api]
+        serviceClasses: [api, db-rw, web, service-pilot]
       - name: atlantic-kl
         clusterRef: re8ch-atlantic
         serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
@@ -25787,7 +25787,7 @@ spec:
         region: my-kul
         address: 198.20.153.89
         capacityMbps: 1000
-        serviceClasses: [api]
+        serviceClasses: [api, db-rw, web, service-pilot]
       excludedAuthorityNodeNames:
       - r640
       - domain-ex
@@ -26413,6 +26413,20 @@ spec:
         class: service-pilot
         probePath: /
         service: headlamp-service
+      auth-origin.service.re8ch.com.:
+        acceptedStatuses:
+        - 200
+        class: service-pilot
+        probeHost: auth-origin.re8ch.com
+        probePath: /.well-known/openid-configuration
+        service: auth-origin-service
+      sub-access.service.re8ch.com.:
+        acceptedStatuses:
+        - 302
+        class: service-pilot
+        probeHost: sub.access.re8ch.com
+        probePath: /
+        service: sub-access-service
       hooks.re8ch.com.:
         acceptedStatuses:
         - 400
