@@ -67,4 +67,4 @@ spec:
       namespace: among-clusters
       name: among-clusters-gateway
       jsonPointer: /status/availableReplicas
-      equals: 1
+      equals: 5

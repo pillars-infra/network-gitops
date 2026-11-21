@@ -269,10 +269,10 @@ metadata:
   name: main-anytls-tunnel
   namespace: egress-fabric
 spec:
-  # One public 443 listener per Atlantic node. Required anti-affinity together
-  # with hostPort guarantees that LA x2, KL, FLK and HEL1 each receive exactly
-  # one endpoint instead of concentrating the entire service on FLK.
-  replicas: 5
+  # Retired: PublicEdge 443 is now an AmongClusters service import owned by
+  # networking-native-atlantic-among-clusters. Keep this at zero until the
+  # legacy object is removed through an explicit reviewed deletion release.
+  replicas: 0
   strategy: {type: Recreate}
   selector:
     matchLabels: {app.kubernetes.io/name: main-anytls-tunnel}

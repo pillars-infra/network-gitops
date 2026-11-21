@@ -67,9 +67,3 @@ spec:
       name: personal-access-atlantic-my-kul
       jsonPointer: /status/readyReplicas
       equals: 1
-    - apiVersion: apps/v1
-      kind: Deployment
-      namespace: egress-fabric
-      name: main-anytls-tunnel
-      jsonPointer: /status/readyReplicas
-      equals: 5

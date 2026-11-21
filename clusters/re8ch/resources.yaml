@@ -25445,6 +25445,10 @@ spec:
         target: kubernetes.default.svc.cluster.local:443
         targetPeers:
         - re8ch-atlantic
+      - serviceIdentity: spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls
+        target: cilium-gateway-re8ch-gateway-canary.kube-system.svc.cluster.local:443
+        targetPeers:
+        - re8ch-atlantic
       imports:
       - expectedSPIFFEID: spiffe://qwen.byoc/cluster/qwen
         listen: :22240
