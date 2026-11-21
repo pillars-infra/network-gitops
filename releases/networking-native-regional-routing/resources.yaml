@@ -348,31 +348,56 @@ data:
     \        if length & 0xC0 or offset + length > len(packet):\n            return\
     \ \"\"\n        labels.append(packet[offset:offset + length].decode(\"ascii\"\
     , \"ignore\"))\n        offset += length\n    return \"\"\n\ndef backend(packet):\n\
-    \    return GEO if qname(packet) == GEO_NAME else BIND\n\ndef udp_query(listener,\
-    \ packet, client):\n    try:\n        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\
-    \ as upstream:\n            upstream.settimeout(3)\n            upstream.sendto(packet,\
-    \ backend(packet))\n            response, _ = upstream.recvfrom(65535)\n     \
-    \       listener.sendto(response, client)\n    except OSError:\n        pass\n\
+    \    return GEO if qname(packet) == GEO_NAME else BIND\n\ndef skip_name(packet,\
+    \ offset):\n    while offset < len(packet):\n        length = packet[offset]\n\
+    \        if length & 0xC0:\n            return offset + 2\n        offset += 1\n\
+    \        if length == 0:\n            return offset\n        offset += length\n\
+    \    raise ValueError\n\ndef add_source_ecs(packet, client_ip):\n    try:\n  \
+    \      address = socket.inet_aton(client_ip)\n        qd, an, ns, ar = struct.unpack(\"\
+    !HHHH\", packet[4:12])\n        offset = 12\n        for _ in range(qd):\n   \
+    \         offset = skip_name(packet, offset) + 4\n        for _ in range(an +\
+    \ ns):\n            offset = skip_name(packet, offset)\n            rdlength =\
+    \ struct.unpack(\"!H\", packet[offset + 8:offset + 10])[0]\n            offset\
+    \ += 10 + rdlength\n        option = struct.pack(\"!HHHBB\", 8, 7, 1, 24, 0) +\
+    \ address[:3]\n        for _ in range(ar):\n            record = skip_name(packet,\
+    \ offset)\n            record_type = struct.unpack(\"!H\", packet[record:record\
+    \ + 2])[0]\n            rdlength = struct.unpack(\"!H\", packet[record + 8:record\
+    \ + 10])[0]\n            rdata = record + 10\n            end = rdata + rdlength\n\
+    \            if record_type == 41:\n                cursor = rdata\n         \
+    \       while cursor + 4 <= end:\n                    code, length = struct.unpack(\"\
+    !HH\", packet[cursor:cursor + 4])\n                    if code == 8:\n       \
+    \                 return packet\n                    cursor += 4 + length\n  \
+    \              return (packet[:record + 8] + struct.pack(\"!H\", rdlength + len(option))\n\
+    \                        + packet[rdata:end] + option + packet[end:])\n      \
+    \      offset = end\n        opt = b\"\\0\" + struct.pack(\"!HHIH\", 41, 1232,\
+    \ 0, len(option)) + option\n        return packet[:10] + struct.pack(\"!H\", ar\
+    \ + 1) + packet[12:] + opt\n    except (OSError, ValueError, struct.error):\n\
+    \        return packet\n\ndef udp_query(listener, packet, client):\n    try:\n\
+    \        packet = add_source_ecs(packet, client[0])\n        with socket.socket(socket.AF_INET,\
+    \ socket.SOCK_DGRAM) as upstream:\n            upstream.settimeout(3)\n      \
+    \      upstream.sendto(packet, backend(packet))\n            response, _ = upstream.recvfrom(65535)\n\
+    \            listener.sendto(response, client)\n    except OSError:\n        pass\n\
     \ndef udp_server():\n    listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n\
     \    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    listener.bind((LISTEN_ADDRESS,\
     \ 53))\n    while True:\n        packet, client = listener.recvfrom(65535)\n \
     \       threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()\n\
     \ndef read_exact(stream, size):\n    data = b\"\"\n    while len(data) < size:\n\
     \        part = stream.recv(size - len(data))\n        if not part:\n        \
-    \    raise ConnectionError\n        data += part\n    return data\n\ndef tcp_client(client):\n\
-    \    with client:\n        client.settimeout(10)\n        while True:\n      \
-    \      try:\n                size = struct.unpack(\"!H\", read_exact(client, 2))[0]\n\
-    \                packet = read_exact(client, size)\n                with socket.create_connection(backend(packet),\
+    \    raise ConnectionError\n        data += part\n    return data\n\ndef tcp_client(client,\
+    \ client_ip):\n    with client:\n        client.settimeout(10)\n        while\
+    \ True:\n            try:\n                size = struct.unpack(\"!H\", read_exact(client,\
+    \ 2))[0]\n                packet = read_exact(client, size)\n                packet\
+    \ = add_source_ecs(packet, client_ip)\n                with socket.create_connection(backend(packet),\
     \ timeout=3) as upstream:\n                    upstream.sendall(struct.pack(\"\
-    !H\", size) + packet)\n                    reply_size = struct.unpack(\"!H\",\
-    \ read_exact(upstream, 2))[0]\n                    reply = read_exact(upstream,\
+    !H\", len(packet)) + packet)\n                    reply_size = struct.unpack(\"\
+    !H\", read_exact(upstream, 2))[0]\n                    reply = read_exact(upstream,\
     \ reply_size)\n                client.sendall(struct.pack(\"!H\", reply_size)\
     \ + reply)\n            except (OSError, ConnectionError, struct.error):\n   \
     \             return\n\ndef tcp_server():\n    listener = socket.socket(socket.AF_INET,\
     \ socket.SOCK_STREAM)\n    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,\
     \ 1)\n    listener.bind((LISTEN_ADDRESS, 53))\n    listener.listen(128)\n    while\
-    \ True:\n        client, _ = listener.accept()\n        threading.Thread(target=tcp_client,\
-    \ args=(client,), daemon=True).start()\n\nthreading.Thread(target=udp_server,\
+    \ True:\n        client, address = listener.accept()\n        threading.Thread(target=tcp_client,\
+    \ args=(client, address[0]), daemon=True).start()\n\nthreading.Thread(target=udp_server,\
     \ daemon=True).start()\ntcp_server()\n"
   geoip.yaml: "domains:\n- domain: kube-api.service.re8ch.com\n  ttl: 30\n  records:\n\
     \    kube-api.service.re8ch.com:\n    - soa: ns-domain-ex.re8ch.com hostmaster.re8ch.com\
