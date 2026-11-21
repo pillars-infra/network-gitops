@@ -39,6 +39,19 @@ def test_namespaces_are_separate_and_adoption_does_not_grant_create_delete():
         assert release['stateConfigMap']['metadata']['namespace']==release['namespace']
     assert files==project([one,two])[0]
 
+
+def test_cluster_inventory_bootstrap_can_recreate_only_its_reviewed_configmap():
+    inventory=obj(namespace='flux-network-system')
+    inventory['metadata']['name']='cluster-node-inventory'
+    files,ledger=project([inventory])
+    release=ledger['releases'][0]
+    contract=yaml.safe_load(files[release['contract']])
+
+    assert release['releaseId']=='networking-native-flux-network-system'
+    assert contract['spec']['authorization']['requireExisting'] is False
+    assert contract['spec']['authorization']['objectNames']==['cluster-node-inventory']
+    assert {'apiGroups':[''],'resources':['configmaps'],'verbs':['create']} in release['rules']
+
 def test_every_checked_in_contract_is_canonical_and_profile_bound():
     for p in (ROOT/'contracts').glob('networking-native-*.yaml'):
         result=validate_contract(Path('contracts')/p.name)
