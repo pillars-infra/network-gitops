@@ -109,13 +109,6 @@ spec:
           tcpSocket:
             port: 53
         name: dns-router
-        ports:
-        - containerPort: 53
-          name: dns-udp
-          protocol: UDP
-        - containerPort: 53
-          name: dns-tcp
-          protocol: TCP
         readinessProbe:
           periodSeconds: 10
           tcpSocket:
