@@ -4,9 +4,9 @@ metadata:
   name: among-clusters-ingest-tls
   namespace: kube-system
 spec:
-  secretName: among-clusters-ingest-tls
   dnsNames:
   - among-clusters.re8ch.com
   issuerRef:
     kind: ClusterIssuer
     name: re8ch-cloudflare-dns01
+  secretName: among-clusters-ingest-tls

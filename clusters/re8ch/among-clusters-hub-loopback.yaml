@@ -1,0 +1,21 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: among-clusters-hub
+  namespace: flux-network-system
+spec:
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              group: apps
+              version: v1
+              kind: Deployment
+              name: among-clusters-hub
+            patch: |-
+              - op: add
+                path: /spec/template/spec/hostNetwork
+                value: true
+              - op: add
+                path: /spec/template/spec/dnsPolicy
+                value: ClusterFirstWithHostNet

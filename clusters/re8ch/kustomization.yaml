@@ -56,6 +56,13 @@ patches:
       kind: HelmRelease
       namespace: flux-network-system
       name: among-clusters-agent
+  - path: among-clusters-hub-loopback.yaml
+    target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      namespace: flux-network-system
+      name: among-clusters-hub
   - path: among-clusters-atlantic-mail-imports.yaml
     target:
       group: helm.toolkit.fluxcd.io
