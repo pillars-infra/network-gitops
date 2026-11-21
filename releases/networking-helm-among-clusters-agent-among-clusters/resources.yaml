@@ -25,7 +25,7 @@ spec:
         - name: TRUST_DOMAIN
           value: re8ch.internal
         - name: HUB_ENDPOINT
-          value: http://among-clusters-hub.among-clusters.svc.cluster.local
+          value: http://127.0.0.1:8080
         - name: SYNC_INTERVAL
           value: 60s
         - name: IDENTITY_SECRET

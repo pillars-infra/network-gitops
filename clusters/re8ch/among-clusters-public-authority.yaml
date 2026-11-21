@@ -15,7 +15,7 @@ spec:
             patch: |-
               - op: replace
                 path: /spec/template/spec/containers/0/env/3/value
-                value: http://among-clusters-hub.among-clusters.svc.cluster.local
+                value: http://127.0.0.1:8080
               - op: remove
                 path: /spec/template/spec/hostAliases
               # The provider agent is part of the recovery path for the

@@ -109,7 +109,7 @@
         "path": "releases/networking-helm-among-clusters-agent-among-clusters",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8"
       },
-      "renderedSHA256": "a4cca91d3158b79b5e32ea8bccd1ce0c1426a148f8f57582faa6480b4b6c9381"
+      "renderedSHA256": "ec3d39336e3ced0f5b009aacb3544890ccb1840da6be434a0309a724d9f58aa2"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-among-clusters",
@@ -262,7 +262,7 @@
         "path": "releases/networking-helm-among-clusters-hub-among-clusters",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83"
       },
-      "renderedSHA256": "5d2410fb79f253c692d2a0848b1c3be23900fc8ab43dc8ff606655a28f4d661c"
+      "renderedSHA256": "9781aae92cb340c97a192e2a349f892f93433ab38ab9f649103815101938dd2c"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-credential-broker",
@@ -383,7 +383,7 @@
         "path": "releases/networking-helm-among-clusters-hub-credential-broker",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83"
       },
-      "renderedSHA256": "e258ab415309a192496c9e9b51f344e53c799e274db47c16b8785d343e659cc3"
+      "renderedSHA256": "242c0d7ea6d1ac18f4acbd83b2ae49a0589cbb942743fa4b6579b1e4100bcd82"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-kube-system",
@@ -440,7 +440,7 @@
         "path": "releases/networking-helm-among-clusters-hub-kube-system",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83"
       },
-      "renderedSHA256": "2b8e534c410bf91cb9a46ba697fe6ca72b1851428f650b1492824d9c1b9bc684"
+      "renderedSHA256": "f3bff92d365843a4749e1dc8f79c8a294bcc1e21096e63ad5653f55131967e90"
     },
     {
       "releaseId": "networking-helm-cilium-kube-system",
@@ -795,72 +795,69 @@
       },
       "spec": {
         "group": "peering.re8ch.com",
-        "scope": "Namespaced",
         "names": {
-          "plural": "authenticatedlinks",
-          "singular": "authenticatedlink",
           "kind": "AuthenticatedLink",
+          "plural": "authenticatedlinks",
           "shortNames": [
             "aclink"
-          ]
+          ],
+          "singular": "authenticatedlink"
         },
+        "scope": "Namespaced",
         "versions": [
           {
             "name": "v1alpha1",
-            "served": true,
-            "storage": true,
-            "subresources": {
-              "status": {}
-            },
             "schema": {
               "openAPIV3Schema": {
-                "type": "object",
                 "properties": {
                   "spec": {
-                    "type": "object",
-                    "required": [
-                      "peerRef",
-                      "transport"
-                    ],
                     "properties": {
-                      "peerRef": {
+                      "localGateway": {
                         "type": "string"
                       },
-                      "transport": {
-                        "type": "string",
-                        "enum": [
-                          "quic-mtls"
-                        ]
-                      },
-                      "localGateway": {
+                      "peerRef": {
                         "type": "string"
                       },
                       "remoteGateway": {
                         "type": "string"
                       },
                       "sessionIdentity": {
-                        "type": "string",
-                        "pattern": "^spiffe://"
+                        "pattern": "^spiffe://",
+                        "type": "string"
+                      },
+                      "transport": {
+                        "enum": [
+                          "quic-mtls"
+                        ],
+                        "type": "string"
                       }
-                    }
+                    },
+                    "required": [
+                      "peerRef",
+                      "transport"
+                    ],
+                    "type": "object"
                   },
                   "status": {
-                    "type": "object",
                     "properties": {
-                      "state": {
-                        "type": "string",
-                        "enum": [
-                          "Pending",
-                          "Connecting",
-                          "Ready",
-                          "Disconnected",
-                          "Blocked",
-                          "Closed",
-                          "Failed"
-                        ]
+                      "lastHandshakeAt": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "lastObservedAt": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "latencyMillis": {
+                        "format": "int64",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "observedGeneration": {
+                        "format": "int64",
+                        "type": "integer"
                       },
                       "reason": {
-                        "type": "string",
                         "enum": [
                           "",
                           "NATUnreachable",
@@ -870,29 +867,32 @@
                           "TransportError",
                           "ObservationStale",
                           "Revoked"
-                        ]
+                        ],
+                        "type": "string"
                       },
-                      "latencyMillis": {
-                        "type": "integer",
-                        "format": "int64",
-                        "minimum": 0
-                      },
-                      "lastHandshakeAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "lastObservedAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "observedGeneration": {
-                        "type": "integer",
-                        "format": "int64"
+                      "state": {
+                        "enum": [
+                          "Pending",
+                          "Connecting",
+                          "Ready",
+                          "Disconnected",
+                          "Blocked",
+                          "Closed",
+                          "Failed"
+                        ],
+                        "type": "string"
                       }
-                    }
+                    },
+                    "type": "object"
                   }
-                }
+                },
+                "type": "object"
               }
+            },
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
             }
           }
         ]
@@ -906,41 +906,75 @@
       },
       "spec": {
         "group": "peering.re8ch.com",
-        "scope": "Namespaced",
         "names": {
-          "plural": "clusteridentities",
-          "singular": "clusteridentity",
           "kind": "ClusterIdentity",
+          "plural": "clusteridentities",
           "shortNames": [
             "acid"
-          ]
+          ],
+          "singular": "clusteridentity"
         },
+        "scope": "Namespaced",
         "versions": [
           {
-            "name": "v1alpha1",
-            "served": true,
-            "storage": true,
-            "subresources": {
-              "status": {}
-            },
             "additionalPrinterColumns": [
               {
+                "jsonPath": ".spec.trustDomain",
                 "name": "Trust Domain",
-                "type": "string",
-                "jsonPath": ".spec.trustDomain"
+                "type": "string"
               },
               {
+                "jsonPath": ".status.state",
                 "name": "State",
-                "type": "string",
-                "jsonPath": ".status.state"
+                "type": "string"
               }
             ],
+            "name": "v1alpha1",
             "schema": {
               "openAPIV3Schema": {
-                "type": "object",
                 "properties": {
                   "spec": {
-                    "type": "object",
+                    "properties": {
+                      "bundleDigest": {
+                        "pattern": "^sha256:[a-f0-9]{64}$",
+                        "type": "string"
+                      },
+                      "capabilities": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "clusterID": {
+                        "maxLength": 63,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "gatewayEndpoints": {
+                        "items": {
+                          "pattern": "^quic://",
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "publicKey": {
+                        "maxLength": 128,
+                        "minLength": 43,
+                        "type": "string"
+                      },
+                      "spiffeID": {
+                        "pattern": "^spiffe://",
+                        "type": "string"
+                      },
+                      "suspended": {
+                        "default": false,
+                        "type": "boolean"
+                      },
+                      "trustDomain": {
+                        "pattern": "^[a-z0-9.-]+$",
+                        "type": "string"
+                      }
+                    },
                     "required": [
                       "clusterID",
                       "trustDomain",
@@ -948,80 +982,46 @@
                       "bundleDigest",
                       "publicKey"
                     ],
-                    "properties": {
-                      "clusterID": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 63
-                      },
-                      "trustDomain": {
-                        "type": "string",
-                        "pattern": "^[a-z0-9.-]+$"
-                      },
-                      "spiffeID": {
-                        "type": "string",
-                        "pattern": "^spiffe://"
-                      },
-                      "bundleDigest": {
-                        "type": "string",
-                        "pattern": "^sha256:[a-f0-9]{64}$"
-                      },
-                      "publicKey": {
-                        "type": "string",
-                        "minLength": 43,
-                        "maxLength": 128
-                      },
-                      "capabilities": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "gatewayEndpoints": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "pattern": "^quic://"
-                        }
-                      },
-                      "suspended": {
-                        "type": "boolean",
-                        "default": false
-                      }
-                    }
+                    "type": "object"
                   },
                   "status": {
-                    "type": "object",
                     "properties": {
+                      "lastGeneration": {
+                        "format": "int64",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "lastNonce": {
+                        "type": "string"
+                      },
+                      "lastSeenAt": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "observedGeneration": {
+                        "format": "int64",
+                        "type": "integer"
+                      },
                       "state": {
-                        "type": "string",
                         "enum": [
                           "Pending",
                           "Ready",
                           "Suspended",
                           "Revoked"
-                        ]
-                      },
-                      "lastSeenAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "observedGeneration": {
-                        "type": "integer",
-                        "format": "int64"
-                      },
-                      "lastGeneration": {
-                        "type": "integer",
-                        "format": "int64",
-                        "minimum": 0
-                      },
-                      "lastNonce": {
+                        ],
                         "type": "string"
                       }
-                    }
+                    },
+                    "type": "object"
                   }
-                }
+                },
+                "type": "object"
               }
+            },
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
             }
           }
         ]
@@ -1035,46 +1035,85 @@
       },
       "spec": {
         "group": "peering.re8ch.com",
-        "scope": "Namespaced",
         "names": {
-          "plural": "externalassets",
-          "singular": "externalasset",
           "kind": "ExternalAsset",
+          "plural": "externalassets",
           "shortNames": [
             "acasset"
-          ]
+          ],
+          "singular": "externalasset"
         },
+        "scope": "Namespaced",
         "versions": [
           {
-            "name": "v1alpha1",
-            "served": true,
-            "storage": true,
-            "subresources": {
-              "status": {}
-            },
             "additionalPrinterColumns": [
               {
+                "jsonPath": ".spec.ownerTenantRef",
                 "name": "Owner",
-                "type": "string",
-                "jsonPath": ".spec.ownerTenantRef"
+                "type": "string"
               },
               {
+                "jsonPath": ".spec.kind",
                 "name": "Kind",
-                "type": "string",
-                "jsonPath": ".spec.kind"
+                "type": "string"
               },
               {
+                "jsonPath": ".status.state",
                 "name": "State",
-                "type": "string",
-                "jsonPath": ".status.state"
+                "type": "string"
               }
             ],
+            "name": "v1alpha1",
             "schema": {
               "openAPIV3Schema": {
-                "type": "object",
                 "properties": {
                   "spec": {
-                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "capabilities": {
+                        "items": {
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "catalogServiceRefs": {
+                        "items": {
+                          "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$",
+                          "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "kind": {
+                        "enum": [
+                          "ssh-device"
+                        ],
+                        "type": "string"
+                      },
+                      "labels": {
+                        "additionalProperties": {
+                          "maxLength": 120,
+                          "type": "string"
+                        },
+                        "type": "object"
+                      },
+                      "locationRef": {
+                        "maxLength": 253,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "ownerTenantRef": {
+                        "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$",
+                        "type": "string"
+                      },
+                      "publicKeyFingerprint": {
+                        "pattern": "^SHA256:[A-Za-z0-9+/]{20,100}$",
+                        "type": "string"
+                      }
+                    },
                     "required": [
                       "ownerTenantRef",
                       "kind",
@@ -1082,77 +1121,38 @@
                       "locationRef",
                       "capabilities"
                     ],
-                    "properties": {
-                      "ownerTenantRef": {
-                        "type": "string",
-                        "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
-                      },
-                      "kind": {
-                        "type": "string",
-                        "enum": [
-                          "ssh-device"
-                        ]
-                      },
-                      "publicKeyFingerprint": {
-                        "type": "string",
-                        "pattern": "^SHA256:[A-Za-z0-9+/]{20,100}$"
-                      },
-                      "locationRef": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 253
-                      },
-                      "capabilities": {
-                        "type": "array",
-                        "uniqueItems": true,
-                        "items": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 120
-                        }
-                      },
-                      "labels": {
-                        "type": "object",
-                        "additionalProperties": {
-                          "type": "string",
-                          "maxLength": 120
-                        }
-                      },
-                      "catalogServiceRefs": {
-                        "type": "array",
-                        "uniqueItems": true,
-                        "items": {
-                          "type": "string",
-                          "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"
-                        }
-                      }
-                    },
-                    "additionalProperties": false
+                    "type": "object"
                   },
                   "status": {
-                    "type": "object",
                     "properties": {
+                      "lastVerifiedAt": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "reason": {
+                        "maxLength": 500,
+                        "type": "string"
+                      },
                       "state": {
-                        "type": "string",
                         "enum": [
                           "Declared",
                           "Verified",
                           "Offline",
                           "Suspended"
-                        ]
-                      },
-                      "lastVerifiedAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "reason": {
-                        "type": "string",
-                        "maxLength": 500
+                        ],
+                        "type": "string"
                       }
-                    }
+                    },
+                    "type": "object"
                   }
-                }
+                },
+                "type": "object"
               }
+            },
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
             }
           }
         ]
@@ -1166,78 +1166,78 @@
       },
       "spec": {
         "group": "peering.re8ch.com",
-        "scope": "Namespaced",
         "names": {
-          "plural": "importedservices",
-          "singular": "importedservice",
           "kind": "ImportedService",
+          "plural": "importedservices",
           "shortNames": [
             "acimport"
-          ]
+          ],
+          "singular": "importedservice"
         },
+        "scope": "Namespaced",
         "versions": [
           {
             "name": "v1alpha1",
-            "served": true,
-            "storage": true,
-            "subresources": {
-              "status": {}
-            },
             "schema": {
               "openAPIV3Schema": {
-                "type": "object",
                 "properties": {
                   "spec": {
-                    "type": "object",
-                    "required": [
-                      "advertisementRef",
-                      "peerRef",
-                      "localServiceName"
-                    ],
                     "properties": {
                       "advertisementRef": {
+                        "type": "string"
+                      },
+                      "localPort": {
+                        "maximum": 65535,
+                        "minimum": 1024,
+                        "type": "integer"
+                      },
+                      "localServiceName": {
                         "type": "string"
                       },
                       "peerRef": {
                         "type": "string"
                       },
-                      "localServiceName": {
-                        "type": "string"
-                      },
-                      "localPort": {
-                        "type": "integer",
-                        "minimum": 1024,
-                        "maximum": 65535
-                      },
                       "suspended": {
-                        "type": "boolean",
-                        "default": false
+                        "default": false,
+                        "type": "boolean"
                       }
-                    }
+                    },
+                    "required": [
+                      "advertisementRef",
+                      "peerRef",
+                      "localServiceName"
+                    ],
+                    "type": "object"
                   },
                   "status": {
-                    "type": "object",
                     "properties": {
+                      "reason": {
+                        "type": "string"
+                      },
+                      "serviceRef": {
+                        "type": "string"
+                      },
                       "state": {
-                        "type": "string",
                         "enum": [
                           "Pending",
                           "Ready",
                           "Suspended",
                           "Expired",
                           "Failed"
-                        ]
-                      },
-                      "serviceRef": {
-                        "type": "string"
-                      },
-                      "reason": {
+                        ],
                         "type": "string"
                       }
-                    }
+                    },
+                    "type": "object"
                   }
-                }
+                },
+                "type": "object"
               }
+            },
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
             }
           }
         ]
@@ -1251,94 +1251,65 @@
       },
       "spec": {
         "group": "peering.re8ch.com",
-        "scope": "Namespaced",
         "names": {
-          "plural": "managedaccessgrants",
-          "singular": "managedaccessgrant",
           "kind": "ManagedAccessGrant",
+          "plural": "managedaccessgrants",
           "shortNames": [
             "acgrant"
-          ]
+          ],
+          "singular": "managedaccessgrant"
         },
+        "scope": "Namespaced",
         "versions": [
           {
             "name": "v1alpha1",
-            "served": true,
-            "storage": true,
-            "subresources": {
-              "status": {}
-            },
             "schema": {
               "openAPIV3Schema": {
-                "type": "object",
                 "properties": {
                   "spec": {
-                    "type": "object",
-                    "required": [
-                      "peerRef",
-                      "advertisementRef",
-                      "expiresAt",
-                      "rules"
-                    ],
-                    "x-kubernetes-validations": [
-                      {
-                        "rule": "self.scope == 'Cluster' || (has(self.namespaces) && size(self.namespaces) > 0)",
-                        "message": "Namespaced grants require at least one namespace"
-                      }
-                    ],
                     "properties": {
-                      "peerRef": {
-                        "type": "string"
-                      },
                       "advertisementRef": {
                         "type": "string"
                       },
-                      "expiresAt": {
-                        "type": "string",
-                        "format": "date-time"
+                      "approved": {
+                        "default": false,
+                        "type": "boolean"
                       },
-                      "scope": {
-                        "type": "string",
-                        "enum": [
-                          "Namespaced",
-                          "Cluster"
-                        ],
-                        "default": "Namespaced"
+                      "expiresAt": {
+                        "format": "date-time",
+                        "type": "string"
                       },
                       "namespaces": {
-                        "type": "array",
-                        "minItems": 1,
                         "items": {
                           "type": "string"
-                        }
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "peerRef": {
+                        "type": "string"
+                      },
+                      "revoked": {
+                        "default": false,
+                        "type": "boolean"
                       },
                       "rules": {
-                        "type": "array",
-                        "minItems": 1,
                         "items": {
-                          "type": "object",
-                          "required": [
-                            "apiGroups",
-                            "resources",
-                            "verbs"
-                          ],
                           "properties": {
                             "apiGroups": {
-                              "type": "array",
                               "items": {
                                 "type": "string"
-                              }
+                              },
+                              "type": "array"
                             },
                             "resources": {
-                              "type": "array",
                               "items": {
                                 "type": "string"
-                              }
+                              },
+                              "type": "array"
                             },
                             "verbs": {
-                              "type": "array",
                               "items": {
-                                "type": "string",
                                 "enum": [
                                   "get",
                                   "list",
@@ -1351,27 +1322,58 @@
                                   "escalate",
                                   "impersonate",
                                   "*"
-                                ]
-                              }
+                                ],
+                                "type": "string"
+                              },
+                              "type": "array"
                             }
-                          }
-                        }
+                          },
+                          "required": [
+                            "apiGroups",
+                            "resources",
+                            "verbs"
+                          ],
+                          "type": "object"
+                        },
+                        "minItems": 1,
+                        "type": "array"
                       },
-                      "approved": {
-                        "type": "boolean",
-                        "default": false
-                      },
-                      "revoked": {
-                        "type": "boolean",
-                        "default": false
+                      "scope": {
+                        "default": "Namespaced",
+                        "enum": [
+                          "Namespaced",
+                          "Cluster"
+                        ],
+                        "type": "string"
                       }
-                    }
+                    },
+                    "required": [
+                      "peerRef",
+                      "advertisementRef",
+                      "expiresAt",
+                      "rules"
+                    ],
+                    "type": "object",
+                    "x-kubernetes-validations": [
+                      {
+                        "message": "Namespaced grants require at least one namespace",
+                        "rule": "self.scope == 'Cluster' || (has(self.namespaces) && size(self.namespaces) > 0)"
+                      }
+                    ]
                   },
                   "status": {
-                    "type": "object",
                     "properties": {
+                      "credentialRef": {
+                        "type": "string"
+                      },
+                      "lastRenewedAt": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
                       "state": {
-                        "type": "string",
                         "enum": [
                           "Pending",
                           "AwaitingLocalApproval",
@@ -1380,22 +1382,20 @@
                           "Expired",
                           "Revoked",
                           "Failed"
-                        ]
-                      },
-                      "credentialRef": {
-                        "type": "string"
-                      },
-                      "lastRenewedAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "reason": {
+                        ],
                         "type": "string"
                       }
-                    }
+                    },
+                    "type": "object"
                   }
-                }
+                },
+                "type": "object"
               }
+            },
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
             }
           }
         ]
@@ -1409,94 +1409,94 @@
       },
       "spec": {
         "group": "peering.re8ch.com",
-        "scope": "Namespaced",
         "names": {
-          "plural": "peerpolicies",
-          "singular": "peerpolicy",
           "kind": "PeerPolicy",
+          "plural": "peerpolicies",
           "shortNames": [
             "acpolicy"
-          ]
+          ],
+          "singular": "peerpolicy"
         },
+        "scope": "Namespaced",
         "versions": [
           {
             "name": "v1alpha1",
-            "served": true,
-            "storage": true,
             "schema": {
               "openAPIV3Schema": {
-                "type": "object",
                 "properties": {
                   "spec": {
-                    "type": "object",
-                    "required": [
-                      "peerSelector",
-                      "serviceClasses",
-                      "protocols"
-                    ],
                     "properties": {
+                      "directions": {
+                        "items": {
+                          "enum": [
+                            "import",
+                            "export"
+                          ],
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "maxAdvertisements": {
+                        "default": 100,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
                       "peerSelector": {
-                        "type": "object",
                         "properties": {
+                          "matchAllReady": {
+                            "default": false,
+                            "type": "boolean"
+                          },
                           "matchNames": {
-                            "type": "array",
                             "items": {
                               "type": "string"
-                            }
-                          },
-                          "matchAllReady": {
-                            "type": "boolean",
-                            "default": false
+                            },
+                            "type": "array"
                           }
-                        }
+                        },
+                        "type": "object"
                       },
-                      "serviceClasses": {
-                        "type": "array",
+                      "ports": {
                         "items": {
-                          "type": "string"
-                        }
+                          "maximum": 65535,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "type": "array"
                       },
                       "protocols": {
-                        "type": "array",
                         "items": {
-                          "type": "string",
                           "enum": [
                             "http",
                             "https",
                             "tcp",
                             "tls",
                             "kubernetes-api"
-                          ]
-                        }
+                          ],
+                          "type": "string"
+                        },
+                        "type": "array"
                       },
-                      "ports": {
-                        "type": "array",
+                      "serviceClasses": {
                         "items": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 65535
-                        }
-                      },
-                      "directions": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "enum": [
-                            "import",
-                            "export"
-                          ]
-                        }
-                      },
-                      "maxAdvertisements": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "default": 100
+                          "type": "string"
+                        },
+                        "type": "array"
                       }
-                    }
+                    },
+                    "required": [
+                      "peerSelector",
+                      "serviceClasses",
+                      "protocols"
+                    ],
+                    "type": "object"
                   }
-                }
+                },
+                "type": "object"
               }
-            }
+            },
+            "served": true,
+            "storage": true
           }
         ]
       }
@@ -1509,94 +1509,94 @@
       },
       "spec": {
         "group": "peering.re8ch.com",
-        "scope": "Namespaced",
         "names": {
-          "plural": "peers",
-          "singular": "peer",
           "kind": "Peer",
+          "plural": "peers",
           "shortNames": [
             "acpeer"
-          ]
+          ],
+          "singular": "peer"
         },
+        "scope": "Namespaced",
         "versions": [
           {
             "name": "v1alpha1",
-            "served": true,
-            "storage": true,
-            "subresources": {
-              "status": {}
-            },
             "schema": {
               "openAPIV3Schema": {
-                "type": "object",
                 "properties": {
                   "spec": {
-                    "type": "object",
-                    "required": [
-                      "localIdentityRef",
-                      "remoteIdentityRef",
-                      "invitationRef",
-                      "transports"
-                    ],
                     "properties": {
+                      "invitationRef": {
+                        "type": "string"
+                      },
                       "localIdentityRef": {
                         "type": "string"
                       },
                       "remoteIdentityRef": {
                         "type": "string"
                       },
-                      "invitationRef": {
-                        "type": "string"
+                      "suspended": {
+                        "default": false,
+                        "type": "boolean"
                       },
                       "transports": {
-                        "type": "array",
-                        "minItems": 1,
                         "items": {
-                          "type": "string",
                           "enum": [
                             "quic-mtls",
                             "wireguard",
                             "cilium",
                             "istio"
-                          ]
-                        }
-                      },
-                      "suspended": {
-                        "type": "boolean",
-                        "default": false
+                          ],
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "type": "array"
                       }
-                    }
+                    },
+                    "required": [
+                      "localIdentityRef",
+                      "remoteIdentityRef",
+                      "invitationRef",
+                      "transports"
+                    ],
+                    "type": "object"
                   },
                   "status": {
-                    "type": "object",
                     "properties": {
+                      "localBundleConfirmed": {
+                        "type": "boolean"
+                      },
+                      "observedGeneration": {
+                        "format": "int64",
+                        "type": "integer"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "remoteBundleConfirmed": {
+                        "type": "boolean"
+                      },
                       "state": {
-                        "type": "string",
                         "enum": [
                           "PendingConfirmation",
                           "Ready",
                           "Suspended",
                           "Revoked",
                           "Failed"
-                        ]
-                      },
-                      "reason": {
+                        ],
                         "type": "string"
-                      },
-                      "observedGeneration": {
-                        "type": "integer",
-                        "format": "int64"
-                      },
-                      "localBundleConfirmed": {
-                        "type": "boolean"
-                      },
-                      "remoteBundleConfirmed": {
-                        "type": "boolean"
                       }
-                    }
+                    },
+                    "type": "object"
                   }
-                }
+                },
+                "type": "object"
               }
+            },
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
             }
           }
         ]
@@ -1816,29 +1816,109 @@
       },
       "spec": {
         "group": "peering.re8ch.com",
-        "scope": "Namespaced",
         "names": {
-          "plural": "serviceadvertisements",
-          "singular": "serviceadvertisement",
           "kind": "ServiceAdvertisement",
+          "plural": "serviceadvertisements",
           "shortNames": [
             "acadv"
-          ]
+          ],
+          "singular": "serviceadvertisement"
         },
+        "scope": "Namespaced",
         "versions": [
           {
             "name": "v1alpha1",
-            "served": true,
-            "storage": true,
-            "subresources": {
-              "status": {}
-            },
             "schema": {
               "openAPIV3Schema": {
-                "type": "object",
                 "properties": {
                   "spec": {
-                    "type": "object",
+                    "properties": {
+                      "assetRefs": {
+                        "items": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "catalogServiceRef": {
+                        "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$",
+                        "type": "string"
+                      },
+                      "gatewayEndpoints": {
+                        "items": {
+                          "pattern": "^quic://",
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "generation": {
+                        "format": "int64",
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "localServiceRef": {
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "namespace": {
+                            "type": "string"
+                          },
+                          "portName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ],
+                        "type": "object"
+                      },
+                      "policyRef": {
+                        "type": "string"
+                      },
+                      "port": {
+                        "maximum": 65535,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "protocol": {
+                        "enum": [
+                          "http",
+                          "https",
+                          "tcp",
+                          "tls",
+                          "kubernetes-api"
+                        ],
+                        "type": "string"
+                      },
+                      "publisherRef": {
+                        "type": "string"
+                      },
+                      "revoked": {
+                        "default": false,
+                        "type": "boolean"
+                      },
+                      "serviceClass": {
+                        "type": "string"
+                      },
+                      "serviceIdentity": {
+                        "pattern": "^spiffe://",
+                        "type": "string"
+                      },
+                      "targetPeers": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "ttlSeconds": {
+                        "maximum": 86400,
+                        "minimum": 30,
+                        "type": "integer"
+                      }
+                    },
                     "required": [
                       "publisherRef",
                       "serviceIdentity",
@@ -1850,124 +1930,44 @@
                       "generation",
                       "policyRef"
                     ],
-                    "properties": {
-                      "publisherRef": {
-                        "type": "string"
-                      },
-                      "serviceIdentity": {
-                        "type": "string",
-                        "pattern": "^spiffe://"
-                      },
-                      "serviceClass": {
-                        "type": "string"
-                      },
-                      "protocol": {
-                        "type": "string",
-                        "enum": [
-                          "http",
-                          "https",
-                          "tcp",
-                          "tls",
-                          "kubernetes-api"
-                        ]
-                      },
-                      "port": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 65535
-                      },
-                      "localServiceRef": {
-                        "type": "object",
-                        "required": [
-                          "name"
-                        ],
-                        "properties": {
-                          "name": {
-                            "type": "string"
-                          },
-                          "namespace": {
-                            "type": "string"
-                          },
-                          "portName": {
-                            "type": "string"
-                          }
-                        }
-                      },
-                      "gatewayEndpoints": {
-                        "type": "array",
-                        "items": {
-                          "type": "string",
-                          "pattern": "^quic://"
-                        }
-                      },
-                      "targetPeers": {
-                        "type": "array",
-                        "minItems": 1,
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "ttlSeconds": {
-                        "type": "integer",
-                        "minimum": 30,
-                        "maximum": 86400
-                      },
-                      "generation": {
-                        "type": "integer",
-                        "format": "int64",
-                        "minimum": 1
-                      },
-                      "policyRef": {
-                        "type": "string"
-                      },
-                      "catalogServiceRef": {
-                        "type": "string",
-                        "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$"
-                      },
-                      "assetRefs": {
-                        "type": "array",
-                        "uniqueItems": true,
-                        "items": {
-                          "type": "string",
-                          "minLength": 1
-                        }
-                      },
-                      "revoked": {
-                        "type": "boolean",
-                        "default": false
-                      }
-                    },
+                    "type": "object",
                     "x-kubernetes-validations": [
                       {
-                        "rule": "!has(self.localServiceRef) || !has(self.localServiceRef.namespace)",
-                        "message": "Cross-namespace service references are forbidden; omit namespace for the local namespace"
+                        "message": "Cross-namespace service references are forbidden; omit namespace for the local namespace",
+                        "rule": "!has(self.localServiceRef) || !has(self.localServiceRef.namespace)"
                       }
                     ]
                   },
                   "status": {
-                    "type": "object",
                     "properties": {
+                      "expiresAt": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
                       "state": {
-                        "type": "string",
                         "enum": [
                           "Pending",
                           "Active",
                           "Expired",
                           "Denied",
                           "Revoked"
-                        ]
-                      },
-                      "expiresAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "reason": {
+                        ],
                         "type": "string"
                       }
-                    }
+                    },
+                    "type": "object"
                   }
-                }
+                },
+                "type": "object"
               }
+            },
+            "served": true,
+            "storage": true,
+            "subresources": {
+              "status": {}
             }
           }
         ]
@@ -2327,10 +2327,10 @@
       "apiVersion": "rbac.authorization.k8s.io/v1",
       "kind": "ClusterRole",
       "metadata": {
-        "name": "among-clusters-view",
         "labels": {
           "rbac.authorization.k8s.io/aggregate-to-view": "true"
-        }
+        },
+        "name": "among-clusters-view"
       },
       "rules": [
         {

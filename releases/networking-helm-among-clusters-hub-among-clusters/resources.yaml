@@ -13,47 +13,33 @@ spec:
       labels:
         app.kubernetes.io/name: among-clusters-hub
     spec:
-      serviceAccountName: among-clusters-hub
-      nodeSelector:
-        kubernetes.io/os: linux
-        scheduling.re8ch.com/service-plane: core
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
       containers:
-      - name: hub
-        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
-        imagePullPolicy: IfNotPresent
-        command:
+      - command:
         - /hub
         env:
         - name: ADMIN_TOKEN
           valueFrom:
             secretKeyRef:
-              name: among-clusters-hub-admin
               key: token
+              name: among-clusters-hub-admin
         - name: MANAGED_ACCESS_ENABLED
           value: 'true'
         - name: RECONCILE_INTERVAL
           value: 60s
-        ports:
-        - name: http
-          containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: http
+        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /healthz
             port: http
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop:
-            - ALL
+        name: hub
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
         resources:
           limits:
             cpu: 500m
@@ -61,6 +47,22 @@ spec:
           requests:
             cpu: 50m
             memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+        scheduling.re8ch.com/service-plane: core
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: among-clusters-hub
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -68,6 +70,15 @@ metadata:
   name: among-clusters-hub-gateway
   namespace: among-clusters
 spec:
+  egress:
+  - toEntities:
+    - kube-apiserver
+    toPorts:
+    - ports:
+      - port: '443'
+        protocol: TCP
+      - port: '6443'
+        protocol: TCP
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: among-clusters-hub
@@ -78,15 +89,6 @@ spec:
     - ports:
       - port: '8080'
         protocol: TCP
-  egress:
-  - toEntities:
-    - kube-apiserver
-    toPorts:
-    - ports:
-      - port: '443'
-        protocol: TCP
-      - port: '6443'
-        protocol: TCP
 ---
 apiVersion: v1
 kind: Service
@@ -94,12 +96,12 @@ metadata:
   name: among-clusters-hub
   namespace: among-clusters
 spec:
-  selector:
-    app.kubernetes.io/name: among-clusters-hub
   ports:
   - name: http
     port: 80
     targetPort: http
+  selector:
+    app.kubernetes.io/name: among-clusters-hub
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -110,65 +112,65 @@ metadata:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: among-clusters-ingest
-  labels:
-    public.re8ch.com/external-dns: enabled
   annotations:
     external-dns.alpha.kubernetes.io/hostname: among-clusters.re8ch.com
     external-dns.alpha.kubernetes.io/ttl: '60'
+  labels:
+    public.re8ch.com/external-dns: enabled
+  name: among-clusters-ingest
   namespace: among-clusters
 spec:
+  hostnames:
+  - among-clusters.re8ch.com
   parentRefs:
   - name: re8ch-gateway-canary
     namespace: kube-system
     sectionName: among-clusters-https
-  hostnames:
-  - among-clusters.re8ch.com
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /broker
+  - backendRefs:
+    - name: among-clusters-credential-broker
+      namespace: credential-broker
+      port: 80
     filters:
     - type: URLRewrite
       urlRewrite:
         path:
-          type: ReplacePrefixMatch
           replacePrefixMatch: /
-    backendRefs:
-    - name: among-clusters-credential-broker
-      namespace: credential-broker
+          type: ReplacePrefixMatch
+    matches:
+    - path:
+        type: PathPrefix
+        value: /broker
+  - backendRefs:
+    - name: among-clusters-hub
       port: 80
-  - matches:
+    matches:
     - path:
         type: PathPrefix
         value: /v1
-    backendRefs:
+  - backendRefs:
     - name: among-clusters-hub
       port: 80
-  - matches:
+    matches:
     - path:
         type: Exact
         value: /healthz
-    backendRefs:
-    - name: among-clusters-hub
-      port: 80
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: among-clusters-ingest
-  labels:
-    public.re8ch.com/external-dns: enabled
-    networking.re8ch.com/dns-authority: public-edge
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: among-clusters.re8ch.com
-    external-dns.alpha.kubernetes.io/ttl: '60'
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
+    external-dns.alpha.kubernetes.io/hostname: among-clusters.re8ch.com
+    external-dns.alpha.kubernetes.io/target: 223.159.210.222
+    external-dns.alpha.kubernetes.io/ttl: '60'
     networking.re8ch.com/dns-authority: public-edge
     networking.re8ch.com/provider: public-edge-manager
-    external-dns.alpha.kubernetes.io/target: 223.159.210.222
     networking.re8ch.com/selected-public-edge: loudi-r640
+  labels:
+    networking.re8ch.com/dns-authority: public-edge
+    public.re8ch.com/external-dns: enabled
+  name: among-clusters-ingest
   namespace: among-clusters
 spec:
   ingressClassName: external-dns-only
@@ -181,12 +183,22 @@ metadata:
   name: among-clusters-hub
   namespace: among-clusters
 spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: among-clusters-hub
-  policyTypes:
-  - Ingress
-  - Egress
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
   ingress:
   - from:
     - namespaceSelector:
@@ -196,21 +208,11 @@ spec:
         matchLabels:
           kubernetes.io/metadata.name: credential-broker
     ports:
-    - protocol: TCP
-      port: 8080
-  egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    ports:
-    - protocol: TCP
-      port: 443
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: kube-system
-    ports:
-    - protocol: UDP
-      port: 53
-    - protocol: TCP
-      port: 53
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-hub
+  policyTypes:
+  - Ingress
+  - Egress

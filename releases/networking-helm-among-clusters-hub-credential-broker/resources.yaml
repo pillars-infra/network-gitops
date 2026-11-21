@@ -13,31 +13,31 @@ spec:
       labels:
         app.kubernetes.io/name: among-clusters-credential-broker
     spec:
-      serviceAccountName: among-clusters-credential-broker
       automountServiceAccountToken: true
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
       containers:
-      - name: broker
-        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
-        command:
+      - command:
         - /broker
         env:
         - name: HUB_ENDPOINT
           value: http://among-clusters-hub.among-clusters.svc
         - name: CREDENTIAL_NAMESPACE
           value: credential-broker
+        image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
+        name: broker
         ports:
-        - name: http
-          containerPort: 8080
+        - containerPort: 8080
+          name: http
         securityContext:
           allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
           capabilities:
             drop:
             - ALL
+          readOnlyRootFilesystem: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: among-clusters-credential-broker
 ---
 apiVersion: v1
 kind: Service
@@ -45,12 +45,12 @@ metadata:
   name: among-clusters-credential-broker
   namespace: credential-broker
 spec:
-  selector:
-    app.kubernetes.io/name: among-clusters-credential-broker
   ports:
   - name: http
     port: 80
     targetPort: http
+  selector:
+    app.kubernetes.io/name: among-clusters-credential-broker
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -79,12 +79,20 @@ metadata:
   name: among-clusters-credential-broker
   namespace: credential-broker
 spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: among-clusters-credential-broker
-  policyTypes:
-  - Ingress
-  - Egress
+  egress:
+  - ports:
+    - port: 80
+      protocol: TCP
+    - port: 443
+      protocol: TCP
+    - port: 6443
+      protocol: TCP
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector: {}
   ingress:
   - from:
     - namespaceSelector:
@@ -94,19 +102,11 @@ spec:
         matchLabels:
           kubernetes.io/metadata.name: headlamp
     ports:
-    - protocol: TCP
-      port: 8080
-  egress:
-  - to:
-    - namespaceSelector: {}
-    ports:
-    - protocol: TCP
-      port: 80
-    - protocol: TCP
-      port: 443
-    - protocol: TCP
-      port: 6443
-    - protocol: UDP
-      port: 53
-    - protocol: TCP
-      port: 53
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-credential-broker
+  policyTypes:
+  - Ingress
+  - Egress
