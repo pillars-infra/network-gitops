@@ -138,7 +138,7 @@ spec:
         - name: LISTENER_ENABLED
           value: 'true'
         - name: EXPORTS_JSON
-          value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"10.250.0.147:6443","targetPeers":["re8ch-atlantic"]}]'
+          value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"kubernetes.default.svc.cluster.local:443","targetPeers":["re8ch-atlantic"]}]'
         - name: EXPORTS_FILE
           value: /routes/exports.json
         - name: IMPORTS_JSON
