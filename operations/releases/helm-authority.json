@@ -109,7 +109,7 @@
         "path": "releases/networking-helm-among-clusters-agent-among-clusters",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8"
       },
-      "renderedSHA256": "85947670a2083dd8635f6c132c2ef2b10705be7364cf324c1df3476f7c5d4df1"
+      "renderedSHA256": "d198918bd67540f7b7181b2bc0067aecf4bb9e74b04b7fd93e6fb228c63a780f"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-among-clusters",
@@ -262,7 +262,7 @@
         "path": "releases/networking-helm-among-clusters-hub-among-clusters",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83"
       },
-      "renderedSHA256": "fd9fd60c96562496a840afe667e65bffa61b626cea9a348adc7a5d9b88c0671e"
+      "renderedSHA256": "df3dfd92be95031d51fc6b585b2e996a26f09297b6f49e9536eb5d7e37668e50"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-credential-broker",
@@ -383,7 +383,7 @@
         "path": "releases/networking-helm-among-clusters-hub-credential-broker",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83"
       },
-      "renderedSHA256": "242c0d7ea6d1ac18f4acbd83b2ae49a0589cbb942743fa4b6579b1e4100bcd82"
+      "renderedSHA256": "12a203a4498c8c59706f517513ff58773d17143716928a5015cec8ba48320f95"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-kube-system",
