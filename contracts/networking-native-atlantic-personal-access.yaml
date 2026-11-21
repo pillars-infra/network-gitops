@@ -72,4 +72,4 @@ spec:
       namespace: egress-fabric
       name: main-anytls-tunnel
       jsonPointer: /status/readyReplicas
-      equals: 1
+      equals: 5
