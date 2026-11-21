@@ -48,6 +48,12 @@ spec:
             # as ingress; using the ClusterIP bypasses that identity boundary
             # and every ingress-only backend returns Access denied.
             patch: |-
+              - op: add
+                path: /spec/template/spec/hostNetwork
+                value: true
+              - op: add
+                path: /spec/template/spec/dnsPolicy
+                value: ClusterFirstWithHostNet
               - op: replace
                 path: /spec/template/spec/containers/0/env/2/value
                 value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"10.43.0.1:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.251.0.4:443","targetPeers":["re8ch-atlantic"]}]'

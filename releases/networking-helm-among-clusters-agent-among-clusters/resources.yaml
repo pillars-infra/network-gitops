@@ -202,6 +202,8 @@ spec:
         - mountPath: /peer-bundles
           name: peer-bundles
           readOnly: true
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
       nodeSelector:
         kubernetes.io/hostname: r640
       securityContext:
