@@ -4,6 +4,20 @@ metadata:
   name: among-clusters-agent
   namespace: flux-network-system
 spec:
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              group: apps
+              version: v1
+              kind: Deployment
+              name: among-clusters-agent
+            patch: |-
+              - op: replace
+                path: /spec/template/spec/containers/0/env/3/value
+                value: http://among-clusters-hub.among-clusters.svc.cluster.local
+              - op: remove
+                path: /spec/template/spec/hostAliases
   values:
     # Keep TLS/SNI while resolving the co-located hub through the declared
     # internal Cilium Gateway VIP, never through external PublicEdge DNS.
