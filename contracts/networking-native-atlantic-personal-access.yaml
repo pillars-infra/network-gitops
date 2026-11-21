@@ -29,9 +29,14 @@ spec:
     - core/Service
     - networking.k8s.io/NetworkPolicy
     objectNames:
+    - main-anytls-tunnel
     - personal-access-atlantic
     - personal-access-atlantic-my-kul
     forceConflictObjects:
+    - apps/Deployment/egress-fabric/main-anytls-tunnel
+    - core/ConfigMap/egress-fabric/main-anytls-tunnel
+    - core/Service/egress-fabric/main-anytls-tunnel
+    - networking.k8s.io/NetworkPolicy/egress-fabric/main-anytls-tunnel
     - apps/Deployment/egress-fabric/personal-access-atlantic
     - apps/Deployment/egress-fabric/personal-access-atlantic-my-kul
     - core/ConfigMap/egress-fabric/personal-access-atlantic
@@ -60,5 +65,11 @@ spec:
       kind: Deployment
       namespace: egress-fabric
       name: personal-access-atlantic-my-kul
+      jsonPointer: /status/readyReplicas
+      equals: 1
+    - apiVersion: apps/v1
+      kind: Deployment
+      namespace: egress-fabric
+      name: main-anytls-tunnel
       jsonPointer: /status/readyReplicas
       equals: 1
