@@ -279,9 +279,18 @@ spec:
 ---
 apiVersion: v1
 data:
-  geoip.yaml: 'domains: []
-
-    '
+  geoip.yaml: "domains:\n- domain: kube-api.service.re8ch.com\n  ttl: 30\n  records:\n\
+    \    kube-api.service.re8ch.com:\n    - soa: ns-domain-ex.re8ch.com hostmaster.re8ch.com\
+    \ 2026112101 60 60 86400 30\n    - ns: ns-domain-ex.re8ch.com\n    - ns: ns-zan.re8ch.com\n\
+    \    - ns: ns-muaya-lightweight.re8ch.com\n    cn.kube-api.service.re8ch.com:\n\
+    \    - a: 223.159.210.222\n    af.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n\
+    \    an.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n    as.kube-api.service.re8ch.com:\n\
+    \    - a: 2.28.106.230\n    eu.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n\
+    \    na.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n    oc.kube-api.service.re8ch.com:\n\
+    \    - a: 2.28.106.230\n    sa.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n\
+    \    global.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n  services:\n\
+    \    kube-api.service.re8ch.com:\n    - '%cc.kube-api.service.re8ch.com'\n   \
+    \ - '%cn.kube-api.service.re8ch.com'\n    - global.kube-api.service.re8ch.com\n"
   named.conf: 'zone "api.re8ch.com" { type slave; file "/var/lib/powerdns/api.re8ch.com.zone";
     masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
 

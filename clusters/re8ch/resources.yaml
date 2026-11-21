@@ -20632,9 +20632,39 @@ data:
     masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
 
     '
-  geoip.yaml: 'domains: []
-
-    '
+  geoip.yaml: |
+    domains:
+    - domain: kube-api.service.re8ch.com
+      ttl: 30
+      records:
+        kube-api.service.re8ch.com:
+        - soa: ns-domain-ex.re8ch.com hostmaster.re8ch.com 2026112101 60 60 86400 30
+        - ns: ns-domain-ex.re8ch.com
+        - ns: ns-zan.re8ch.com
+        - ns: ns-muaya-lightweight.re8ch.com
+        cn.kube-api.service.re8ch.com:
+        - a: 223.159.210.222
+        af.kube-api.service.re8ch.com:
+        - a: 2.28.106.230
+        an.kube-api.service.re8ch.com:
+        - a: 2.28.106.230
+        as.kube-api.service.re8ch.com:
+        - a: 2.28.106.230
+        eu.kube-api.service.re8ch.com:
+        - a: 2.28.106.230
+        na.kube-api.service.re8ch.com:
+        - a: 2.28.106.230
+        oc.kube-api.service.re8ch.com:
+        - a: 2.28.106.230
+        sa.kube-api.service.re8ch.com:
+        - a: 2.28.106.230
+        global.kube-api.service.re8ch.com:
+        - a: 2.28.106.230
+      services:
+        kube-api.service.re8ch.com:
+        - '%cc.kube-api.service.re8ch.com'
+        - '%cn.kube-api.service.re8ch.com'
+        - global.kube-api.service.re8ch.com
   pdns.conf: 'launch=bind,geoip
 
     bind-config=/etc/powerdns/named.conf
