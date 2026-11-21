@@ -208,6 +208,8 @@ spec:
       app.kubernetes.io/name: among-clusters-gateway
   template:
     metadata:
+      annotations:
+        networking.re8ch.com/haproxy-config-sha256: 5135ad52574b87d3e8e40bf4b82be9621358069f5aceff94106331cf6d906dfd
       labels:
         app.kubernetes.io/name: among-clusters-gateway
     spec:
