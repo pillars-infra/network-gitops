@@ -45,10 +45,7 @@ metadata:
   name: personal-access-atlantic
   namespace: egress-fabric
 spec:
-  # One public 443 listener per Atlantic node. Required anti-affinity together
-  # with hostPort guarantees that LA x2, KL, FLK and HEL1 each receive exactly
-  # one endpoint instead of concentrating the entire service on FLK.
-  replicas: 5
+  replicas: 1
   strategy: {type: Recreate}
   selector:
     matchLabels:
@@ -272,7 +269,10 @@ metadata:
   name: main-anytls-tunnel
   namespace: egress-fabric
 spec:
-  replicas: 1
+  # One public 443 listener per Atlantic node. Required anti-affinity together
+  # with hostPort guarantees that LA x2, KL, FLK and HEL1 each receive exactly
+  # one endpoint instead of concentrating the entire service on FLK.
+  replicas: 5
   strategy: {type: Recreate}
   selector:
     matchLabels: {app.kubernetes.io/name: main-anytls-tunnel}
