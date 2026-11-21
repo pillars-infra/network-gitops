@@ -25181,6 +25181,11 @@ spec:
       enabled: false
     clusterID: re8ch
     gateway:
+      exports:
+      - serviceIdentity: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
+        target: 10.250.0.147:6443
+        targetPeers:
+        - re8ch-atlantic
       imports:
       - expectedSPIFFEID: spiffe://qwen.byoc/cluster/qwen
         listen: :22240
