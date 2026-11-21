@@ -317,6 +317,8 @@ data:
 
     enable-lua-records=yes
 
+    edns-subnet-processing=yes
+
     allow-notify-from=42.194.130.91,2.28.106.230,179.255.126.104
 
     version-string=anonymous
