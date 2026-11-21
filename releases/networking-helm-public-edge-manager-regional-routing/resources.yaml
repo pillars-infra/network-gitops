@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ce056534a831665b91bccefd5b03fefb481e899e43dc9da4265877723d4acf3f
+        checksum/config: 292dc409a057929ce5040a501280d406b02555f33b4c77e01d0da419880ef1f8
       labels:
         app.kubernetes.io/name: public-edge-manager
     spec:
@@ -274,7 +274,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ce056534a831665b91bccefd5b03fefb481e899e43dc9da4265877723d4acf3f
+        checksum/config: 292dc409a057929ce5040a501280d406b02555f33b4c77e01d0da419880ef1f8
       labels:
         app.kubernetes.io/name: public-edge-manager-controller
     spec:
@@ -427,7 +427,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ce056534a831665b91bccefd5b03fefb481e899e43dc9da4265877723d4acf3f
+        checksum/config: 292dc409a057929ce5040a501280d406b02555f33b4c77e01d0da419880ef1f8
       labels:
         app.kubernetes.io/name: public-edge-manager-globalping
     spec:
@@ -503,14 +503,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/transfer-config: 360f67c845e67829ff35c83085c569cd4a03555febbdd7709265875252a296e1
+        checksum/transfer-config: ff47005bbbd7f00cad23388ec767961f9d9d65531d47cca4183d15c52d063547
       labels:
         app.kubernetes.io/name: public-edge-manager-hidden-primary
     spec:
       containers:
       - env:
         - name: NODE_NAME
-          value: r640
+          value: domain-ex
         - name: DNS_TRANSFER_ROLE
           value: primary
         - name: DNS_PORT
@@ -583,7 +583,7 @@ spec:
           name: state
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
-      nodeName: r640
+      nodeName: domain-ex
       serviceAccountName: public-edge-manager
       tolerations:
       - effect: NoSchedule
@@ -650,7 +650,7 @@ data:
   PUBLICATION_ENABLED: 'false'
   PUBLICATION_REFS_JSON: '{}'
   READINESS_GATES_JSON: '{}'
-  ROUTE_SNAPSHOT_ENDPOINT: https://10.250.0.128:8443/v1/route-snapshot
+  ROUTE_SNAPSHOT_ENDPOINT: https://10.250.0.186:8443/v1/route-snapshot
   ROUTE_SNAPSHOT_LISTEN_ADDRESS: 0.0.0.0:8443
   ROUTE_SNAPSHOT_MAX_STALE_SECONDS: '900'
   ROUTE_SNAPSHOT_REFRESH_SECONDS: '15'

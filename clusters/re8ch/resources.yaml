@@ -25858,7 +25858,7 @@ spec:
         cpu: 20m
         memory: 32Mi
     routeSnapshot:
-      endpoint: https://10.250.0.128:8443/v1/route-snapshot
+      endpoint: https://10.250.0.186:8443/v1/route-snapshot
       maxStaleSeconds: 900
       publicKeyRef: public-edge-route-snapshot-public-key
       refreshSeconds: 15
@@ -26132,7 +26132,7 @@ spec:
       httpPort: 18081
       primary:
         enabled: true
-        nodeName: r640
+        nodeName: domain-ex
         signingKeySecretRef: public-edge-route-snapshot-signing
         snapshotTlsSecretRef: public-edge-hidden-primary-tls
         tlsSecretRef: public-edge-hidden-primary-tls
