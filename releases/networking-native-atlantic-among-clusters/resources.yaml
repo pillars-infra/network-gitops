@@ -190,6 +190,11 @@ spec:
       automountServiceAccountToken: false
       nodeSelector:
         kubernetes.io/hostname: overseas-flk
+      tolerations:
+      - key: dedicated
+        operator: Equal
+        value: overseas-edge
+        effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
