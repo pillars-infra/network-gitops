@@ -46,7 +46,30 @@ def test_all_atlantic_ingress_points_are_reviewed_api_candidates():
         ("overseas-kl", "SEA", "my-kul", "198.20.153.89"),
     }
     assert all(item["clusterRef"] == "re8ch-atlantic" for item in candidates.values())
-    assert all(item["serviceClasses"] == ["api"] for item in candidates.values())
+    assert all(item["serviceClasses"] == ["api", "db-rw", "web", "service-pilot"]
+               for item in candidates.values())
     assert values["image"]["digest"] == (
         "sha256:8d9f78dcf2c904c628f58250d427c8b976e55943ba4650fae87ccbfd0a63a3b0"
     )
+
+
+def test_public_edge_has_stable_aliases_for_external_cdns_and_access_portal():
+    release = next(item for item in documents()
+                   if item.get("kind") == "HelmRelease"
+                   and item.get("metadata", {}).get("name") == "public-edge-manager")
+    services = release["spec"]["values"]["services"]
+
+    assert services["auth-origin.service.re8ch.com."] == {
+        "acceptedStatuses": [200],
+        "class": "service-pilot",
+        "probeHost": "auth-origin.re8ch.com",
+        "probePath": "/.well-known/openid-configuration",
+        "service": "auth-origin-service",
+    }
+    assert services["sub-access.service.re8ch.com."] == {
+        "acceptedStatuses": [302],
+        "class": "service-pilot",
+        "probeHost": "sub.access.re8ch.com",
+        "probePath": "/",
+        "service": "sub-access-service",
+    }
