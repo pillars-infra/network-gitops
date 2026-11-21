@@ -279,6 +279,9 @@ spec:
 ---
 apiVersion: v1
 data:
+  geoip.yaml: 'domains: []
+
+    '
   named.conf: 'zone "api.re8ch.com" { type slave; file "/var/lib/powerdns/api.re8ch.com.zone";
     masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
 
@@ -298,15 +301,21 @@ data:
     masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
 
     '
-  pdns.conf: 'launch=bind
+  pdns.conf: 'launch=bind,geoip
 
     bind-config=/etc/powerdns/named.conf
+
+    geoip-zones-file=/etc/powerdns/geoip.yaml
+
+    geoip-database-files=/usr/share/GeoIP/GeoIP.dat,/usr/share/GeoIP/GeoIPv6.dat
 
     local-port=53
 
     secondary=yes
 
     primary=no
+
+    enable-lua-records=yes
 
     allow-notify-from=42.194.130.91,2.28.106.230,179.255.126.104
 
