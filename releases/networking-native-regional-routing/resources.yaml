@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/authority-source-revision: geo-authority-router-v2
+        networking.re8ch.com/authority-source-revision: geo-authority-router-v3
       labels:
         app.kubernetes.io/name: powerdns-cloud-authorities
     spec:
