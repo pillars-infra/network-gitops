@@ -56,6 +56,12 @@ spec:
           value: /peer-bundles/ca.crt
         - name: KUBERNETES_TLS_SERVER_NAME
           value: kubernetes.default.svc
+        - name: KUBERNETES_SERVICE_HOST
+          value: 127.0.0.1
+        - name: KUBERNETES_SERVICE_PORT
+          value: '6443'
+        - name: KUBERNETES_SERVICE_PORT_HTTPS
+          value: '6443'
         image: ghcr.io/among-clusters/among-clusters@sha256:b6fb7db4032666cb65ea8333196b29a02327f6c72baaa35cacb22f4b76a05ca1
         name: agent
         resources:
@@ -78,6 +84,8 @@ spec:
         - mountPath: /peer-bundles
           name: peer-bundles
           readOnly: true
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
       nodeSelector:
         kubernetes.io/os: linux
         scheduling.re8ch.com/service-plane: core
