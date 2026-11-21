@@ -310,7 +310,7 @@ data:
     masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
 
     '
-  pdns.conf: 'launch=bind,geoip
+  pdns.conf: 'launch=geoip,bind
 
     bind-config=/etc/powerdns/named.conf
 
