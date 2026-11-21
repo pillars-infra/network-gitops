@@ -25814,7 +25814,11 @@ spec:
       parentZone: re8ch.com
       probeNodeNames: []
       probeTimeoutSeconds: 2
-      replicas: 3
+      # Keep the HA controller on the two provider nodes with working node-local
+      # Mihomo egress. A third replica currently schedules onto the legacy
+      # Docker node, where image pulls bypass Mihomo and wedge protected
+      # rollouts indefinitely.
+      replicas: 2
       requiredAddressNames:
       - headlamp.service.re8ch.com
       secondaryNameserversByZone:
