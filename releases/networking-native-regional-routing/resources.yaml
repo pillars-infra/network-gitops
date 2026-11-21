@@ -341,48 +341,48 @@ spec:
 apiVersion: v1
 data:
   dns-router.py: "import os\nimport socket\nimport struct\nimport threading\n\nBIND\
-    \ = (\"127.0.0.1\", 5300)\nGEO = (\"127.0.0.1\", 5301)\nEDGE = (socket.gethostbyname(\"\
-    public-edge-manager-dns.regional-routing.svc.cluster.local\"), 53)\nGEO_NAME =\
-    \ \"kube-api.service.re8ch.com\"\nCLASSIFIER_NAME = \"classify.geo.re8ch.internal\"\
-    \nGLOBAL_AREA = \"198.18.255.1\"\nLISTEN_ADDRESS = os.environ[\"LISTEN_ADDRESS\"\
-    ]\n\ndef qname(packet):\n    labels = []\n    offset = 12\n    while offset <\
-    \ len(packet):\n        length = packet[offset]\n        offset += 1\n       \
-    \ if length == 0:\n            return \".\".join(labels).lower()\n        if length\
-    \ & 0xC0 or offset + length > len(packet):\n            return \"\"\n        labels.append(packet[offset:offset\
-    \ + length].decode(\"ascii\", \"ignore\"))\n        offset += length\n    return\
-    \ \"\"\n\ndef skip_name(packet, offset):\n    while offset < len(packet):\n  \
-    \      length = packet[offset]\n        if length & 0xC0:\n            return\
-    \ offset + 2\n        offset += 1\n        if length == 0:\n            return\
-    \ offset\n        offset += length\n    raise ValueError\n\ndef set_ecs(packet,\
-    \ client_ip, replace=False):\n    try:\n        address = socket.inet_aton(client_ip)\n\
-    \        qd, an, ns, ar = struct.unpack(\"!HHHH\", packet[4:12])\n        offset\
-    \ = 12\n        for _ in range(qd):\n            offset = skip_name(packet, offset)\
-    \ + 4\n        for _ in range(an + ns):\n            offset = skip_name(packet,\
-    \ offset)\n            rdlength = struct.unpack(\"!H\", packet[offset + 8:offset\
-    \ + 10])[0]\n            offset += 10 + rdlength\n        option = struct.pack(\"\
-    !HHHBB\", 8, 7, 1, 24, 0) + address[:3]\n        for _ in range(ar):\n       \
-    \     record = skip_name(packet, offset)\n            record_type = struct.unpack(\"\
-    !H\", packet[record:record + 2])[0]\n            rdlength = struct.unpack(\"!H\"\
-    , packet[record + 8:record + 10])[0]\n            rdata = record + 10\n      \
-    \      end = rdata + rdlength\n            if record_type == 41:\n           \
-    \     cursor = rdata\n                while cursor + 4 <= end:\n             \
-    \       code, length = struct.unpack(\"!HH\", packet[cursor:cursor + 4])\n   \
-    \                 if code == 8:\n                        if not replace:\n   \
-    \                         return packet\n                        replacement =\
-    \ packet[cursor:cursor + 4] + option[4:]\n                        return (packet[:record\
-    \ + 8] + struct.pack(\"!H\", rdlength - length + 7)\n                        \
-    \        + packet[rdata:cursor] + replacement + packet[cursor + 4 + length:])\n\
-    \                    cursor += 4 + length\n                return (packet[:record\
-    \ + 8] + struct.pack(\"!H\", rdlength + len(option))\n                       \
-    \ + packet[rdata:end] + option + packet[end:])\n            offset = end\n   \
-    \     opt = b\"\\0\" + struct.pack(\"!HHIH\", 41, 1232, 0, len(option)) + option\n\
-    \        return packet[:10] + struct.pack(\"!H\", ar + 1) + packet[12:] + opt\n\
-    \    except (OSError, ValueError, struct.error):\n        return packet\n\ndef\
-    \ encode_name(name):\n    return b\"\".join(bytes([len(label)]) + label.encode(\"\
-    ascii\") for label in name.split(\".\")) + b\"\\0\"\n\ndef classifier_query(client_ip):\n\
-    \    transaction = os.urandom(2)\n    packet = transaction + struct.pack(\"!HHHHH\"\
-    , 0x0100, 1, 0, 0, 0)\n    packet += encode_name(CLASSIFIER_NAME) + struct.pack(\"\
-    !HH\", 1, 1)\n    return set_ecs(packet, client_ip)\n\ndef first_a(packet):\n\
+    \ = (\"127.0.0.1\", 5300)\nGEO = (\"127.0.0.1\", 5301)\nEDGE_HOST = os.environ.get(\n\
+    \    \"PUBLIC_EDGE_MANAGER_DNS_SERVICE_HOST\",\n    \"public-edge-manager-dns.regional-routing.svc.cluster.local\"\
+    ,\n)\nEDGE = (socket.gethostbyname(EDGE_HOST), 53)\nGEO_NAME = \"kube-api.service.re8ch.com\"\
+    \nCLASSIFIER_NAME = \"classify.geo.re8ch.internal\"\nGLOBAL_AREA = \"198.18.255.1\"\
+    \nLISTEN_ADDRESS = os.environ[\"LISTEN_ADDRESS\"]\n\ndef qname(packet):\n    labels\
+    \ = []\n    offset = 12\n    while offset < len(packet):\n        length = packet[offset]\n\
+    \        offset += 1\n        if length == 0:\n            return \".\".join(labels).lower()\n\
+    \        if length & 0xC0 or offset + length > len(packet):\n            return\
+    \ \"\"\n        labels.append(packet[offset:offset + length].decode(\"ascii\"\
+    , \"ignore\"))\n        offset += length\n    return \"\"\n\ndef skip_name(packet,\
+    \ offset):\n    while offset < len(packet):\n        length = packet[offset]\n\
+    \        if length & 0xC0:\n            return offset + 2\n        offset += 1\n\
+    \        if length == 0:\n            return offset\n        offset += length\n\
+    \    raise ValueError\n\ndef set_ecs(packet, client_ip, replace=False):\n    try:\n\
+    \        address = socket.inet_aton(client_ip)\n        qd, an, ns, ar = struct.unpack(\"\
+    !HHHH\", packet[4:12])\n        offset = 12\n        for _ in range(qd):\n   \
+    \         offset = skip_name(packet, offset) + 4\n        for _ in range(an +\
+    \ ns):\n            offset = skip_name(packet, offset)\n            rdlength =\
+    \ struct.unpack(\"!H\", packet[offset + 8:offset + 10])[0]\n            offset\
+    \ += 10 + rdlength\n        option = struct.pack(\"!HHHBB\", 8, 7, 1, 24, 0) +\
+    \ address[:3]\n        for _ in range(ar):\n            record = skip_name(packet,\
+    \ offset)\n            record_type = struct.unpack(\"!H\", packet[record:record\
+    \ + 2])[0]\n            rdlength = struct.unpack(\"!H\", packet[record + 8:record\
+    \ + 10])[0]\n            rdata = record + 10\n            end = rdata + rdlength\n\
+    \            if record_type == 41:\n                cursor = rdata\n         \
+    \       while cursor + 4 <= end:\n                    code, length = struct.unpack(\"\
+    !HH\", packet[cursor:cursor + 4])\n                    if code == 8:\n       \
+    \                 if not replace:\n                            return packet\n\
+    \                        replacement = packet[cursor:cursor + 4] + option[4:]\n\
+    \                        return (packet[:record + 8] + struct.pack(\"!H\", rdlength\
+    \ - length + 7)\n                                + packet[rdata:cursor] + replacement\
+    \ + packet[cursor + 4 + length:])\n                    cursor += 4 + length\n\
+    \                return (packet[:record + 8] + struct.pack(\"!H\", rdlength +\
+    \ len(option))\n                        + packet[rdata:end] + option + packet[end:])\n\
+    \            offset = end\n        opt = b\"\\0\" + struct.pack(\"!HHIH\", 41,\
+    \ 1232, 0, len(option)) + option\n        return packet[:10] + struct.pack(\"\
+    !H\", ar + 1) + packet[12:] + opt\n    except (OSError, ValueError, struct.error):\n\
+    \        return packet\n\ndef encode_name(name):\n    return b\"\".join(bytes([len(label)])\
+    \ + label.encode(\"ascii\") for label in name.split(\".\")) + b\"\\0\"\n\ndef\
+    \ classifier_query(client_ip):\n    transaction = os.urandom(2)\n    packet =\
+    \ transaction + struct.pack(\"!HHHHH\", 0x0100, 1, 0, 0, 0)\n    packet += encode_name(CLASSIFIER_NAME)\
+    \ + struct.pack(\"!HH\", 1, 1)\n    return set_ecs(packet, client_ip)\n\ndef first_a(packet):\n\
     \    try:\n        qd, an = struct.unpack(\"!HH\", packet[4:8])\n        offset\
     \ = 12\n        for _ in range(qd):\n            offset = skip_name(packet, offset)\
     \ + 4\n        for _ in range(an):\n            offset = skip_name(packet, offset)\n\
