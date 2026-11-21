@@ -18,7 +18,8 @@ def test_powerdns_classifies_location_but_public_edge_selects_candidate():
                   and item.get("metadata", {}).get("name") == "powerdns-cloud-authorities")
     router = config["data"]["dns-router.py"]
     compile(router, "dns-router.py", "exec")
-    assert 'EDGE = (socket.gethostbyname("public-edge-manager-dns.' in router
+    assert '"PUBLIC_EDGE_MANAGER_DNS_SERVICE_HOST"' in router
+    assert 'EDGE = (socket.gethostbyname(EDGE_HOST), 53)' in router
     assert 'return set_ecs(packet, classify(client_ip), replace=True), EDGE' in router
 
     geo = yaml.safe_load(config["data"]["geoip.yaml"])["domains"][0]

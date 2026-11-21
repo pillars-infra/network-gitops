@@ -20666,7 +20666,11 @@ data:
 
     BIND = ("127.0.0.1", 5300)
     GEO = ("127.0.0.1", 5301)
-    EDGE = (socket.gethostbyname("public-edge-manager-dns.regional-routing.svc.cluster.local"), 53)
+    EDGE_HOST = os.environ.get(
+        "PUBLIC_EDGE_MANAGER_DNS_SERVICE_HOST",
+        "public-edge-manager-dns.regional-routing.svc.cluster.local",
+    )
+    EDGE = (socket.gethostbyname(EDGE_HOST), 53)
     GEO_NAME = "kube-api.service.re8ch.com"
     CLASSIFIER_NAME = "classify.geo.re8ch.internal"
     GLOBAL_AREA = "198.18.255.1"
