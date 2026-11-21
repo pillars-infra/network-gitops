@@ -96,10 +96,9 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: among-clusters-service-routes
+  name: among-clusters-edge-sni
   namespace: among-clusters
 data:
-  exports.json: '[]'
   haproxy.cfg: |
     global
       log stdout format raw local0
@@ -287,7 +286,7 @@ spec:
       - name: peer-bundles
         secret: {secretName: among-clusters-peer-bundle}
       - name: edge-sni
-        configMap: {name: among-clusters-service-routes}
+        configMap: {name: among-clusters-edge-sni}
 ---
 apiVersion: v1
 kind: Service

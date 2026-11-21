@@ -25,7 +25,7 @@ def test_atlantic_mux_waits_for_fragmented_client_hello():
     assert "tcp-request content accept if { req.ssl_hello_type 1 }" in manifest
     assert "reject unless { req.ssl_hello_type 1 }" not in manifest
     objects = list(yaml.safe_load_all(manifest))
-    routes = next(obj for obj in objects if obj and obj.get("kind") == "ConfigMap" and obj["metadata"]["name"] == "among-clusters-service-routes")
+    routes = next(obj for obj in objects if obj and obj.get("kind") == "ConfigMap" and obj["metadata"]["name"] == "among-clusters-edge-sni")
     gateway = next(obj for obj in objects if obj and obj.get("kind") == "Deployment" and obj["metadata"]["name"] == "among-clusters-gateway")
     checksum = hashlib.sha256(routes["data"]["haproxy.cfg"].encode()).hexdigest()
     assert gateway["spec"]["template"]["metadata"]["annotations"]["networking.re8ch.com/haproxy-config-sha256"] == checksum
