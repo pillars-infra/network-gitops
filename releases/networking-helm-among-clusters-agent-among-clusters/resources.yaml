@@ -142,7 +142,7 @@ spec:
         - name: EXPORTS_FILE
           value: /routes/exports.json
         - name: IMPORTS_JSON
-          value: '[{"expectedSPIFFEID":"spiffe://qwen.byoc/cluster/qwen","listen":":22240","name":"qwen-k8s","port":22240,"serviceIdentity":"spiffe://qwen.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://artc.byoc/cluster/artc","listen":":23768","name":"artc-k8s","port":23768,"serviceIdentity":"spiffe://artc.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":33768","name":"atlantic-k8s","port":33768,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":1080","name":"atl-exit","port":1080,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","sessionOnly":true}]'
+          value: '[{"expectedSPIFFEID":"spiffe://qwen.byoc/cluster/qwen","listen":":22240","name":"qwen-k8s","port":22240,"serviceIdentity":"spiffe://qwen.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://artc.byoc/cluster/artc","listen":":23768","name":"artc-k8s","port":23768,"serviceIdentity":"spiffe://artc.byoc/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":33768","name":"atlantic-k8s","port":33768,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/default/service/kubernetes","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":1080","name":"atl-exit","port":1080,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":18080","name":"atl-mail-web","port":18080,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-webmail","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":18081","name":"atl-mail-idp","port":18081,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-idp","sessionOnly":true},{"expectedSPIFFEID":"spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic","listen":":18082","name":"atl-mail-admin","port":18082,"serviceIdentity":"spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-management","sessionOnly":true}]'
         - name: PEER_SESSIONS_JSON
           value: '[]'
         - name: PEER_IDENTITIES_JSON
@@ -165,6 +165,15 @@ spec:
           protocol: TCP
         - containerPort: 1080
           name: atl-exit
+          protocol: TCP
+        - containerPort: 18080
+          name: atl-mail-web
+          protocol: TCP
+        - containerPort: 18081
+          name: atl-mail-idp
+          protocol: TCP
+        - containerPort: 18082
+          name: atl-mail-admin
           protocol: TCP
         resources:
           limits:
@@ -240,6 +249,18 @@ spec:
     port: 1080
     protocol: TCP
     targetPort: atl-exit
+  - name: atl-mail-web
+    port: 18080
+    protocol: TCP
+    targetPort: atl-mail-web
+  - name: atl-mail-idp
+    port: 18081
+    protocol: TCP
+    targetPort: atl-mail-idp
+  - name: atl-mail-admin
+    port: 18082
+    protocol: TCP
+    targetPort: atl-mail-admin
   selector:
     app.kubernetes.io/name: among-clusters-gateway
   type: ClusterIP
@@ -311,12 +332,29 @@ spec:
       protocol: TCP
     - port: 1080
       protocol: TCP
+    - port: 18080
+      protocol: TCP
+    - port: 18081
+      protocol: TCP
+    - port: 18082
+      protocol: TCP
   - from:
     - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: egress-fabric
     ports:
     - port: 1080
+      protocol: TCP
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: mail-system
+    ports:
+    - port: 18080
+      protocol: TCP
+    - port: 18081
+      protocol: TCP
+    - port: 18082
       protocol: TCP
   podSelector:
     matchLabels:
