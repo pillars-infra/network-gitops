@@ -5,11 +5,11 @@ metadata:
   namespace: flux-network-system
 spec:
   values:
-    # Preserve the public TLS name while resolving it to the Cilium Gateway
-    # Service ClusterIP from inside the provider cluster. This keeps the
-    # request on the cluster network without weakening HTTPS/SNI verification.
+    # Keep TLS/SNI while resolving the co-located hub through the declared
+    # internal Cilium Gateway VIP, never through external PublicEdge DNS.
+    hubEndpoint: https://among-clusters.service.re8ch.com
     hostAliases:
-      - ip: 10.43.158.127
+      - ip: 10.251.0.4
         hostnames: [among-clusters.service.re8ch.com]
     gateway:
       publicAuthority:
