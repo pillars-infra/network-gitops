@@ -25737,11 +25737,6 @@ spec:
           provider: he-ownership
           type: TXT
           value: hEoXQWWZ7vJQ0rqzfWB8E/Ifpsi+OzthgIJJJX9v9/E
-        hidden-primary.service.re8ch.com.:
-        - externalCDN: true
-          provider: public-edge-xot
-          type: A
-          value: 2.28.106.230
         tencent.anycam.functions.re8ch.com.:
         - externalCDN: true
           provider: tencent-scf
@@ -25863,7 +25858,7 @@ spec:
         cpu: 20m
         memory: 32Mi
     routeSnapshot:
-      endpoint: https://2.28.106.230:8443/v1/route-snapshot
+      endpoint: https://10.250.0.128:8443/v1/route-snapshot
       maxStaleSeconds: 900
       publicKeyRef: public-edge-route-snapshot-public-key
       refreshSeconds: 15
@@ -26137,7 +26132,7 @@ spec:
       httpPort: 18081
       primary:
         enabled: true
-        nodeName: overseas-flk
+        nodeName: r640
         signingKeySecretRef: public-edge-route-snapshot-signing
         snapshotTlsSecretRef: public-edge-hidden-primary-tls
         tlsSecretRef: public-edge-hidden-primary-tls
