@@ -20665,7 +20665,7 @@ data:
         - '%cc.kube-api.service.re8ch.com'
         - '%cn.kube-api.service.re8ch.com'
         - global.kube-api.service.re8ch.com
-  pdns.conf: 'launch=bind,geoip
+  pdns.conf: 'launch=geoip,bind
 
     bind-config=/etc/powerdns/named.conf
 
