@@ -73,3 +73,18 @@ def test_public_edge_has_stable_aliases_for_external_cdns_and_access_portal():
         "probePath": "/",
         "service": "sub-access-service",
     }
+
+
+def test_external_records_do_not_overlap_managed_services_or_zones():
+    release = next(item for item in documents()
+                   if item.get("kind") == "HelmRelease"
+                   and item.get("metadata", {}).get("name") == "public-edge-manager")
+    values = release["spec"]["values"]
+    external_records = set(values["dns"]["externalRecords"])
+    managed_services = set(values["services"])
+    managed_zones = set(values["dns"]["axfrZones"])
+
+    assert external_records.isdisjoint(managed_services)
+    assert external_records.isdisjoint(managed_zones)
+    assert "kube-api.re8ch.com." not in external_records
+    assert "kube-api-backup.re8ch.com." not in external_records
