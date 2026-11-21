@@ -44,13 +44,13 @@ spec:
               name: among-clusters-gateway
             # Keep the recovery plane independent of cluster DNS and enter the
             # public Gateway through its ClusterIP, not the externally
-            # advertised VIP. Both identities terminate on the reviewed
-            # PublicEdge kube-api/HTTPS routes; this avoids the raw API Service
-            # becoming a second, less reliable transport path.
+            # advertised VIP. Keep kube-api on the raw Service: the PublicEdge
+            # listener intentionally has no kube-api.re8ch.com TLS filter
+            # chain, so sending that SNI to the Gateway is rejected.
             patch: |-
               - op: replace
                 path: /spec/template/spec/containers/0/env/2/value
-                value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"10.43.158.127:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.43.158.127:443","targetPeers":["re8ch-atlantic"]}]'
+                value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"10.43.0.1:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.43.158.127:443","targetPeers":["re8ch-atlantic"]}]'
   values:
     # The post-rendered workload talks directly to the co-located hub Service;
     # this chart value remains only as the stable upstream chart input.
