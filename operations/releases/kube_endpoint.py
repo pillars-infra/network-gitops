@@ -74,7 +74,7 @@ def select(path: Path, config: dict, cluster: str) -> str:
                 timeout=12,
             )
         except subprocess.TimeoutExpired:
-            failures.append(endpoint)
+            failures.append(f"{endpoint} (timeout)")
             continue
         if result.returncode == 0:
             if token is not None:
@@ -82,7 +82,8 @@ def select(path: Path, config: dict, cluster: str) -> str:
                 _write(path, config)
             print(f"selected Kubernetes endpoint: {endpoint}")
             return endpoint
-        failures.append(endpoint)
+        reason = " ".join((result.stderr or "").split())[:240] or f"kubectl exit {result.returncode}"
+        failures.append(f"{endpoint} ({reason})")
     raise Rejected("no healthy Kubernetes API endpoint: " + ", ".join(failures))
 
 
