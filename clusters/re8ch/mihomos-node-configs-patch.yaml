@@ -23,7 +23,7 @@ data:
         url: "https://www.gstatic.com/generate_204"
         interval: 600
         lazy: true
-    rules: ["IP-CIDR,10.0.0.0/8,DIRECT,no-resolve", "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve", "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve", "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve", "DOMAIN,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ghcr.io,GLOBAL", "DOMAIN-SUFFIX,pkg-containers.githubusercontent.com,GLOBAL", "DOMAIN-SUFFIX,github.com,GLOBAL", "DOMAIN-SUFFIX,githubusercontent.com,GLOBAL", "DOMAIN-SUFFIX,cn,DIRECT", "RULE-SET,cn-ip,DIRECT", "MATCH,GLOBAL"]
+    rules: ["IP-CIDR,10.0.0.0/8,DIRECT,no-resolve", "IP-CIDR,100.64.0.0/10,DIRECT,no-resolve", "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve", "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve", "IP-CIDR,179.255.126.104/32,DIRECT,no-resolve", "IP-CIDR,179.253.231.159/32,DIRECT,no-resolve", "IP-CIDR,2.28.106.230/32,DIRECT,no-resolve", "IP-CIDR,2.29.219.31/32,DIRECT,no-resolve", "IP-CIDR,198.20.153.89/32,DIRECT,no-resolve", "DOMAIN,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ipinfo.io,DIRECT", "DOMAIN-SUFFIX,ghcr.io,GLOBAL", "DOMAIN-SUFFIX,pkg-containers.githubusercontent.com,GLOBAL", "DOMAIN-SUFFIX,github.com,GLOBAL", "DOMAIN-SUFFIX,githubusercontent.com,GLOBAL", "DOMAIN-SUFFIX,cn,DIRECT", "RULE-SET,cn-ip,DIRECT", "MATCH,GLOBAL"]
   global.yaml: |
     mixed-port: 17891
     external-controller: 0.0.0.0:19090
