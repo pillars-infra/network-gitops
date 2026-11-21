@@ -262,7 +262,7 @@
         "path": "releases/networking-helm-among-clusters-hub-among-clusters",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83"
       },
-      "renderedSHA256": "9781aae92cb340c97a192e2a349f892f93433ab38ab9f649103815101938dd2c"
+      "renderedSHA256": "fd9fd60c96562496a840afe667e65bffa61b626cea9a348adc7a5d9b88c0671e"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-credential-broker",
