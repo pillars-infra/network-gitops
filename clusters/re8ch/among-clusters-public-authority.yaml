@@ -18,9 +18,28 @@ spec:
                 value: http://among-clusters-hub.among-clusters.svc.cluster.local
               - op: remove
                 path: /spec/template/spec/hostAliases
+              # The provider agent is part of the recovery path for the
+              # service network itself.  Reach the node-local API frontend so
+              # a broken ClusterIP dataplane cannot prevent it from loading
+              # its identity and re-establishing Atlantic peer sessions.
+              - op: add
+                path: /spec/template/spec/hostNetwork
+                value: true
+              - op: add
+                path: /spec/template/spec/dnsPolicy
+                value: ClusterFirstWithHostNet
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value: {name: KUBERNETES_SERVICE_HOST, value: 127.0.0.1}
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value: {name: KUBERNETES_SERVICE_PORT, value: "6443"}
+              - op: add
+                path: /spec/template/spec/containers/0/env/-
+                value: {name: KUBERNETES_SERVICE_PORT_HTTPS, value: "6443"}
   values:
-    # Keep TLS/SNI while resolving the co-located hub through the declared
-    # internal Cilium Gateway VIP, never through external PublicEdge DNS.
+    # The post-rendered workload talks directly to the co-located hub Service;
+    # this chart value remains only as the stable upstream chart input.
     hubEndpoint: https://among-clusters.service.re8ch.com
     hostAliases:
       - ip: 10.251.0.4
