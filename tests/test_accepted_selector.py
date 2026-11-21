@@ -84,7 +84,7 @@ def test_empty_matrix_is_explicitly_skipped_and_execution_rechecks_state():
     assert 'id-token' in workflow['jobs']['select']['permissions']
     acquire=next(step for step in workflow['jobs']['reconcile']['steps'] if step.get('name')=='Acquire exact OIDC identity and prove denials')
     assert acquire['env']['KUBE_API_CA_PEM']=='${{ secrets.KUBE_API_CA_PEM }}'
-    assert '--certificate-authority=' in acquire['run'] and '--embed-certs=true' in acquire['run']
+    assert 'operations/releases/kube_endpoint.py' in acquire['run']
     assert any('accepted-bundle --configmap' in step.get('run','') for step in workflow['jobs']['reconcile']['steps'])
     assert workflow['jobs']['selection-status']['steps'][0]['run'].rstrip().endswith('exit 1')
 
@@ -92,10 +92,11 @@ def test_empty_matrix_is_explicitly_skipped_and_execution_rechecks_state():
 def test_initialize_creates_private_fixed_config_without_output_or_overwrite(tmp_path,monkeypatch,capsys):
     path=tmp_path/'kubeconfig';monkeypatch.setenv('KUBECONFIG',str(path));monkeypatch.setenv('KUBE_API_CA_PEM','fixture-ca')
     monkeypatch.setattr(refresh_kubeconfig.Executor,'actions_kube_token',lambda self:'fixture-token')
+    monkeypatch.setattr(refresh_kubeconfig,'select',lambda path,config,cluster:'https://179.255.126.104:443')
     refresh_kubeconfig.initialize();value=yaml.safe_load(path.read_text())
     assert path.stat().st_mode&0o777==0o600
     cluster=value['clusters'][0]['cluster']
-    assert cluster['server']=='https://223.159.210.222'
+    assert cluster['server']=='https://179.255.126.104:443'
     assert cluster['tls-server-name']=='kube-api.service.re8ch.com'
     assert base64.b64decode(value['clusters'][0]['cluster']['certificate-authority-data']).decode()=='fixture-ca'
     assert value['users'][0]['user']['token']=='fixture-token'

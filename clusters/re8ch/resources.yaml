@@ -25867,6 +25867,16 @@ spec:
       - functions.re8ch.com.
       - test.re8ch.com.
       externalRecords:
+        kube-api.re8ch.com.:
+        - externalCDN: true
+          provider: atlantic-control-plane
+          type: A
+          value: 179.255.126.104
+        kube-api-backup.re8ch.com.:
+        - externalCDN: true
+          provider: atlantic-control-plane
+          type: A
+          value: 179.253.231.159
         _acme-challenge.service.re8ch.com.:
         - externalCDN: true
           provider: cloudflare-dns01

@@ -100,6 +100,27 @@ metadata:
   namespace: among-clusters
 data:
   exports.json: '[]'
+  haproxy.cfg: |
+    global
+      log stdout format raw local0
+      maxconn 4096
+    defaults
+      mode tcp
+      log global
+      timeout connect 5s
+      timeout client 1m
+      timeout server 1m
+    frontend atlantic_tls
+      bind :8444
+      tcp-request inspect-delay 5s
+      tcp-request content accept if { req.ssl_hello_type 1 }
+      tcp-request content reject unless { req.ssl_hello_type 1 }
+      use_backend main_kube_api if { req.ssl_sni -i kube-api.re8ch.com kube-api.service.re8ch.com }
+      default_backend main_public_edge
+    backend main_kube_api
+      server local 127.0.0.1:16443 check inter 2s fall 2 rise 2
+    backend main_public_edge
+      server local 127.0.0.1:16445 check inter 2s fall 2 rise 2
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -129,8 +150,7 @@ spec:
   - from:
     - ipBlock: {cidr: 0.0.0.0/0}
     ports:
-    - {protocol: TCP, port: 16443}
-    - {protocol: TCP, port: 16445}
+    - {protocol: TCP, port: 8444}
   egress:
   - to:
     - ipBlock: {cidr: 223.159.210.222/32}
@@ -181,7 +201,9 @@ spec:
   # One generic PublicEdge ingress per Atlantic node. The stream remains
   # opaque TLS; the main Cilium Gateway retains certificate and SNI authority.
   replicas: 5
-  strategy: {type: Recreate}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 1, maxSurge: 0}
   selector:
     matchLabels:
       app.kubernetes.io/name: among-clusters-gateway
@@ -225,7 +247,7 @@ spec:
         ports:
         - {name: main-egress, containerPort: 17891, protocol: TCP}
         - {name: main-kube-api, containerPort: 16443, protocol: TCP}
-        - {name: public-edge, containerPort: 16445, hostPort: 443, protocol: TCP}
+        - {name: public-edge, containerPort: 16445, protocol: TCP}
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -237,6 +259,25 @@ spec:
         - {name: identity, mountPath: /identity, readOnly: true}
         - {name: service-routes, mountPath: /routes, readOnly: true}
         - {name: peer-bundles, mountPath: /peer-bundles, readOnly: true}
+      - name: edge-sni
+        image: docker.io/library/haproxy@sha256:7816a9801a6846b912bc37e48529808e2fa87c3c47992441940f68e393ebcfeb
+        args: [-W, -db, -f, /usr/local/etc/haproxy/haproxy.cfg]
+        ports:
+        - {name: public-tls, containerPort: 8444, hostPort: 443, protocol: TCP}
+        readinessProbe: {tcpSocket: {port: public-tls}, periodSeconds: 3, timeoutSeconds: 1}
+        livenessProbe: {tcpSocket: {port: public-tls}, periodSeconds: 15, timeoutSeconds: 1}
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+          limits: {cpu: 100m, memory: 64Mi}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 99
+          runAsGroup: 99
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: edge-sni, mountPath: /usr/local/etc/haproxy, readOnly: true}
       volumes:
       - name: identity
         secret: {secretName: among-clusters-agent-identity}
@@ -244,6 +285,8 @@ spec:
         configMap: {name: among-clusters-service-routes}
       - name: peer-bundles
         secret: {secretName: among-clusters-peer-bundle}
+      - name: edge-sni
+        configMap: {name: among-clusters-service-routes}
 ---
 apiVersion: v1
 kind: Service
