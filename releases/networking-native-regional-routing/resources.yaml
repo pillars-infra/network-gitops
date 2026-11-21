@@ -103,6 +103,11 @@ spec:
         - /etc/powerdns/dns-router.py
         command:
         - python3
+        env:
+        - name: LISTEN_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
         livenessProbe:
           periodSeconds: 30
@@ -335,22 +340,23 @@ spec:
 ---
 apiVersion: v1
 data:
-  dns-router.py: "import socket\nimport struct\nimport threading\n\nBIND = (\"127.0.0.1\"\
-    , 5300)\nGEO = (\"127.0.0.1\", 5301)\nGEO_NAME = \"kube-api.service.re8ch.com\"\
-    \n\ndef qname(packet):\n    labels = []\n    offset = 12\n    while offset < len(packet):\n\
-    \        length = packet[offset]\n        offset += 1\n        if length == 0:\n\
-    \            return \".\".join(labels).lower()\n        if length & 0xC0 or offset\
-    \ + length > len(packet):\n            return \"\"\n        labels.append(packet[offset:offset\
-    \ + length].decode(\"ascii\", \"ignore\"))\n        offset += length\n    return\
-    \ \"\"\n\ndef backend(packet):\n    return GEO if qname(packet) == GEO_NAME else\
-    \ BIND\n\ndef udp_query(listener, packet, client):\n    try:\n        with socket.socket(socket.AF_INET,\
-    \ socket.SOCK_DGRAM) as upstream:\n            upstream.settimeout(3)\n      \
-    \      upstream.sendto(packet, backend(packet))\n            response, _ = upstream.recvfrom(65535)\n\
-    \            listener.sendto(response, client)\n    except OSError:\n        pass\n\
+  dns-router.py: "import os\nimport socket\nimport struct\nimport threading\n\nBIND\
+    \ = (\"127.0.0.1\", 5300)\nGEO = (\"127.0.0.1\", 5301)\nGEO_NAME = \"kube-api.service.re8ch.com\"\
+    \nLISTEN_ADDRESS = os.environ[\"LISTEN_ADDRESS\"]\n\ndef qname(packet):\n    labels\
+    \ = []\n    offset = 12\n    while offset < len(packet):\n        length = packet[offset]\n\
+    \        offset += 1\n        if length == 0:\n            return \".\".join(labels).lower()\n\
+    \        if length & 0xC0 or offset + length > len(packet):\n            return\
+    \ \"\"\n        labels.append(packet[offset:offset + length].decode(\"ascii\"\
+    , \"ignore\"))\n        offset += length\n    return \"\"\n\ndef backend(packet):\n\
+    \    return GEO if qname(packet) == GEO_NAME else BIND\n\ndef udp_query(listener,\
+    \ packet, client):\n    try:\n        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\
+    \ as upstream:\n            upstream.settimeout(3)\n            upstream.sendto(packet,\
+    \ backend(packet))\n            response, _ = upstream.recvfrom(65535)\n     \
+    \       listener.sendto(response, client)\n    except OSError:\n        pass\n\
     \ndef udp_server():\n    listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n\
-    \    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    listener.bind((\"\
-    0.0.0.0\", 53))\n    while True:\n        packet, client = listener.recvfrom(65535)\n\
-    \        threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()\n\
+    \    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    listener.bind((LISTEN_ADDRESS,\
+    \ 53))\n    while True:\n        packet, client = listener.recvfrom(65535)\n \
+    \       threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()\n\
     \ndef read_exact(stream, size):\n    data = b\"\"\n    while len(data) < size:\n\
     \        part = stream.recv(size - len(data))\n        if not part:\n        \
     \    raise ConnectionError\n        data += part\n    return data\n\ndef tcp_client(client):\n\
@@ -364,7 +370,7 @@ data:
     \ + reply)\n            except (OSError, ConnectionError, struct.error):\n   \
     \             return\n\ndef tcp_server():\n    listener = socket.socket(socket.AF_INET,\
     \ socket.SOCK_STREAM)\n    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,\
-    \ 1)\n    listener.bind((\"0.0.0.0\", 53))\n    listener.listen(128)\n    while\
+    \ 1)\n    listener.bind((LISTEN_ADDRESS, 53))\n    listener.listen(128)\n    while\
     \ True:\n        client, _ = listener.accept()\n        threading.Thread(target=tcp_client,\
     \ args=(client,), daemon=True).start()\n\nthreading.Thread(target=udp_server,\
     \ daemon=True).start()\ntcp_server()\n"
