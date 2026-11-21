@@ -237,7 +237,7 @@ class Executor:
                 raise Rejected("operation ID was reused with different content")
             return {}, [], request_digest
         state = store.state()
-        if state and state.get("blocked"):
+        if state and state.get("blocked") and operation["action"] != "reset":
             raise Rejected(f"release is blocked: {state.get('blockedReason', 'manual recovery required')}")
         expected_sequence = 1 if state is None else state["sequence"] + 1
         if operation["sequence"] != expected_sequence:

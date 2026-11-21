@@ -553,3 +553,12 @@ def test_failed_rollback_remains_blocked_on_next_cloud_worker(tmp_path, monkeypa
     with pytest.raises(executor.Rejected, match="release is blocked"):
         executor.Executor(runner=runner, now=lambda: NOW).reconcile(value, replay, bundle_path, next_root)
     assert runner.calls == []
+    reset = dict(replay)
+    reset.update({"operationId": str(uuid.uuid4()), "action": "reset"})
+    result = executor.Executor(runner=runner, now=lambda: NOW).reconcile(
+        value, reset, bundle_path, next_root, verify_signature=False)
+    assert result["outcome"] == "healthy"
+    recovered = executor.Store(next_root, "demo").state()
+    assert recovered["blocked"] is False
+    assert "blockedReason" not in recovered
+    assert runner.calls == []
