@@ -123,6 +123,7 @@
       "contract": "contracts/networking-native-among-clusters.yaml",
       "namespace": "among-clusters",
       "inventory": [
+        "cilium.io/CiliumNetworkPolicy/among-clusters/among-clusters-gateway-kube-apiserver",
         "cilium.io/CiliumNetworkPolicy/among-clusters/among-clusters-gateway-mihomos-host-egress",
         "core/Service/among-clusters/artc-kubernetes-import",
         "core/Service/among-clusters/atlantic-kubernetes-import",
@@ -139,6 +140,7 @@
             "ciliumnetworkpolicies"
           ],
           "resourceNames": [
+            "among-clusters-gateway-kube-apiserver",
             "among-clusters-gateway-mihomos-host-egress"
           ],
           "verbs": [

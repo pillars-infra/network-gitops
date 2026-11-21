@@ -1,6 +1,25 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
+  name: among-clusters-gateway-kube-apiserver
+  namespace: among-clusters
+spec:
+  egress:
+  - toEntities:
+    - kube-apiserver
+    toPorts:
+    - ports:
+      - port: '443'
+        protocol: TCP
+      - port: '6443'
+        protocol: TCP
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-gateway
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
   labels:
     app.kubernetes.io/component: mihomos-pilot
     app.kubernetes.io/part-of: among-clusters
