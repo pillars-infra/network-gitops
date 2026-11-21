@@ -32,6 +32,10 @@ on:
         description: Force only the reviewed Helm ownership conflicts during one-time takeover
         type: boolean
         default: false
+      reset_blocked:
+        description: Record an audited reset of blocked durable state without applying objects
+        type: boolean
+        default: false
 concurrency:
   group: networking-static-release-${{ inputs.contract }}
   cancel-in-progress: false
@@ -280,7 +284,12 @@ jobs:
           python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
             --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json")
-          if [[ '${{ inputs.force_takeover }}' == true ]]; then
+          if [[ '${{ inputs.reset_blocked }}' == true && '${{ inputs.force_takeover }}' == true ]]; then
+            echo 'reset_blocked and force_takeover are mutually exclusive' >&2
+            exit 2
+          elif [[ '${{ inputs.reset_blocked }}' == true ]]; then
+            request_args+=(--action reset)
+          elif [[ '${{ inputs.force_takeover }}' == true ]]; then
             request_args+=(--action force-reconcile)
             while IFS= read -r object; do request_args+=(--force-object "$object"); done < <(
               python - "$CONTRACT" <<'PY'
@@ -407,7 +416,12 @@ jobs:
           python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
             --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json")
-          if [[ '${{ inputs.force_takeover }}' == true ]]; then
+          if [[ '${{ inputs.reset_blocked }}' == true && '${{ inputs.force_takeover }}' == true ]]; then
+            echo 'reset_blocked and force_takeover are mutually exclusive' >&2
+            exit 2
+          elif [[ '${{ inputs.reset_blocked }}' == true ]]; then
+            request_args+=(--action reset)
+          elif [[ '${{ inputs.force_takeover }}' == true ]]; then
             request_args+=(--action force-reconcile)
             while IFS= read -r object; do request_args+=(--force-object "$object"); done < <(
               python - "$CONTRACT" <<'PY'
