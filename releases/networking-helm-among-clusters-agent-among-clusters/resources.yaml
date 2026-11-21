@@ -142,7 +142,7 @@ spec:
         - name: LISTENER_ENABLED
           value: 'true'
         - name: EXPORTS_JSON
-          value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"kubernetes.default.svc.cluster.local:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.251.0.4:443","targetPeers":["re8ch-atlantic"]}]'
+          value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"10.43.0.1:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.43.158.127:443","targetPeers":["re8ch-atlantic"]}]'
         - name: EXPORTS_FILE
           value: /routes/exports.json
         - name: IMPORTS_JSON

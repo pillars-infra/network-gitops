@@ -42,10 +42,14 @@ spec:
               version: v1
               kind: Deployment
               name: among-clusters-gateway
+            # Keep the recovery plane independent of cluster DNS and enter the
+            # public Gateway through its ClusterIP, not the externally
+            # advertised VIP. The addresses are the immutable Service IPs
+            # declared by the re8ch cluster desired state.
             patch: |-
               - op: replace
                 path: /spec/template/spec/containers/0/env/2/value
-                value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"kubernetes.default.svc.cluster.local:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.251.0.4:443","targetPeers":["re8ch-atlantic"]}]'
+                value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"10.43.0.1:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.43.158.127:443","targetPeers":["re8ch-atlantic"]}]'
   values:
     # The post-rendered workload talks directly to the co-located hub Service;
     # this chart value remains only as the stable upstream chart input.
