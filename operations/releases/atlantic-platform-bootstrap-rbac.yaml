@@ -99,21 +99,22 @@ metadata:
 rules:
   - apiGroups: [apps]
     resources: [deployments]
-    resourceNames: [personal-access-atlantic, personal-access-atlantic-my-kul]
+    resourceNames: [personal-access-atlantic, personal-access-atlantic-my-kul, main-anytls-tunnel]
     verbs: [get, patch]
   - apiGroups: ['']
     resources: [configmaps]
     resourceNames:
       - personal-access-atlantic
+      - main-anytls-tunnel
       - ssa-state-networking-native-atlantic-personal-access
     verbs: [get, patch]
   - apiGroups: ['']
     resources: [services]
-    resourceNames: [personal-access-atlantic]
+    resourceNames: [personal-access-atlantic, main-anytls-tunnel]
     verbs: [get, patch]
   - apiGroups: [networking.k8s.io]
     resources: [networkpolicies]
-    resourceNames: [personal-access-atlantic]
+    resourceNames: [personal-access-atlantic, main-anytls-tunnel]
     verbs: [get, patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
