@@ -54,9 +54,44 @@ spec:
               - op: add
                 path: /spec/template/spec/dnsPolicy
                 value: ClusterFirstWithHostNet
+              # hostNetwork already exposes the process listeners. Leaving
+              # containerPort entries makes the scheduler reserve them as
+              # hostPorts and reject the pod even when no socket is occupied.
+              - op: replace
+                path: /spec/template/spec/containers/0/ports
+                value: []
               - op: replace
                 path: /spec/template/spec/containers/0/env/2/value
                 value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"10.43.0.1:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.251.0.4:443","targetPeers":["re8ch-atlantic"]}]'
+          - target:
+              version: v1
+              kind: Service
+              name: among-clusters-gateway
+            patch: |-
+              - op: replace
+                path: /spec/ports/0/targetPort
+                value: 8443
+              - op: replace
+                path: /spec/ports/1/targetPort
+                value: 22240
+              - op: replace
+                path: /spec/ports/2/targetPort
+                value: 23768
+              - op: replace
+                path: /spec/ports/3/targetPort
+                value: 33768
+              - op: replace
+                path: /spec/ports/4/targetPort
+                value: 1080
+              - op: replace
+                path: /spec/ports/5/targetPort
+                value: 18080
+              - op: replace
+                path: /spec/ports/6/targetPort
+                value: 18081
+              - op: replace
+                path: /spec/ports/7/targetPort
+                value: 18082
   values:
     # The post-rendered workload talks directly to the co-located hub Service;
     # this chart value remains only as the stable upstream chart input.
