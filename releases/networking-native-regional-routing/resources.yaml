@@ -341,41 +341,64 @@ spec:
 apiVersion: v1
 data:
   dns-router.py: "import os\nimport socket\nimport struct\nimport threading\n\nBIND\
-    \ = (\"127.0.0.1\", 5300)\nGEO = (\"127.0.0.1\", 5301)\nGEO_NAME = \"kube-api.service.re8ch.com\"\
-    \nLISTEN_ADDRESS = os.environ[\"LISTEN_ADDRESS\"]\n\ndef qname(packet):\n    labels\
-    \ = []\n    offset = 12\n    while offset < len(packet):\n        length = packet[offset]\n\
-    \        offset += 1\n        if length == 0:\n            return \".\".join(labels).lower()\n\
-    \        if length & 0xC0 or offset + length > len(packet):\n            return\
-    \ \"\"\n        labels.append(packet[offset:offset + length].decode(\"ascii\"\
-    , \"ignore\"))\n        offset += length\n    return \"\"\n\ndef backend(packet):\n\
-    \    return GEO if qname(packet) == GEO_NAME else BIND\n\ndef skip_name(packet,\
-    \ offset):\n    while offset < len(packet):\n        length = packet[offset]\n\
-    \        if length & 0xC0:\n            return offset + 2\n        offset += 1\n\
-    \        if length == 0:\n            return offset\n        offset += length\n\
-    \    raise ValueError\n\ndef add_source_ecs(packet, client_ip):\n    try:\n  \
-    \      address = socket.inet_aton(client_ip)\n        qd, an, ns, ar = struct.unpack(\"\
-    !HHHH\", packet[4:12])\n        offset = 12\n        for _ in range(qd):\n   \
-    \         offset = skip_name(packet, offset) + 4\n        for _ in range(an +\
-    \ ns):\n            offset = skip_name(packet, offset)\n            rdlength =\
-    \ struct.unpack(\"!H\", packet[offset + 8:offset + 10])[0]\n            offset\
-    \ += 10 + rdlength\n        option = struct.pack(\"!HHHBB\", 8, 7, 1, 24, 0) +\
-    \ address[:3]\n        for _ in range(ar):\n            record = skip_name(packet,\
-    \ offset)\n            record_type = struct.unpack(\"!H\", packet[record:record\
-    \ + 2])[0]\n            rdlength = struct.unpack(\"!H\", packet[record + 8:record\
-    \ + 10])[0]\n            rdata = record + 10\n            end = rdata + rdlength\n\
-    \            if record_type == 41:\n                cursor = rdata\n         \
-    \       while cursor + 4 <= end:\n                    code, length = struct.unpack(\"\
-    !HH\", packet[cursor:cursor + 4])\n                    if code == 8:\n       \
-    \                 return packet\n                    cursor += 4 + length\n  \
-    \              return (packet[:record + 8] + struct.pack(\"!H\", rdlength + len(option))\n\
-    \                        + packet[rdata:end] + option + packet[end:])\n      \
-    \      offset = end\n        opt = b\"\\0\" + struct.pack(\"!HHIH\", 41, 1232,\
-    \ 0, len(option)) + option\n        return packet[:10] + struct.pack(\"!H\", ar\
-    \ + 1) + packet[12:] + opt\n    except (OSError, ValueError, struct.error):\n\
-    \        return packet\n\ndef udp_query(listener, packet, client):\n    try:\n\
-    \        packet = add_source_ecs(packet, client[0])\n        with socket.socket(socket.AF_INET,\
+    \ = (\"127.0.0.1\", 5300)\nGEO = (\"127.0.0.1\", 5301)\nEDGE = (socket.gethostbyname(\"\
+    public-edge-manager-dns.regional-routing.svc.cluster.local\"), 53)\nGEO_NAME =\
+    \ \"kube-api.service.re8ch.com\"\nCLASSIFIER_NAME = \"classify.geo.re8ch.internal\"\
+    \nGLOBAL_AREA = \"198.18.255.1\"\nLISTEN_ADDRESS = os.environ[\"LISTEN_ADDRESS\"\
+    ]\n\ndef qname(packet):\n    labels = []\n    offset = 12\n    while offset <\
+    \ len(packet):\n        length = packet[offset]\n        offset += 1\n       \
+    \ if length == 0:\n            return \".\".join(labels).lower()\n        if length\
+    \ & 0xC0 or offset + length > len(packet):\n            return \"\"\n        labels.append(packet[offset:offset\
+    \ + length].decode(\"ascii\", \"ignore\"))\n        offset += length\n    return\
+    \ \"\"\n\ndef skip_name(packet, offset):\n    while offset < len(packet):\n  \
+    \      length = packet[offset]\n        if length & 0xC0:\n            return\
+    \ offset + 2\n        offset += 1\n        if length == 0:\n            return\
+    \ offset\n        offset += length\n    raise ValueError\n\ndef set_ecs(packet,\
+    \ client_ip, replace=False):\n    try:\n        address = socket.inet_aton(client_ip)\n\
+    \        qd, an, ns, ar = struct.unpack(\"!HHHH\", packet[4:12])\n        offset\
+    \ = 12\n        for _ in range(qd):\n            offset = skip_name(packet, offset)\
+    \ + 4\n        for _ in range(an + ns):\n            offset = skip_name(packet,\
+    \ offset)\n            rdlength = struct.unpack(\"!H\", packet[offset + 8:offset\
+    \ + 10])[0]\n            offset += 10 + rdlength\n        option = struct.pack(\"\
+    !HHHBB\", 8, 7, 1, 24, 0) + address[:3]\n        for _ in range(ar):\n       \
+    \     record = skip_name(packet, offset)\n            record_type = struct.unpack(\"\
+    !H\", packet[record:record + 2])[0]\n            rdlength = struct.unpack(\"!H\"\
+    , packet[record + 8:record + 10])[0]\n            rdata = record + 10\n      \
+    \      end = rdata + rdlength\n            if record_type == 41:\n           \
+    \     cursor = rdata\n                while cursor + 4 <= end:\n             \
+    \       code, length = struct.unpack(\"!HH\", packet[cursor:cursor + 4])\n   \
+    \                 if code == 8:\n                        if not replace:\n   \
+    \                         return packet\n                        replacement =\
+    \ packet[cursor:cursor + 4] + option[4:]\n                        return (packet[:record\
+    \ + 8] + struct.pack(\"!H\", rdlength - length + 7)\n                        \
+    \        + packet[rdata:cursor] + replacement + packet[cursor + 4 + length:])\n\
+    \                    cursor += 4 + length\n                return (packet[:record\
+    \ + 8] + struct.pack(\"!H\", rdlength + len(option))\n                       \
+    \ + packet[rdata:end] + option + packet[end:])\n            offset = end\n   \
+    \     opt = b\"\\0\" + struct.pack(\"!HHIH\", 41, 1232, 0, len(option)) + option\n\
+    \        return packet[:10] + struct.pack(\"!H\", ar + 1) + packet[12:] + opt\n\
+    \    except (OSError, ValueError, struct.error):\n        return packet\n\ndef\
+    \ encode_name(name):\n    return b\"\".join(bytes([len(label)]) + label.encode(\"\
+    ascii\") for label in name.split(\".\")) + b\"\\0\"\n\ndef classifier_query(client_ip):\n\
+    \    transaction = os.urandom(2)\n    packet = transaction + struct.pack(\"!HHHHH\"\
+    , 0x0100, 1, 0, 0, 0)\n    packet += encode_name(CLASSIFIER_NAME) + struct.pack(\"\
+    !HH\", 1, 1)\n    return set_ecs(packet, client_ip)\n\ndef first_a(packet):\n\
+    \    try:\n        qd, an = struct.unpack(\"!HH\", packet[4:8])\n        offset\
+    \ = 12\n        for _ in range(qd):\n            offset = skip_name(packet, offset)\
+    \ + 4\n        for _ in range(an):\n            offset = skip_name(packet, offset)\n\
+    \            record_type, record_class, _ttl, length = struct.unpack(\"!HHIH\"\
+    , packet[offset:offset + 10])\n            offset += 10\n            if record_type\
+    \ == 1 and record_class == 1 and length == 4:\n                return socket.inet_ntoa(packet[offset:offset\
+    \ + 4])\n            offset += length\n    except (OSError, ValueError, struct.error):\n\
+    \        pass\n    return GLOBAL_AREA\n\ndef classify(client_ip):\n    with socket.socket(socket.AF_INET,\
+    \ socket.SOCK_DGRAM) as upstream:\n        upstream.settimeout(2)\n        upstream.sendto(classifier_query(client_ip),\
+    \ GEO)\n        response, _ = upstream.recvfrom(65535)\n    return first_a(response)\n\
+    \ndef routed(packet, client_ip):\n    if qname(packet) == GEO_NAME:\n        return\
+    \ set_ecs(packet, classify(client_ip), replace=True), EDGE\n    return set_ecs(packet,\
+    \ client_ip), BIND\n\ndef udp_query(listener, packet, client):\n    try:\n   \
+    \     packet, target = routed(packet, client[0])\n        with socket.socket(socket.AF_INET,\
     \ socket.SOCK_DGRAM) as upstream:\n            upstream.settimeout(3)\n      \
-    \      upstream.sendto(packet, backend(packet))\n            response, _ = upstream.recvfrom(65535)\n\
+    \      upstream.sendto(packet, target)\n            response, _ = upstream.recvfrom(65535)\n\
     \            listener.sendto(response, client)\n    except OSError:\n        pass\n\
     \ndef udp_server():\n    listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n\
     \    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    listener.bind((LISTEN_ADDRESS,\
@@ -386,8 +409,8 @@ data:
     \    raise ConnectionError\n        data += part\n    return data\n\ndef tcp_client(client,\
     \ client_ip):\n    with client:\n        client.settimeout(10)\n        while\
     \ True:\n            try:\n                size = struct.unpack(\"!H\", read_exact(client,\
-    \ 2))[0]\n                packet = read_exact(client, size)\n                packet\
-    \ = add_source_ecs(packet, client_ip)\n                with socket.create_connection(backend(packet),\
+    \ 2))[0]\n                packet = read_exact(client, size)\n                packet,\
+    \ target = routed(packet, client_ip)\n                with socket.create_connection(target,\
     \ timeout=3) as upstream:\n                    upstream.sendall(struct.pack(\"\
     !H\", len(packet)) + packet)\n                    reply_size = struct.unpack(\"\
     !H\", read_exact(upstream, 2))[0]\n                    reply = read_exact(upstream,\
@@ -399,18 +422,19 @@ data:
     \ True:\n        client, address = listener.accept()\n        threading.Thread(target=tcp_client,\
     \ args=(client, address[0]), daemon=True).start()\n\nthreading.Thread(target=udp_server,\
     \ daemon=True).start()\ntcp_server()\n"
-  geoip.yaml: "domains:\n- domain: kube-api.service.re8ch.com\n  ttl: 30\n  records:\n\
-    \    kube-api.service.re8ch.com:\n    - soa: ns-domain-ex.re8ch.com hostmaster.re8ch.com\
-    \ 2026112101 60 60 86400 30\n    - ns: ns-domain-ex.re8ch.com\n    - ns: ns-zan.re8ch.com\n\
-    \    - ns: ns-muaya-lightweight.re8ch.com\n    cn.kube-api.service.re8ch.com:\n\
-    \    - a: 223.159.210.222\n    af.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n\
-    \    an.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n    as.kube-api.service.re8ch.com:\n\
-    \    - a: 2.28.106.230\n    eu.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n\
-    \    na.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n    oc.kube-api.service.re8ch.com:\n\
-    \    - a: 2.28.106.230\n    sa.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n\
-    \    global.kube-api.service.re8ch.com:\n    - a: 2.28.106.230\n  services:\n\
-    \    kube-api.service.re8ch.com:\n    - '%cc.kube-api.service.re8ch.com'\n   \
-    \ - '%cn.kube-api.service.re8ch.com'\n    - global.kube-api.service.re8ch.com\n"
+  geoip.yaml: "domains:\n- domain: classify.geo.re8ch.internal\n  ttl: 30\n  records:\n\
+    \    classify.geo.re8ch.internal:\n    - soa: localhost hostmaster.re8ch.com 2026112102\
+    \ 60 60 86400 30\n    - ns: localhost\n    cn.classify.geo.re8ch.internal: [{a:\
+    \ 198.18.1.1}]\n    us.classify.geo.re8ch.internal: [{a: 198.18.2.1}]\n    de.classify.geo.re8ch.internal:\
+    \ [{a: 198.18.3.1}]\n    my.classify.geo.re8ch.internal: [{a: 198.18.4.1}]\n \
+    \   fi.classify.geo.re8ch.internal: [{a: 198.18.5.1}]\n    na.classify.geo.re8ch.internal:\
+    \ [{a: 198.18.2.1}]\n    eu.classify.geo.re8ch.internal: [{a: 198.18.3.1}]\n \
+    \   as.classify.geo.re8ch.internal: [{a: 198.18.4.1}]\n    af.classify.geo.re8ch.internal:\
+    \ [{a: 198.18.255.1}]\n    an.classify.geo.re8ch.internal: [{a: 198.18.255.1}]\n\
+    \    oc.classify.geo.re8ch.internal: [{a: 198.18.4.1}]\n    sa.classify.geo.re8ch.internal:\
+    \ [{a: 198.18.2.1}]\n    global.classify.geo.re8ch.internal: [{a: 198.18.255.1}]\n\
+    \  services:\n    classify.geo.re8ch.internal:\n    - '%cc.classify.geo.re8ch.internal'\n\
+    \    - '%cn.classify.geo.re8ch.internal'\n    - global.classify.geo.re8ch.internal\n"
   named.conf: 'zone "api.re8ch.com" { type slave; file "/var/lib/powerdns/api.re8ch.com.zone";
     masters { 42.194.130.91; 2.28.106.230; 179.255.126.104; }; };
 

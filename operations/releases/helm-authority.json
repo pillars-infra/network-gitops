@@ -710,12 +710,12 @@
       },
       "source": {
         "renderer": "kustomize",
-        "revision": "helm-oci@sha256:47dcf11d958db846ca219bd26c78867c18f13ce39360ef997154d747a1e2726e",
+        "revision": "helm-oci@sha256:0137c1015e9cc4d452ef47a288ed5e0e51ca3046ba1581b1ac58c86522e64fab",
         "repository": "pillars-infra/network-gitops",
         "path": "releases/networking-helm-public-edge-manager-regional-routing",
-        "chartOCI": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:47dcf11d958db846ca219bd26c78867c18f13ce39360ef997154d747a1e2726e"
+        "chartOCI": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:0137c1015e9cc4d452ef47a288ed5e0e51ca3046ba1581b1ac58c86522e64fab"
       },
-      "renderedSHA256": "3a0adfac0d27583ba9187f614f60e62c09b17750559ccb35657729b29cb0d1d5"
+      "renderedSHA256": "b63d092118766f7a3497ad26b8b4b961f601f50e709986d640077e6c67df02eb"
     }
   ],
   "platformBootstrap": [
@@ -1993,6 +1993,226 @@
       "spec": {
         "controllerName": "io.cilium/gateway-controller",
         "description": "The default Cilium GatewayClass"
+      }
+    },
+    {
+      "apiVersion": "networking.re8ch.com/v1alpha1",
+      "kind": "PublicEdge",
+      "metadata": {
+        "labels": {
+          "networking.re8ch.com/federated": "true",
+          "networking.re8ch.com/remote-cluster": "re8ch-atlantic"
+        },
+        "name": "atlantic-flk"
+      },
+      "spec": {
+        "area": "EU-CENTRAL",
+        "capacityMbps": 400,
+        "discovery": {
+          "clusterRef": "re8ch-atlantic",
+          "serviceRef": "spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api",
+          "source": "AmongCluster"
+        },
+        "draining": false,
+        "enabled": true,
+        "endpoint": {
+          "type": "PublicIP",
+          "value": "2.28.106.230"
+        },
+        "forwarding": {
+          "mode": "RegionalRelay",
+          "originArea": "CN"
+        },
+        "gatewayVIP": "2.28.106.230",
+        "nodeName": "overseas-flk",
+        "ports": [
+          443
+        ],
+        "priority": 0,
+        "protocols": [
+          "https",
+          "tls-passthrough"
+        ],
+        "region": "de-fsn",
+        "serviceClasses": [
+          "api"
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.re8ch.com/v1alpha1",
+      "kind": "PublicEdge",
+      "metadata": {
+        "labels": {
+          "networking.re8ch.com/federated": "true",
+          "networking.re8ch.com/remote-cluster": "re8ch-atlantic"
+        },
+        "name": "atlantic-hel1"
+      },
+      "spec": {
+        "area": "EU-NORTH",
+        "capacityMbps": 1000,
+        "discovery": {
+          "clusterRef": "re8ch-atlantic",
+          "serviceRef": "spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api",
+          "source": "AmongCluster"
+        },
+        "draining": false,
+        "enabled": true,
+        "endpoint": {
+          "type": "PublicIP",
+          "value": "2.29.219.31"
+        },
+        "forwarding": {
+          "mode": "RegionalRelay",
+          "originArea": "CN"
+        },
+        "gatewayVIP": "2.29.219.31",
+        "nodeName": "re8ch-atlantic-server-hel1",
+        "ports": [
+          443
+        ],
+        "priority": 0,
+        "protocols": [
+          "https",
+          "tls-passthrough"
+        ],
+        "region": "fi-hel1",
+        "serviceClasses": [
+          "api"
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.re8ch.com/v1alpha1",
+      "kind": "PublicEdge",
+      "metadata": {
+        "labels": {
+          "networking.re8ch.com/federated": "true",
+          "networking.re8ch.com/remote-cluster": "re8ch-atlantic"
+        },
+        "name": "atlantic-kl"
+      },
+      "spec": {
+        "area": "SEA",
+        "capacityMbps": 1000,
+        "discovery": {
+          "clusterRef": "re8ch-atlantic",
+          "serviceRef": "spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api",
+          "source": "AmongCluster"
+        },
+        "draining": false,
+        "enabled": true,
+        "endpoint": {
+          "type": "PublicIP",
+          "value": "198.20.153.89"
+        },
+        "forwarding": {
+          "mode": "RegionalRelay",
+          "originArea": "CN"
+        },
+        "gatewayVIP": "198.20.153.89",
+        "nodeName": "overseas-kl",
+        "ports": [
+          443
+        ],
+        "priority": 0,
+        "protocols": [
+          "https",
+          "tls-passthrough"
+        ],
+        "region": "my-kul",
+        "serviceClasses": [
+          "api"
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.re8ch.com/v1alpha1",
+      "kind": "PublicEdge",
+      "metadata": {
+        "labels": {
+          "networking.re8ch.com/federated": "true",
+          "networking.re8ch.com/remote-cluster": "re8ch-atlantic"
+        },
+        "name": "atlantic-la-1"
+      },
+      "spec": {
+        "area": "US-WEST",
+        "capacityMbps": 1000,
+        "discovery": {
+          "clusterRef": "re8ch-atlantic",
+          "serviceRef": "spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api",
+          "source": "AmongCluster"
+        },
+        "draining": false,
+        "enabled": true,
+        "endpoint": {
+          "type": "PublicIP",
+          "value": "179.255.126.104"
+        },
+        "forwarding": {
+          "mode": "RegionalRelay",
+          "originArea": "CN"
+        },
+        "gatewayVIP": "179.255.126.104",
+        "nodeName": "overseas-la",
+        "ports": [
+          443
+        ],
+        "priority": 0,
+        "protocols": [
+          "https",
+          "tls-passthrough"
+        ],
+        "region": "us-la-1",
+        "serviceClasses": [
+          "api"
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.re8ch.com/v1alpha1",
+      "kind": "PublicEdge",
+      "metadata": {
+        "labels": {
+          "networking.re8ch.com/federated": "true",
+          "networking.re8ch.com/remote-cluster": "re8ch-atlantic"
+        },
+        "name": "atlantic-la-2"
+      },
+      "spec": {
+        "area": "US-WEST",
+        "capacityMbps": 1000,
+        "discovery": {
+          "clusterRef": "re8ch-atlantic",
+          "serviceRef": "spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api",
+          "source": "AmongCluster"
+        },
+        "draining": false,
+        "enabled": true,
+        "endpoint": {
+          "type": "PublicIP",
+          "value": "179.253.231.159"
+        },
+        "forwarding": {
+          "mode": "RegionalRelay",
+          "originArea": "CN"
+        },
+        "gatewayVIP": "179.253.231.159",
+        "nodeName": "overseas-la-2",
+        "ports": [
+          443
+        ],
+        "priority": 0,
+        "protocols": [
+          "https",
+          "tls-passthrough"
+        ],
+        "region": "us-la-2",
+        "serviceClasses": [
+          "api"
+        ]
       }
     },
     {
@@ -3901,10 +4121,10 @@
     {
       "name": "public-edge-manager",
       "chart": {
-        "oci": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:47dcf11d958db846ca219bd26c78867c18f13ce39360ef997154d747a1e2726e",
-        "sha256": "fc617b8a9ebab2e352977462af7264ad85a35a120367e6a2e34c215981a886cf"
+        "oci": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:0137c1015e9cc4d452ef47a288ed5e0e51ca3046ba1581b1ac58c86522e64fab",
+        "sha256": "138ab59f494afed6a27cbe9b113b5fc7dfe4fc7d75a2ce583439cdf749d3bd60"
       },
-      "objects": 23
+      "objects": 28
     }
   ]
 }

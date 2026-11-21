@@ -20634,37 +20634,30 @@ data:
     '
   geoip.yaml: |
     domains:
-    - domain: kube-api.service.re8ch.com
+    - domain: classify.geo.re8ch.internal
       ttl: 30
       records:
-        kube-api.service.re8ch.com:
-        - soa: ns-domain-ex.re8ch.com hostmaster.re8ch.com 2026112101 60 60 86400 30
-        - ns: ns-domain-ex.re8ch.com
-        - ns: ns-zan.re8ch.com
-        - ns: ns-muaya-lightweight.re8ch.com
-        cn.kube-api.service.re8ch.com:
-        - a: 223.159.210.222
-        af.kube-api.service.re8ch.com:
-        - a: 2.28.106.230
-        an.kube-api.service.re8ch.com:
-        - a: 2.28.106.230
-        as.kube-api.service.re8ch.com:
-        - a: 2.28.106.230
-        eu.kube-api.service.re8ch.com:
-        - a: 2.28.106.230
-        na.kube-api.service.re8ch.com:
-        - a: 2.28.106.230
-        oc.kube-api.service.re8ch.com:
-        - a: 2.28.106.230
-        sa.kube-api.service.re8ch.com:
-        - a: 2.28.106.230
-        global.kube-api.service.re8ch.com:
-        - a: 2.28.106.230
+        classify.geo.re8ch.internal:
+        - soa: localhost hostmaster.re8ch.com 2026112102 60 60 86400 30
+        - ns: localhost
+        cn.classify.geo.re8ch.internal: [{a: 198.18.1.1}]
+        us.classify.geo.re8ch.internal: [{a: 198.18.2.1}]
+        de.classify.geo.re8ch.internal: [{a: 198.18.3.1}]
+        my.classify.geo.re8ch.internal: [{a: 198.18.4.1}]
+        fi.classify.geo.re8ch.internal: [{a: 198.18.5.1}]
+        na.classify.geo.re8ch.internal: [{a: 198.18.2.1}]
+        eu.classify.geo.re8ch.internal: [{a: 198.18.3.1}]
+        as.classify.geo.re8ch.internal: [{a: 198.18.4.1}]
+        af.classify.geo.re8ch.internal: [{a: 198.18.255.1}]
+        an.classify.geo.re8ch.internal: [{a: 198.18.255.1}]
+        oc.classify.geo.re8ch.internal: [{a: 198.18.4.1}]
+        sa.classify.geo.re8ch.internal: [{a: 198.18.2.1}]
+        global.classify.geo.re8ch.internal: [{a: 198.18.255.1}]
       services:
-        kube-api.service.re8ch.com:
-        - '%cc.kube-api.service.re8ch.com'
-        - '%cn.kube-api.service.re8ch.com'
-        - global.kube-api.service.re8ch.com
+        classify.geo.re8ch.internal:
+        - '%cc.classify.geo.re8ch.internal'
+        - '%cn.classify.geo.re8ch.internal'
+        - global.classify.geo.re8ch.internal
   dns-router.py: |
     import os
     import socket
@@ -20673,7 +20666,10 @@ data:
 
     BIND = ("127.0.0.1", 5300)
     GEO = ("127.0.0.1", 5301)
+    EDGE = (socket.gethostbyname("public-edge-manager-dns.regional-routing.svc.cluster.local"), 53)
     GEO_NAME = "kube-api.service.re8ch.com"
+    CLASSIFIER_NAME = "classify.geo.re8ch.internal"
+    GLOBAL_AREA = "198.18.255.1"
     LISTEN_ADDRESS = os.environ["LISTEN_ADDRESS"]
 
     def qname(packet):
@@ -20690,9 +20686,6 @@ data:
             offset += length
         return ""
 
-    def backend(packet):
-        return GEO if qname(packet) == GEO_NAME else BIND
-
     def skip_name(packet, offset):
         while offset < len(packet):
             length = packet[offset]
@@ -20704,7 +20697,7 @@ data:
             offset += length
         raise ValueError
 
-    def add_source_ecs(packet, client_ip):
+    def set_ecs(packet, client_ip, replace=False):
         try:
             address = socket.inet_aton(client_ip)
             qd, an, ns, ar = struct.unpack("!HHHH", packet[4:12])
@@ -20727,7 +20720,11 @@ data:
                     while cursor + 4 <= end:
                         code, length = struct.unpack("!HH", packet[cursor:cursor + 4])
                         if code == 8:
-                            return packet
+                            if not replace:
+                                return packet
+                            replacement = packet[cursor:cursor + 4] + option[4:]
+                            return (packet[:record + 8] + struct.pack("!H", rdlength - length + 7)
+                                    + packet[rdata:cursor] + replacement + packet[cursor + 4 + length:])
                         cursor += 4 + length
                     return (packet[:record + 8] + struct.pack("!H", rdlength + len(option))
                             + packet[rdata:end] + option + packet[end:])
@@ -20737,12 +20734,50 @@ data:
         except (OSError, ValueError, struct.error):
             return packet
 
+    def encode_name(name):
+        return b"".join(bytes([len(label)]) + label.encode("ascii") for label in name.split(".")) + b"\0"
+
+    def classifier_query(client_ip):
+        transaction = os.urandom(2)
+        packet = transaction + struct.pack("!HHHHH", 0x0100, 1, 0, 0, 0)
+        packet += encode_name(CLASSIFIER_NAME) + struct.pack("!HH", 1, 1)
+        return set_ecs(packet, client_ip)
+
+    def first_a(packet):
+        try:
+            qd, an = struct.unpack("!HH", packet[4:8])
+            offset = 12
+            for _ in range(qd):
+                offset = skip_name(packet, offset) + 4
+            for _ in range(an):
+                offset = skip_name(packet, offset)
+                record_type, record_class, _ttl, length = struct.unpack("!HHIH", packet[offset:offset + 10])
+                offset += 10
+                if record_type == 1 and record_class == 1 and length == 4:
+                    return socket.inet_ntoa(packet[offset:offset + 4])
+                offset += length
+        except (OSError, ValueError, struct.error):
+            pass
+        return GLOBAL_AREA
+
+    def classify(client_ip):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as upstream:
+            upstream.settimeout(2)
+            upstream.sendto(classifier_query(client_ip), GEO)
+            response, _ = upstream.recvfrom(65535)
+        return first_a(response)
+
+    def routed(packet, client_ip):
+        if qname(packet) == GEO_NAME:
+            return set_ecs(packet, classify(client_ip), replace=True), EDGE
+        return set_ecs(packet, client_ip), BIND
+
     def udp_query(listener, packet, client):
         try:
-            packet = add_source_ecs(packet, client[0])
+            packet, target = routed(packet, client[0])
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as upstream:
                 upstream.settimeout(3)
-                upstream.sendto(packet, backend(packet))
+                upstream.sendto(packet, target)
                 response, _ = upstream.recvfrom(65535)
                 listener.sendto(response, client)
         except OSError:
@@ -20772,8 +20807,8 @@ data:
                 try:
                     size = struct.unpack("!H", read_exact(client, 2))[0]
                     packet = read_exact(client, size)
-                    packet = add_source_ecs(packet, client_ip)
-                    with socket.create_connection(backend(packet), timeout=3) as upstream:
+                    packet, target = routed(packet, client_ip)
+                    with socket.create_connection(target, timeout=3) as upstream:
                         upstream.sendall(struct.pack("!H", len(packet)) + packet)
                         reply_size = struct.unpack("!H", read_exact(upstream, 2))[0]
                         reply = read_exact(upstream, reply_size)
@@ -25642,13 +25677,20 @@ spec:
       priorityWeight: 1
       resolverCidrs:
         CN:
+        - 198.18.1.0/24
         - 223.5.5.0/24
         - 119.29.29.0/24
         - 114.114.114.0/24
-        EU:
+        EU-CENTRAL:
+        - 198.18.3.0/24
         - 80.80.80.0/24
         - 9.9.9.0/24
-        US:
+        EU-NORTH:
+        - 198.18.5.0/24
+        SEA:
+        - 198.18.4.0/24
+        US-WEST:
+        - 198.18.2.0/24
         - 8.8.8.0/24
         - 8.8.4.0/24
     crd:
@@ -25681,6 +25723,52 @@ spec:
       - 8.8.8.8
       dnsPolicy: None
       enabled: true
+      federatedEdges:
+      - name: atlantic-la-1
+        clusterRef: re8ch-atlantic
+        serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
+        nodeName: overseas-la
+        area: US-WEST
+        region: us-la-1
+        address: 179.255.126.104
+        capacityMbps: 1000
+        serviceClasses: [api]
+      - name: atlantic-la-2
+        clusterRef: re8ch-atlantic
+        serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
+        nodeName: overseas-la-2
+        area: US-WEST
+        region: us-la-2
+        address: 179.253.231.159
+        capacityMbps: 1000
+        serviceClasses: [api]
+      - name: atlantic-flk
+        clusterRef: re8ch-atlantic
+        serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
+        nodeName: overseas-flk
+        area: EU-CENTRAL
+        region: de-fsn
+        address: 2.28.106.230
+        capacityMbps: 400
+        serviceClasses: [api]
+      - name: atlantic-hel1
+        clusterRef: re8ch-atlantic
+        serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
+        nodeName: re8ch-atlantic-server-hel1
+        area: EU-NORTH
+        region: fi-hel1
+        address: 2.29.219.31
+        capacityMbps: 1000
+        serviceClasses: [api]
+      - name: atlantic-kl
+        clusterRef: re8ch-atlantic
+        serviceRef: spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api
+        nodeName: overseas-kl
+        area: SEA
+        region: my-kul
+        address: 198.20.153.89
+        capacityMbps: 1000
+        serviceClasses: [api]
       excludedAuthorityNodeNames:
       - r640
       - domain-ex
@@ -26052,10 +26140,10 @@ spec:
           cpu: 10m
           memory: 32Mi
     image:
-      digest: sha256:5e7860204e5e81c716838a309ed2a2c1be4de09e4724127f22a82e5f3ce8d527
+      digest: sha256:8d9f78dcf2c904c628f58250d427c8b976e55943ba4650fae87ccbfd0a63a3b0
       pullPolicy: IfNotPresent
       repository: ghcr.io/public-edge/public-edge-manager
-      tag: 0.8.7
+      tag: 0.8.8
     nameservers:
     - ns-bootstrap.re8ch.com.
     probe:
@@ -26063,7 +26151,7 @@ spec:
       intervalSeconds: 15
       maxWorkers: 8
       responseTimeoutSeconds: 12
-      userAgent: public-edge-manager/0.8.7
+      userAgent: public-edge-manager/0.8.8
     publication:
       adapters: {}
       enabled: false
@@ -26096,43 +26184,75 @@ spec:
         CN:
         - id: r640
           ip: 223.159.210.222
-          region: CN
-        - id: overseas-flk
+          region: cn-hunan
+        - id: atlantic-flk
           ip: 2.28.106.230
-          region: EU
-        - id: overseas-la
+          region: de-fsn
+        - id: atlantic-la-1
           ip: 179.255.126.104
-          region: US
-        EU:
-        - id: overseas-flk
+          region: us-la-1
+        - id: atlantic-kl
+          ip: 198.20.153.89
+          region: my-kul
+        EU-CENTRAL:
+        - id: atlantic-flk
           ip: 2.28.106.230
-          region: EU
-        - id: overseas-la
+          region: de-fsn
+        - id: atlantic-hel1
+          ip: 2.29.219.31
+          region: fi-hel1
+        - id: atlantic-la-1
           ip: 179.255.126.104
-          region: US
+          region: us-la-1
         - id: r640
           ip: 223.159.210.222
-          region: CN
-        US:
-        - id: overseas-la
-          ip: 179.255.126.104
-          region: US
-        - id: overseas-flk
+          region: cn-hunan
+        EU-NORTH:
+        - id: atlantic-hel1
+          ip: 2.29.219.31
+          region: fi-hel1
+        - id: atlantic-flk
           ip: 2.28.106.230
-          region: EU
+          region: de-fsn
         - id: r640
           ip: 223.159.210.222
-          region: CN
+          region: cn-hunan
+        SEA:
+        - id: atlantic-kl
+          ip: 198.20.153.89
+          region: my-kul
+        - id: atlantic-la-1
+          ip: 179.255.126.104
+          region: us-la-1
+        - id: r640
+          ip: 223.159.210.222
+          region: cn-hunan
+        US-WEST:
+        - id: atlantic-la-1
+          ip: 179.255.126.104
+          region: us-la-1
+        - id: atlantic-la-2
+          ip: 179.253.231.159
+          region: us-la-2
+        - id: atlantic-flk
+          ip: 2.28.106.230
+          region: de-fsn
+        - id: r640
+          ip: 223.159.210.222
+          region: cn-hunan
         default:
         - id: r640
           ip: 223.159.210.222
-          region: CN
-        - id: overseas-flk
+          region: cn-hunan
+        - id: atlantic-flk
           ip: 2.28.106.230
-          region: EU
-        - id: overseas-la
+          region: de-fsn
+        - id: atlantic-la-1
           ip: 179.255.126.104
-          region: US
+          region: us-la-1
+        - id: atlantic-kl
+          ip: 198.20.153.89
+          region: my-kul
       trustedEcsPrefixes:
       - 223.5.5.0/24
       - 119.29.29.0/24
@@ -26141,6 +26261,8 @@ spec:
       - 8.8.4.0/24
       - 80.80.80.0/24
       - 9.9.9.0/24
+      - 10.181.0.0/16
+      - 10.250.0.0/16
     runtime:
       configMapName: public-edge-runtime
     service:
@@ -27281,7 +27403,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:47dcf11d958db846ca219bd26c78867c18f13ce39360ef997154d747a1e2726e
+    digest: sha256:0137c1015e9cc4d452ef47a288ed5e0e51ca3046ba1581b1ac58c86522e64fab
   url: oci://ghcr.io/public-edge/charts/public-edge-manager
 ---
 apiVersion: networking.k8s.io/v1
