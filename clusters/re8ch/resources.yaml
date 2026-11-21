@@ -25420,6 +25420,17 @@ spec:
           kind: NetworkPolicy
           name: among-clusters-gateway
           version: v1
+      - patch: |-
+          - op: replace
+            path: /spec/template/spec/containers/0/env/3/value
+            value: http://among-clusters-hub.among-clusters.svc.cluster.local
+          - op: remove
+            path: /spec/template/spec/hostAliases
+        target:
+          group: apps
+          kind: Deployment
+          name: among-clusters-agent
+          version: v1
   releaseName: among-clusters-agent
   storageNamespace: among-clusters
   targetNamespace: among-clusters

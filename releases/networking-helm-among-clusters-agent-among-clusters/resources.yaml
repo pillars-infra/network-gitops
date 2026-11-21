@@ -25,7 +25,7 @@ spec:
         - name: TRUST_DOMAIN
           value: re8ch.internal
         - name: HUB_ENDPOINT
-          value: https://among-clusters.service.re8ch.com
+          value: http://among-clusters-hub.among-clusters.svc.cluster.local
         - name: SYNC_INTERVAL
           value: 60s
         - name: IDENTITY_SECRET
@@ -78,10 +78,6 @@ spec:
         - mountPath: /peer-bundles
           name: peer-bundles
           readOnly: true
-      hostAliases:
-      - hostnames:
-        - among-clusters.service.re8ch.com
-        ip: 10.251.0.4
       nodeSelector:
         kubernetes.io/os: linux
         scheduling.re8ch.com/service-plane: core
@@ -204,11 +200,6 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
-      tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Equal
-        value: 'true'
       volumes:
       - name: identity
         secret:
@@ -277,6 +268,44 @@ metadata:
   name: among-clusters-agent
   namespace: among-clusters
 spec:
+  egress:
+  - ports:
+    - port: 6443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 10.43.0.1/32
+    - ipBlock:
+        cidr: 10.181.22.125/32
+    - ipBlock:
+        cidr: 10.181.22.128/32
+    - ipBlock:
+        cidr: 10.181.22.147/32
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+  - ports:
+    - port: 443
+      protocol: UDP
+    - port: 8443
+      protocol: UDP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+  - ports:
+    - port: 443
+      protocol: TCP
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
   ingress:
   - ports:
     - port: 8443
@@ -286,6 +315,7 @@ spec:
       app.kubernetes.io/name: among-clusters-agent
   policyTypes:
   - Ingress
+  - Egress
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -337,13 +367,6 @@ spec:
     - port: 18081
       protocol: TCP
     - port: 18082
-      protocol: TCP
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: egress-fabric
-    ports:
-    - port: 1080
       protocol: TCP
   - from:
     - namespaceSelector:
