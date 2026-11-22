@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 33d7a0c967f8ec1d47d0547a845c57ccf4b72e7430488701ac3d4c17154dfcb7
+        checksum/config: ba26afb1ddcd1dbafa4c97ee9f05c301ce80bf9d300a816c31b549b735fdac4a
       labels:
         app.kubernetes.io/name: public-edge-manager
     spec:
@@ -58,10 +58,14 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
+        - name: KUBERNETES_SERVICE_HOST
+          value: 10.250.0.147
+        - name: KUBERNETES_SERVICE_PORT_HTTPS
+          value: '6443'
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
         imagePullPolicy: IfNotPresent
         name: manager
         readinessProbe:
@@ -175,7 +179,7 @@ spec:
               fieldPath: spec.nodeName
         - name: SNI_ROUTES
           value: '{"kube-api.service.re8ch.com":{"host":"10.250.0.147","port":6443}}'
-        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
         imagePullPolicy: IfNotPresent
         name: redirector
         ports:
@@ -257,7 +261,11 @@ spec:
           value: kube-system
         - name: RUNTIME_CONFIGMAP
           value: public-edge-runtime
-        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+        - name: KUBERNETES_SERVICE_HOST
+          value: 10.250.0.147
+        - name: KUBERNETES_SERVICE_PORT_HTTPS
+          value: '6443'
+        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
         imagePullPolicy: IfNotPresent
         name: cli
         securityContext:
@@ -288,7 +296,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 33d7a0c967f8ec1d47d0547a845c57ccf4b72e7430488701ac3d4c17154dfcb7
+        checksum/config: ba26afb1ddcd1dbafa4c97ee9f05c301ce80bf9d300a816c31b549b735fdac4a
       labels:
         app.kubernetes.io/name: public-edge-manager-controller
     spec:
@@ -374,7 +382,7 @@ spec:
         - name: REQUIRED_ADDRESS_NAMES_JSON
           value: '["headlamp.service.re8ch.com"]'
         - name: SECONDARY_NAMESERVERS_BY_ZONE_JSON
-          value: '{"service.re8ch.com":["ns1.he.net.","ns2.he.net.","ns3.he.net."]}'
+          value: '{}'
         - name: EXTERNAL_AUTHORITIES_JSON
           value: '[{"address":"223.159.210.222","enabled":false,"id":"routeros-r640","nameserver":"ns-routeros.re8ch.com.","region":"cn-hunan"},{"address":"124.220.77.50","enabled":true,"id":"tencent-domain-ex","nameserver":"ns-domain-ex.re8ch.com.","region":"cn-shanghai"},{"address":"47.103.114.218","enabled":true,"id":"aliyun-muaya-lightweight","nameserver":"ns-muaya-lightweight.re8ch.com.","region":"cn-shanghai"},{"address":"101.34.217.95","enabled":true,"id":"tencent-suxunji","nameserver":"ns-suxunji.re8ch.com.","region":"cn-shanghai"},{"address":"1.14.174.244","enabled":true,"id":"tencent-zan","nameserver":"ns-zan.re8ch.com.","region":"cn-guangdong"}]'
         - name: EXTERNAL_AUTHORITY_EVIDENCE_CONFIGMAP
@@ -389,10 +397,14 @@ spec:
           value: cloudflare-pg-dns-controller-secret
         - name: CF_SECRET_KEY
           value: CF_API_TOKEN
+        - name: KUBERNETES_SERVICE_HOST
+          value: 10.250.0.147
+        - name: KUBERNETES_SERVICE_PORT_HTTPS
+          value: '6443'
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
         imagePullPolicy: IfNotPresent
         name: controller
         resources:
@@ -445,7 +457,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 33d7a0c967f8ec1d47d0547a845c57ccf4b72e7430488701ac3d4c17154dfcb7
+        checksum/config: ba26afb1ddcd1dbafa4c97ee9f05c301ce80bf9d300a816c31b549b735fdac4a
       labels:
         app.kubernetes.io/name: public-edge-manager-globalping
     spec:
@@ -482,10 +494,14 @@ spec:
           value: '[{"acceptedStatuses":[200],"hostname":"db-rw.re8ch.com","method":"GET","path":"/auth/ready"}]'
         - name: GLOBALPING_AUTHORITY_ADDRESSES_JSON
           value: '["124.220.77.50","47.103.114.218","101.34.217.95","1.14.174.244"]'
+        - name: KUBERNETES_SERVICE_HOST
+          value: 10.250.0.147
+        - name: KUBERNETES_SERVICE_PORT_HTTPS
+          value: '6443'
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
         imagePullPolicy: IfNotPresent
         name: observer
         resources:
@@ -545,10 +561,14 @@ spec:
           value: /etc/public-edge-runtime/runtime.json
         - name: NAMESERVERS_FILE
           value: /etc/public-edge-nameservers/nameservers.json
+        - name: KUBERNETES_SERVICE_HOST
+          value: 10.250.0.147
+        - name: KUBERNETES_SERVICE_PORT_HTTPS
+          value: '6443'
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
         imagePullPolicy: IfNotPresent
         name: hidden-primary
         ports:
@@ -663,7 +683,7 @@ data:
   GLOBALPING_QUALITY_MAX_AGE_SECONDS: '2700'
   GLOBALPING_QUALITY_MODE: Shadow
   NAMESERVERS: ns-bootstrap.re8ch.com.
-  PROBE_USER_AGENT: public-edge-manager/0.8.12
+  PROBE_USER_AGENT: public-edge-manager/0.8.13
   PUBLICATION_ADAPTERS_JSON: '{}'
   PUBLICATION_ENABLED: 'false'
   PUBLICATION_REFS_JSON: '{}'
@@ -673,10 +693,10 @@ data:
   ROUTE_SNAPSHOT_MAX_STALE_SECONDS: '900'
   ROUTE_SNAPSHOT_REFRESH_SECONDS: '15'
   ROUTE_SNAPSHOT_STATE_PATH: /var/lib/public-edge/route-snapshot.json
-  ROUTING_POLICY_JSON: '{"defaultRegion":"US-WEST","regions":{"CN":[{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"},{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"atlantic-kl","ip":"198.20.153.89","region":"my-kul"}],"EU-CENTRAL":[{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"atlantic-hel1","ip":"2.29.219.31","region":"fi-hel1"},{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"}],"EU-NORTH":[{"id":"atlantic-hel1","ip":"2.29.219.31","region":"fi-hel1"},{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"}],"SEA":[{"id":"atlantic-kl","ip":"198.20.153.89","region":"my-kul"},{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"}],"US-WEST":[{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"atlantic-la-2","ip":"179.253.231.159","region":"us-la-2"},{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"}],"default":[{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"},{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"atlantic-kl","ip":"198.20.153.89","region":"my-kul"}]},"trustedEcsPrefixes":["198.18.1.0/24","198.18.2.0/24","198.18.3.0/24","198.18.4.0/24","198.18.5.0/24","223.5.5.0/24","119.29.29.0/24","114.114.114.0/24","8.8.8.0/24","8.8.4.0/24","80.80.80.0/24","9.9.9.0/24","10.181.0.0/16","10.250.0.0/16"]}'
-  SECONDARY_NAMESERVERS_BY_ZONE_JSON: '{"service.re8ch.com":["ns1.he.net.","ns2.he.net.","ns3.he.net."]}'
+  ROUTING_POLICY_JSON: '{"defaultRegion":"US-WEST","regions":{"CN":[{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"},{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"atlantic-kl","ip":"198.20.153.89","region":"my-kul"}],"EU-CENTRAL":[{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"atlantic-hel1","ip":"2.29.219.31","region":"fi-hel1"},{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"}],"EU-NORTH":[{"id":"atlantic-hel1","ip":"2.29.219.31","region":"fi-hel1"},{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"}],"SEA":[{"id":"atlantic-kl","ip":"198.20.153.89","region":"my-kul"},{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"}],"US-WEST":[{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"atlantic-la-2","ip":"179.253.231.159","region":"us-la-2"},{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"}],"default":[{"id":"r640","ip":"223.159.210.222","region":"cn-hunan"},{"id":"atlantic-flk","ip":"2.28.106.230","region":"de-fsn"},{"id":"atlantic-la-1","ip":"179.255.126.104","region":"us-la-1"},{"id":"atlantic-kl","ip":"198.20.153.89","region":"my-kul"}]},"trustedEcsPrefixes":["198.18.1.0/24","198.18.2.0/24","198.18.3.0/24","198.18.4.0/24","198.18.5.0/24","223.5.5.0/24","119.29.29.0/24","114.114.114.0/24","8.8.8.0/24","8.8.4.0/24","80.80.80.0/24","9.9.9.0/24","10.181.0.0/16","10.250.0.0/16","172.31.92.77/32","172.31.93.77/32","172.31.94.77/32","172.31.92.79/32","172.31.93.79/32","172.31.94.79/32","172.31.93.16/32"]}'
+  SECONDARY_NAMESERVERS_BY_ZONE_JSON: '{}'
   SOA_RNAME: hostmaster.re8ch.com.
-  TRUSTED_ECS_PREFIXES_JSON: '["198.18.1.0/24","198.18.2.0/24","198.18.3.0/24","198.18.4.0/24","198.18.5.0/24","223.5.5.0/24","119.29.29.0/24","114.114.114.0/24","8.8.8.0/24","8.8.4.0/24","80.80.80.0/24","9.9.9.0/24","10.181.0.0/16","10.250.0.0/16"]'
+  TRUSTED_ECS_PREFIXES_JSON: '["198.18.1.0/24","198.18.2.0/24","198.18.3.0/24","198.18.4.0/24","198.18.5.0/24","223.5.5.0/24","119.29.29.0/24","114.114.114.0/24","8.8.8.0/24","8.8.4.0/24","80.80.80.0/24","9.9.9.0/24","10.181.0.0/16","10.250.0.0/16","172.31.92.77/32","172.31.93.77/32","172.31.94.77/32","172.31.92.79/32","172.31.93.79/32","172.31.94.79/32","172.31.93.16/32"]'
   XOT_LISTEN_ADDRESS: 0.0.0.0:853
   XOT_SECONDARIES_JSON: '[{"dnsName":"overseas-la","id":"overseas-la"},{"dnsName":"domain-ex","id":"domain-ex"},{"dnsName":"muaya-lightweight","id":"muaya-lightweight"},{"dnsName":"suxunji","id":"suxunji"},{"dnsName":"zan","id":"zan"}]'
   XOT_SERVER_NAME: hidden-primary.service.re8ch.com

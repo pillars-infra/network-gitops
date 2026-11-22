@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/authority-source-revision: geo-authority-router-v4
+        networking.re8ch.com/authority-source-revision: geo-authority-router-v5
       labels:
         app.kubernetes.io/name: powerdns-cloud-authorities
     spec:
@@ -393,10 +393,11 @@ data:
     \        pass\n    return GLOBAL_AREA\n\ndef classify(client_ip):\n    with socket.socket(socket.AF_INET,\
     \ socket.SOCK_DGRAM) as upstream:\n        upstream.settimeout(2)\n        upstream.sendto(classifier_query(client_ip),\
     \ GEO)\n        response, _ = upstream.recvfrom(65535)\n    return first_a(response)\n\
-    \ndef routed(packet, client_ip):\n    if qname(packet) == GEO_NAME:\n        return\
-    \ set_ecs(packet, classify(client_ip), replace=True), EDGE\n    return set_ecs(packet,\
-    \ client_ip), BIND\n\ndef udp_query(listener, packet, client):\n    try:\n   \
-    \     packet, target = routed(packet, client[0])\n        with socket.socket(socket.AF_INET,\
+    \ndef routed(packet, client_ip):\n    # PublicEdge owns every managed query type,\
+    \ including NS/SOA. Legacy\n    # AXFR data must never reintroduce stale public\
+    \ delegation or answers.\n    return set_ecs(packet, classify(client_ip), replace=True),\
+    \ EDGE\n\ndef udp_query(listener, packet, client):\n    try:\n        packet,\
+    \ target = routed(packet, client[0])\n        with socket.socket(socket.AF_INET,\
     \ socket.SOCK_DGRAM) as upstream:\n            upstream.settimeout(3)\n      \
     \      upstream.sendto(packet, target)\n            response, _ = upstream.recvfrom(65535)\n\
     \            listener.sendto(response, client)\n    except OSError:\n        pass\n\

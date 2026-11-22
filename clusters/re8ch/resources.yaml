@@ -20772,9 +20772,9 @@ data:
         return first_a(response)
 
     def routed(packet, client_ip):
-        if qname(packet) == GEO_NAME:
-            return set_ecs(packet, classify(client_ip), replace=True), EDGE
-        return set_ecs(packet, client_ip), BIND
+        # PublicEdge owns every managed query type, including NS/SOA. Legacy
+        # AXFR data must never reintroduce stale public delegation or answers.
+        return set_ecs(packet, classify(client_ip), replace=True), EDGE
 
     def udp_query(listener, packet, client):
         try:
@@ -22356,7 +22356,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/authority-source-revision: geo-authority-router-v4
+        networking.re8ch.com/authority-source-revision: geo-authority-router-v5
       labels:
         app.kubernetes.io/name: powerdns-cloud-authorities
     spec:
@@ -25709,6 +25709,24 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+          - op: add
+            path: /spec/template/spec/containers/0/env/-
+            value: {name: KUBERNETES_SERVICE_HOST, value: '10.250.0.147'}
+          - op: add
+            path: /spec/template/spec/containers/0/env/-
+            value: {name: KUBERNETES_SERVICE_PORT_HTTPS, value: '6443'}
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: public-edge-manager-(controller|globalping|cli|hidden-primary)
+        patch: |-
+          - op: add
+            path: /spec/template/spec/containers/0/env/-
+            value: {name: KUBERNETES_SERVICE_HOST, value: '10.250.0.147'}
+          - op: add
+            path: /spec/template/spec/containers/0/env/-
+            value: {name: KUBERNETES_SERVICE_PORT_HTTPS, value: '6443'}
   releaseName: public-edge-manager
   rollback:
     cleanupOnFail: true
@@ -25890,11 +25908,9 @@ spec:
       replicas: 2
       requiredAddressNames:
       - headlamp.service.re8ch.com
-      secondaryNameserversByZone:
-        service.re8ch.com:
-        - ns1.he.net.
-        - ns2.he.net.
-        - ns3.he.net.
+      # Ordinary AXFR secondaries cannot execute source-aware answers.
+      # Keep public delegation owned by the existing qualified-authority election.
+      secondaryNameserversByZone: {}
       serviceClasses:
       - api
       - db-ro
@@ -26213,10 +26229,10 @@ spec:
           cpu: 10m
           memory: 32Mi
     image:
-      digest: sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+      digest: sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
       pullPolicy: IfNotPresent
       repository: ghcr.io/public-edge/public-edge-manager
-      tag: 0.8.12
+      tag: 0.8.13
     nameservers:
     - ns-bootstrap.re8ch.com.
     probe:
@@ -26224,7 +26240,7 @@ spec:
       intervalSeconds: 15
       maxWorkers: 8
       responseTimeoutSeconds: 12
-      userAgent: public-edge-manager/0.8.12
+      userAgent: public-edge-manager/0.8.13
     publication:
       adapters: {}
       enabled: false
@@ -26343,6 +26359,18 @@ spec:
       - 9.9.9.0/24
       - 10.181.0.0/16
       - 10.250.0.0/16
+      # Exact frontend transit interface identities observed through the
+      # platform API. Never trust the whole WireGuard/private address range.
+      # suxunji
+      - 172.31.92.77/32
+      - 172.31.93.77/32
+      - 172.31.94.77/32
+      # muaya-lightweight
+      - 172.31.92.79/32
+      - 172.31.93.79/32
+      - 172.31.94.79/32
+      # zan's currently observed Service source
+      - 172.31.93.16/32
     runtime:
       configMapName: public-edge-runtime
     service:
@@ -27501,7 +27529,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:2ac43545ea1229195b64993b82e132fdafc42a813e6a244489c13d24e660aeee
+    digest: sha256:a854a0bb08c4dc45a02f2b57ad4fdf298ecf4b8de0424a2b644d9fc0a51c4c09
   url: oci://ghcr.io/public-edge/charts/public-edge-manager
 ---
 apiVersion: networking.k8s.io/v1
