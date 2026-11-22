@@ -6,7 +6,7 @@ import pytest
 import topology_parity as parity
 
 
-def obj():return {'apiVersion':parity.API,'kind':'AdvancedFabric','metadata':{'name':'advanced-fabric','resourceVersion':'fixture-version'},'spec':{'nodes':[{'name':'fixture','private':'do-not-log'}]}}
+def obj():return {'apiVersion':parity.API,'kind':'AdvancedFabric','metadata':{'name':'advanced-fabric','uid':'fixture-uid','resourceVersion':'fixture-version'},'spec':{'nodes':[{'name':'fixture','private':'do-not-log'}]}}
 
 def runner(monkeypatch,live=None,source='fixture-source'):
     monkeypatch.setattr(parity,'SOURCE_SHA256',hashlib.sha256(source.encode()).hexdigest())
@@ -50,10 +50,25 @@ def test_source_read_diagnostics_never_expose_contents():
     assert 'do-not-log' not in str(exc.value)
 
 
-def test_topology_version_change_between_reads_rejects_adoption(monkeypatch):
+def test_status_only_version_change_binds_the_compared_snapshot(monkeypatch):
     live=obj();live['metadata']['resourceVersion']='concurrent-change'
+    live['status']={'observedAt':'new-status'}
     run,_=runner(monkeypatch,live)
-    with pytest.raises(parity.TopologyParityError,match='changed while binding'):
+    desired=obj()
+    assert parity.check([desired],None,run)['differenceCount']==0
+    assert desired['metadata']['resourceVersion']=='concurrent-change'
+
+def test_recreated_topology_identity_blocks_adoption(monkeypatch):
+    live=obj();live['metadata']['uid']='replacement-uid'
+    run,_=runner(monkeypatch,live)
+    with pytest.raises(parity.TopologyParityError,match='identity changed'):
+        parity.check([obj()],None,run)
+
+def test_concurrent_spec_change_still_blocks_adoption(monkeypatch):
+    live=obj();live['metadata']['resourceVersion']='concurrent-change'
+    live['spec']['nodes'][0]['private']='changed-private'
+    run,_=runner(monkeypatch,live)
+    with pytest.raises(parity.TopologyParityError,match='difference count=1'):
         parity.check([obj()],None,run)
 
 

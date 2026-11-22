@@ -49,13 +49,21 @@ def check(objects,previous,command):
             return {'sourcePinMatches':True,'initialAdoption':False}
         result=command(['kubectl','get','advancedfabrics.networking.advfab.org','advanced-fabric','-o','json'],timeout=60,redact=True)
         live=json.loads(result.stdout)
-        version=targets[0]['metadata'].get('resourceVersion')
-        if not version or live.get('metadata',{}).get('resourceVersion')!=version:
-            raise TopologyParityError('topology changed while binding adoption precondition')
+        metadata=live.get('metadata',{})
+        version=metadata.get('resourceVersion')
+        uid=metadata.get('uid')
+        if not version or not uid or metadata.get('deletionTimestamp'):
+            raise TopologyParityError('topology adoption identity unavailable')
+        if targets[0]['metadata'].get('uid',uid)!=uid:
+            raise TopologyParityError('topology identity changed during adoption')
         counts=difference_counts(targets[0]['spec'],live['spec'])
         count=sum(counts.values())
     except TopologyParityError:raise
     except Exception:
         raise TopologyParityError('restricted topology parity could not be verified; diagnostics withheld') from None
     if count:raise TopologyParityError('initial topology adoption differs from live state; difference count='+str(count)+'; categories='+json.dumps(counts,sort_keys=True))
+    # Bind the exact snapshot just compared. Status updates may advance RV while
+    # other bundle objects are read; they are not topology changes. SSA still
+    # receives UID and RV, and initial adoption repeats this check before writes.
+    targets[0]['metadata'].update({'uid':uid,'resourceVersion':version})
     return {'sourcePinMatches':True,'initialAdoption':True,'differenceCount':0}

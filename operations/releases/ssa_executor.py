@@ -159,6 +159,7 @@ class Executor:
         self.sleeper = sleeper
         self.apply_only = False
         self._restricted_identities: set[str] = set()
+        self._initial_topology_adoption = False
         self._kube_token: str | None = None
         self._kube_token_refresh_at = 0.0
 
@@ -220,7 +221,17 @@ class Executor:
                 break
             self.sleeper(2 ** attempt)
         if result.returncode:
-            message = "restricted command failed; diagnostics withheld" if redact else (result.stderr or result.stdout or "command failed")[-2048:]
+            if redact:
+                # Only fixed categories escape redaction, never server text.
+                category = "unknown"
+                diagnostic = (result.stderr or "").lower()
+                if "the object has been modified" in diagnostic: category = "resource-version-conflict"
+                elif "conflict" in diagnostic: category = "field-ownership-conflict"
+                elif "forbidden" in diagnostic: category = "forbidden"
+                elif transient_failure(result.stdout, result.stderr): category = "transient"
+                message = "restricted command failed; category=" + category + "; diagnostics withheld"
+            else:
+                message = (result.stderr or result.stdout or "command failed")[-2048:]
             raise Rejected(message)
         return result
 
@@ -339,15 +350,19 @@ class Executor:
             argv += ["-f", "-"]
             for attempt in range(3):
                 current = self.with_existing_versions([item])[0] if rebind_existing else item
+                if self._initial_topology_adoption and item.get('apiVersion') == 'networking.advfab.org/v1alpha1' and item.get('kind') == 'AdvancedFabric':
+                    from topology_parity import check, TopologyParityError
+                    try: check([current], None, self.command)
+                    except TopologyParityError as error: raise Rejected(str(error)) from None
                 try:
                     self.command(argv, json.dumps(current), timeout=120,
                                  redact=object_identity(item) in self._restricted_identities)
                     break
                 except Rejected as error:
-                    if dry_run and attempt < 2 and transient_failure("", str(error)):
+                    if dry_run and attempt < 2 and (transient_failure("", str(error)) or "category=transient;" in str(error)):
                         self.sleeper(2 ** attempt)
                         continue
-                    if not rebind_existing or attempt == 2 or "the object has been modified" not in str(error):
+                    if not rebind_existing or attempt == 2 or not any(value in str(error) for value in ("the object has been modified", "category=resource-version-conflict;")):
                         raise
 
     @staticmethod
@@ -608,7 +623,9 @@ class Executor:
             selected_objects = self.with_existing_versions(selected_objects)
             by_identity.update({object_identity(item): item for item in selected_objects})
         from topology_parity import check, TopologyParityError
-        try:check(selected_objects,previous,self.command)
+        try:
+            parity=check(selected_objects,previous,self.command)
+            self._initial_topology_adoption=bool(parity and parity.get('initialAdoption'))
         except TopologyParityError as error:raise Rejected(str(error)) from None
         if not selected_objects and not finalize:
             raise Rejected("stage selection contains no objects")
