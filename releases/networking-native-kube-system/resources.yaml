@@ -1012,6 +1012,7 @@ spec:
     direct-routing-skip-unreachable: 'false'
     egress-masquerade-interfaces: ''
     enable-bpf-masquerade: 'true'
+    enable-host-legacy-routing: 'true'
   nodeSelector:
     matchLabels:
       kubernetes.io/hostname: r640

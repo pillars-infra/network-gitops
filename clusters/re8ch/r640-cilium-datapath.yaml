@@ -11,6 +11,10 @@ spec:
     matchLabels:
       kubernetes.io/hostname: r640
   defaults:
+    # Native BPF host forwarding miscounts the veth Ethernet header on an
+    # external L3 egress device. Use the supported host stack on this node;
+    # retain the real transit MTU and all XDP/service settings below.
+    enable-host-legacy-routing: "true"
     auto-direct-node-routes: "false"
     bpf-lb-acceleration: native
     devices: eno2np1
