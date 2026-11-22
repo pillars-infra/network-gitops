@@ -49,7 +49,7 @@ def test_all_atlantic_ingress_points_are_reviewed_api_candidates():
     assert all(item["serviceClasses"] == ["api", "db-rw", "web", "service-pilot"]
                for item in candidates.values())
     assert values["image"]["digest"] == (
-        "sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c"
+        "sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4"
     )
     assert values["discovery"]["externalAuthorityEvidenceConfigMap"] == (
         "public-edge-globalping-quality"
@@ -96,3 +96,22 @@ def test_external_records_do_not_overlap_managed_services_or_zones():
     assert external_records.isdisjoint(managed_zones)
     assert "kube-api.re8ch.com." not in external_records
     assert "kube-api-backup.re8ch.com." not in external_records
+
+
+def test_compiled_authority_placement_is_not_gated_by_health_labels():
+    path = ROOT / "releases/networking-helm-public-edge-manager-regional-routing/resources.yaml"
+    daemonset = next(item for item in yaml.safe_load_all(path.read_text())
+                     if item and item.get("kind") == "DaemonSet"
+                     and item["metadata"]["name"] == "public-edge-manager")
+    terms = daemonset["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+        "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"]
+    names = set()
+    for term in terms:
+        assert not term.get("matchExpressions"), "authority health must not control placement"
+        fields = term["matchFields"]
+        assert len(fields) == 1
+        assert fields[0]["key"] == "metadata.name"
+        assert fields[0]["operator"] == "In"
+        assert len(fields[0]["values"]) == 1, "Kubernetes requires one name per field selector"
+        names.update(fields[0]["values"])
+    assert names == {"suxunji", "domain-ex"}

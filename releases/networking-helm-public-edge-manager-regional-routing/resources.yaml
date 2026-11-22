@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6ffee497a539cccb069d892d387456c85641cf90c0c617fe5f6510b316784535
+        checksum/config: 33d7a0c967f8ec1d47d0547a845c57ccf4b72e7430488701ac3d4c17154dfcb7
       labels:
         app.kubernetes.io/name: public-edge-manager
     spec:
@@ -23,6 +23,10 @@ spec:
                 operator: In
                 values:
                 - suxunji
+            - matchFields:
+              - key: metadata.name
+                operator: In
+                values:
                 - domain-ex
       containers:
       - env:
@@ -53,7 +57,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c
+        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
         imagePullPolicy: IfNotPresent
         name: manager
         readinessProbe:
@@ -167,7 +171,7 @@ spec:
               fieldPath: spec.nodeName
         - name: SNI_ROUTES
           value: '{"kube-api.service.re8ch.com":{"host":"10.250.0.147","port":6443}}'
-        image: ghcr.io/public-edge/public-edge-manager@sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c
+        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
         imagePullPolicy: IfNotPresent
         name: redirector
         ports:
@@ -249,7 +253,7 @@ spec:
           value: kube-system
         - name: RUNTIME_CONFIGMAP
           value: public-edge-runtime
-        image: ghcr.io/public-edge/public-edge-manager@sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c
+        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
         imagePullPolicy: IfNotPresent
         name: cli
         securityContext:
@@ -280,7 +284,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6ffee497a539cccb069d892d387456c85641cf90c0c617fe5f6510b316784535
+        checksum/config: 33d7a0c967f8ec1d47d0547a845c57ccf4b72e7430488701ac3d4c17154dfcb7
       labels:
         app.kubernetes.io/name: public-edge-manager-controller
     spec:
@@ -384,7 +388,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c
+        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
         imagePullPolicy: IfNotPresent
         name: controller
         resources:
@@ -437,7 +441,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6ffee497a539cccb069d892d387456c85641cf90c0c617fe5f6510b316784535
+        checksum/config: 33d7a0c967f8ec1d47d0547a845c57ccf4b72e7430488701ac3d4c17154dfcb7
       labels:
         app.kubernetes.io/name: public-edge-manager-globalping
     spec:
@@ -477,7 +481,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c
+        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
         imagePullPolicy: IfNotPresent
         name: observer
         resources:
@@ -540,7 +544,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c
+        image: ghcr.io/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
         imagePullPolicy: IfNotPresent
         name: hidden-primary
         ports:
@@ -655,7 +659,7 @@ data:
   GLOBALPING_QUALITY_MAX_AGE_SECONDS: '2700'
   GLOBALPING_QUALITY_MODE: Shadow
   NAMESERVERS: ns-bootstrap.re8ch.com.
-  PROBE_USER_AGENT: public-edge-manager/0.8.11
+  PROBE_USER_AGENT: public-edge-manager/0.8.12
   PUBLICATION_ADAPTERS_JSON: '{}'
   PUBLICATION_ENABLED: 'false'
   PUBLICATION_REFS_JSON: '{}'
