@@ -10,6 +10,14 @@ spec:
         kubernetesApiEndpoints:
           - https://10.250.0.128:6443
           - https://10.250.0.147:6443
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values: [a1-wsl-zt, b1-wsl-zt, r640, amdwsl-zt]
       controller:
         affinity:
           nodeAffinity:
