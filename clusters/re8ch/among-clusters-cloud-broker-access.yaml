@@ -1,0 +1,72 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: among-clusters-broker-tool-access
+  namespace: credential-broker
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ai-operations
+      podSelector:
+        matchLabels:
+          app: re8ch-cloud-platform
+    ports:
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-credential-broker
+  policyTypes:
+  - Ingress
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: among-clusters-broker-tool-access
+  namespace: credential-broker
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: among-clusters-credential-broker
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        k8s:app: re8ch-cloud-platform
+        k8s:io.kubernetes.pod.namespace: ai-operations
+    toPorts:
+    - ports:
+      - port: '8080'
+        protocol: TCP
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: re8ch-cloud-platform-atlantic-broker
+  namespace: byoc-pilot
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  annotations:
+    peering.re8ch.com/reviewed-grant-uid: d9fae24e-cea9-4014-8c93-0837bd8e7e60
+rules:
+- apiGroups: [peering.re8ch.com]
+  resources: [managedaccessgrants]
+  resourceNames: [re8ch-atlantic-headlamp-admin]
+  verbs: [get, use]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: re8ch-cloud-platform-atlantic-broker
+  namespace: byoc-pilot
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: re8ch-cloud-platform-atlantic-broker
+subjects:
+- kind: ServiceAccount
+  name: re8ch-cloud-platform
+  namespace: ai-operations
