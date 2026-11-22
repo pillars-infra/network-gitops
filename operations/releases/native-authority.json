@@ -568,7 +568,9 @@
       "inventory": [
         "cilium.io/CiliumNetworkPolicy/credential-broker/among-clusters-broker-hub",
         "cilium.io/CiliumNetworkPolicy/credential-broker/among-clusters-broker-imports",
-        "cilium.io/CiliumNetworkPolicy/credential-broker/among-clusters-broker-kube-apiserver"
+        "cilium.io/CiliumNetworkPolicy/credential-broker/among-clusters-broker-kube-apiserver",
+        "cilium.io/CiliumNetworkPolicy/credential-broker/among-clusters-broker-tool-access",
+        "networking.k8s.io/NetworkPolicy/credential-broker/among-clusters-broker-tool-access"
       ],
       "rules": [
         {
@@ -581,7 +583,23 @@
           "resourceNames": [
             "among-clusters-broker-hub",
             "among-clusters-broker-imports",
-            "among-clusters-broker-kube-apiserver"
+            "among-clusters-broker-kube-apiserver",
+            "among-clusters-broker-tool-access"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "networking.k8s.io"
+          ],
+          "resources": [
+            "networkpolicies"
+          ],
+          "resourceNames": [
+            "among-clusters-broker-tool-access"
           ],
           "verbs": [
             "get",
@@ -2400,6 +2418,37 @@
       "apiVersion": "rbac.authorization.k8s.io/v1",
       "kind": "Role",
       "metadata": {
+        "annotations": {
+          "peering.re8ch.com/reviewed-grant-uid": "d9fae24e-cea9-4014-8c93-0837bd8e7e60"
+        },
+        "labels": {
+          "app.kubernetes.io/part-of": "among-clusters"
+        },
+        "name": "re8ch-cloud-platform-atlantic-broker",
+        "namespace": "byoc-pilot"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resourceNames": [
+            "re8ch-atlantic-headlamp-admin"
+          ],
+          "resources": [
+            "managedaccessgrants"
+          ],
+          "verbs": [
+            "get",
+            "use"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
         "name": "write-cloudflare-dns-token",
         "namespace": "cert-manager"
       },
@@ -2569,6 +2618,29 @@
           "verbs": [
             "get"
           ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "labels": {
+          "app.kubernetes.io/part-of": "among-clusters"
+        },
+        "name": "re8ch-cloud-platform-atlantic-broker",
+        "namespace": "byoc-pilot"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "re8ch-cloud-platform-atlantic-broker"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "re8ch-cloud-platform",
+          "namespace": "ai-operations"
         }
       ]
     },
@@ -2795,6 +2867,10 @@
       "reason": "cloud-helm-render"
     },
     {
+      "identity": "rbac.authorization.k8s.io/Role/byoc-pilot/re8ch-cloud-platform-atlantic-broker",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
       "identity": "rbac.authorization.k8s.io/Role/cert-manager/write-cloudflare-dns-token",
       "reason": "platform-bootstrap-rbac"
     },
@@ -2820,6 +2896,10 @@
     },
     {
       "identity": "rbac.authorization.k8s.io/Role/qianwen-ops/read-cloudflare-dns-token",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/byoc-pilot/re8ch-cloud-platform-atlantic-broker",
       "reason": "platform-bootstrap-rbac"
     },
     {
