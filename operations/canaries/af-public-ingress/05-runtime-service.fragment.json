@@ -1,0 +1,13 @@
+{
+  "services": {
+    "af-canary.service.re8ch.com.": {
+      "service": "af-canary",
+      "class": "af-canary",
+      "probePath": "/transfer",
+      "acceptedStatuses": [
+        200
+      ],
+      "requireFederatedContract": true
+    }
+  }
+}

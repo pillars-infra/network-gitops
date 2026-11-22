@@ -1,0 +1,45 @@
+apiVersion: peering.re8ch.com/v1alpha1
+kind: PeerPolicy
+metadata:
+  name: af-canary-export
+  namespace: byoc-pilot
+  labels:
+    app.kubernetes.io/part-of: af-public-ingress-canary
+spec:
+  peerSelector:
+    matchNames:
+    - re8ch-atlantic
+  serviceClasses:
+  - network.canary.http
+  protocols:
+  - http
+  ports:
+  - 8080
+  directions:
+  - export
+  maxAdvertisements: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: af-ingress-canary
+  namespace: af-canary
+  labels:
+    app.kubernetes.io/name: af-ingress-canary
+    app.kubernetes.io/part-of: af-public-ingress-canary
+    peering.re8ch.com/advertise: 'true'
+  annotations:
+    peering.re8ch.com/protocol: http
+    peering.re8ch.com/service-class: network.canary.http
+    peering.re8ch.com/policy-ref: af-canary-export
+    peering.re8ch.com/target-peers: re8ch-atlantic
+    peering.re8ch.com/ttl-seconds: '90'
+    peering.re8ch.com/port-name: http
+    peering.re8ch.com/public-ingress: '{"endpoints":[{"id":"primary","site":"r640","region":"cn-hunan","protocol":"https","address":"223.159.210.222","port":443,"hostname":"af-canary.service.re8ch.com","path":"/transfer","revision":"canary-r1"},{"id":"secondary","site":"la1","region":"us-la-1","protocol":"https","address":"179.255.126.104","port":443,"hostname":"af-canary.service.re8ch.com","path":"/transfer","revision":"canary-r1"}]}'
+spec:
+  selector:
+    app.kubernetes.io/name: af-ingress-canary
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080

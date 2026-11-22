@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: af-canary
+  labels:
+    app.kubernetes.io/part-of: af-public-ingress-canary
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: af-ingress-canary
+  namespace: af-canary
+  labels:
+    app.kubernetes.io/name: af-ingress-canary
+    app.kubernetes.io/part-of: af-public-ingress-canary
+data:
+  app.py: |
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    import threading
+    import time
+
+    CAPACITY = threading.BoundedSemaphore(4)
+    BODY = (b"AF-CANARY/fixture-v1\n" * 2048)[:16384]
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if not CAPACITY.acquire(blocking=False):
+                self.send_response(503); self.end_headers(); return
+            try:
+                if self.path not in ("/health", "/transfer", "/stalled-body"):
+                    self.send_response(404); self.end_headers(); return
+                body = b"ok\n" if self.path == "/health" else BODY
+                self.send_response(200)
+                self.send_header("Content-Type", "application/octet-stream")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                if self.path == "/stalled-body":
+                    self.wfile.write(body[:1]); self.wfile.flush(); time.sleep(15)
+                else:
+                    self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            finally:
+                CAPACITY.release()
+        def log_message(self, *_):
+            pass
+
+    ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: af-ingress-canary
+  namespace: af-canary
+  labels:
+    app.kubernetes.io/name: af-ingress-canary
+    app.kubernetes.io/part-of: af-public-ingress-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: af-ingress-canary
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: af-ingress-canary
+        app.kubernetes.io/part-of: af-public-ingress-canary
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: r640
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      containers:
+      - name: canary
+        image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+        command:
+        - python3
+        - /runtime/app.py
+        env:
+        - name: PYTHONDONTWRITEBYTECODE
+          value: '1'
+        ports:
+        - name: http
+          containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 20m
+            memory: 48Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 5
+        volumeMounts:
+        - name: runtime
+          mountPath: /runtime
+          readOnly: true
+      volumes:
+      - name: runtime
+        configMap:
+          name: af-ingress-canary
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: af-ingress-canary
+  namespace: af-canary
+  labels:
+    app.kubernetes.io/name: af-ingress-canary
+    app.kubernetes.io/part-of: af-public-ingress-canary
+spec:
+  selector:
+    app.kubernetes.io/name: af-ingress-canary
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: af-ingress-canary
+  namespace: af-canary
+  labels:
+    app.kubernetes.io/name: af-ingress-canary
+    app.kubernetes.io/part-of: af-public-ingress-canary
+spec:
+  parentRefs:
+  - name: re8ch-gateway-canary
+    namespace: kube-system
+    sectionName: service-wildcard-https
+  hostnames:
+  - af-canary.service.re8ch.com
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: af-ingress-canary
+      port: 8080

@@ -1,0 +1,9 @@
+assessmentRefs:
+  suxunji:
+    name: tls-6e49d57c6a30e995cc0d7a75
+    uid: __SUXUNJI_SERVICE_NPA_UID__
+    sourceNode: suxunji
+    targetId: af-canary-cn
+    paddingBytes:
+    - 0
+    - 2048
