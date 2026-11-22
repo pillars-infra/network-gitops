@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: b5898a881a1e0d8977b88fa4fa3e47044dbfcad8bf7dff263e2b4298cc69a899
+        checksum/config: 48683988f308e811df86addd8cdd5dc75978ece61f68b2ff6db7c197115a9983
       labels:
         app.kubernetes.io/name: public-edge-manager
     spec:
@@ -52,7 +52,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114
+        image: ghcr.io/public-edge/public-edge-manager@sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b
         imagePullPolicy: IfNotPresent
         name: manager
         readinessProbe:
@@ -166,7 +166,7 @@ spec:
               fieldPath: spec.nodeName
         - name: SNI_ROUTES
           value: '{"kube-api.service.re8ch.com":{"host":"10.250.0.147","port":6443}}'
-        image: ghcr.io/public-edge/public-edge-manager@sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114
+        image: ghcr.io/public-edge/public-edge-manager@sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b
         imagePullPolicy: IfNotPresent
         name: redirector
         ports:
@@ -248,7 +248,7 @@ spec:
           value: kube-system
         - name: RUNTIME_CONFIGMAP
           value: public-edge-runtime
-        image: ghcr.io/public-edge/public-edge-manager@sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114
+        image: ghcr.io/public-edge/public-edge-manager@sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b
         imagePullPolicy: IfNotPresent
         name: cli
         securityContext:
@@ -279,7 +279,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: b5898a881a1e0d8977b88fa4fa3e47044dbfcad8bf7dff263e2b4298cc69a899
+        checksum/config: 48683988f308e811df86addd8cdd5dc75978ece61f68b2ff6db7c197115a9983
       labels:
         app.kubernetes.io/name: public-edge-manager-controller
     spec:
@@ -383,7 +383,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114
+        image: ghcr.io/public-edge/public-edge-manager@sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b
         imagePullPolicy: IfNotPresent
         name: controller
         resources:
@@ -436,7 +436,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: b5898a881a1e0d8977b88fa4fa3e47044dbfcad8bf7dff263e2b4298cc69a899
+        checksum/config: 48683988f308e811df86addd8cdd5dc75978ece61f68b2ff6db7c197115a9983
       labels:
         app.kubernetes.io/name: public-edge-manager-globalping
     spec:
@@ -476,7 +476,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114
+        image: ghcr.io/public-edge/public-edge-manager@sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b
         imagePullPolicy: IfNotPresent
         name: observer
         resources:
@@ -539,7 +539,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114
+        image: ghcr.io/public-edge/public-edge-manager@sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b
         imagePullPolicy: IfNotPresent
         name: hidden-primary
         ports:
@@ -654,7 +654,7 @@ data:
   GLOBALPING_QUALITY_MAX_AGE_SECONDS: '2700'
   GLOBALPING_QUALITY_MODE: Shadow
   NAMESERVERS: ns-bootstrap.re8ch.com.
-  PROBE_USER_AGENT: public-edge-manager/0.8.9
+  PROBE_USER_AGENT: public-edge-manager/0.8.10
   PUBLICATION_ADAPTERS_JSON: '{}'
   PUBLICATION_ENABLED: 'false'
   PUBLICATION_REFS_JSON: '{}'

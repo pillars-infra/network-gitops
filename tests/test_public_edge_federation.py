@@ -49,7 +49,7 @@ def test_all_atlantic_ingress_points_are_reviewed_api_candidates():
     assert all(item["serviceClasses"] == ["api", "db-rw", "web", "service-pilot"]
                for item in candidates.values())
     assert values["image"]["digest"] == (
-        "sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114"
+        "sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b"
     )
     assert values["discovery"]["externalAuthorityEvidenceConfigMap"] == (
         "public-edge-globalping-quality"
