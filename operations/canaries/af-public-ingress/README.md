@@ -69,13 +69,21 @@ These are individually previewed Admin MCP inputs, not a new controller/planner.
     NPA is verified; preview the full PublicEdge. Then verify both authorities independently.
     Neither authority gets a fake NODE_NAME; R640 evidence remains diagnostic for the backend path.
 
+The canary uses area `GLOBAL` to isolate identity, endpoint, evidence and DNS convergence.
+It does not validate Geo selection or physical-route reconfiguration. Production relay
+candidates retain each site's reviewed RegionalRelay/origin-CN policy; this fixture does
+not copy the canary DirectGateway policy onto overseas production endpoints.
+
 ## Controlled changes and pass criteria
 
 - Source-only IP move: replace only the Service's reviewed public-ingress annotation with
   `06-primary-moved-to-la1.fragment.json`. PE endpointId stays primary and AF ref stays unchanged.
   A remains healthy as secondary; primary's actual site/region/address/revision move to LA1.
   Observe ad revision → current import → resolved AF target → fresh scoped NPA → new independent
-  PE probe → DNS B. Old health, in-flight A results, DNS grace and literal fallback must not resurrect A.
+  PE probe → DNS B. Fix the acceptance deadline at **180 seconds** from the source change
+  to fresh matching NPA and DNS B; current measured host/pod collection cycles take about
+  45–70 seconds. Record a missed deadline as failure, without moving the threshold.
+  Old health, in-flight A results, DNS grace and literal fallback must not resurrect A.
 - Add/remove/reorder: keep stable IDs; adding/reordering an unselected endpoint cannot reset current
   health. Removing primary while secondary stays healthy must reject that binding, not pick array[0].
 - Revoke: restore the unexported Service document from foundation; observe source/hub revocation,

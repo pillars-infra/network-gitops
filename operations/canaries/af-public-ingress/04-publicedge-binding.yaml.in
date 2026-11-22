@@ -8,7 +8,7 @@ spec:
   enabled: true
   nodeName: r640
   region: cn-hunan
-  area: CN
+  area: GLOBAL
   endpoint:
     type: PublicIP
     value: 223.159.210.222
