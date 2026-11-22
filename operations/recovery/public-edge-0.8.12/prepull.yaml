@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: public-edge-v0812-bootstrap-suxunji
+  namespace: regional-routing
+  labels:
+    app.kubernetes.io/name: public-edge-artifact-bootstrap
+spec:
+  nodeName: suxunji
+  restartPolicy: Never
+  activeDeadlineSeconds: 1800
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: prepull
+    image: ghcr.io:443/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+    imagePullPolicy: IfNotPresent
+    command:
+    - /bin/true
+    resources:
+      requests:
+        cpu: 1m
+        memory: 8Mi
+      limits:
+        cpu: 50m
+        memory: 32Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: public-edge-v0812-bootstrap-domain-ex
+  namespace: regional-routing
+  labels:
+    app.kubernetes.io/name: public-edge-artifact-bootstrap
+spec:
+  nodeName: domain-ex
+  restartPolicy: Never
+  activeDeadlineSeconds: 1800
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: prepull
+    image: ghcr.io:443/public-edge/public-edge-manager@sha256:c2f23e8364261c6a4aa21430d2795a89719a706ce91daf9cd98d658ddae290e4
+    imagePullPolicy: IfNotPresent
+    command:
+    - /bin/true
+    resources:
+      requests:
+        cpu: 1m
+        memory: 8Mi
+      limits:
+        cpu: 50m
+        memory: 32Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
