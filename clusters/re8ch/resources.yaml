@@ -25710,6 +25710,12 @@ spec:
                 fieldRef:
                   fieldPath: status.hostIP
           - op: add
+            path: /spec/template/spec/containers/0/resources/limits/cpu
+            value: 500m
+          - op: add
+            path: /spec/template/spec/containers/0/resources/requests/cpu
+            value: 100m
+          - op: add
             path: /spec/template/spec/containers/0/env/-
             value: {name: KUBERNETES_SERVICE_HOST, value: '10.250.0.147'}
           - op: add
@@ -25727,6 +25733,18 @@ spec:
           - op: add
             path: /spec/template/spec/containers/0/env/-
             value: {name: KUBERNETES_SERVICE_PORT_HTTPS, value: '6443'}
+      - target:
+          group: apps
+          version: v1
+          kind: Deployment
+          name: public-edge-manager-globalping
+        patch: |-
+          - op: add
+            path: /spec/template/spec/dnsPolicy
+            value: None
+          - op: add
+            path: /spec/template/spec/dnsConfig
+            value: {nameservers: ['1.1.1.1', '8.8.8.8']}
   releaseName: public-edge-manager
   rollback:
     cleanupOnFail: true
@@ -25757,7 +25775,7 @@ spec:
       latencyPenaltyCap: 50
       localAreaBonus: 100000
       localNodeBonus: 0
-      minHoldSeconds: 600
+      minHoldSeconds: 120
       minReadySeconds: 120
       priorityWeight: 1
       resolverCidrs:
@@ -25855,6 +25873,8 @@ spec:
         capacityMbps: 1000
         serviceClasses: [api, db-rw, web, service-pilot]
       excludedAuthorityNodeNames:
+      - muaya-ecs
+      - vm-20-12-ubuntu
       - r640
       - domain-ex
       - muaya-lightweight
@@ -26238,7 +26258,7 @@ spec:
     probe:
       connectTimeoutSeconds: 5
       intervalSeconds: 15
-      maxWorkers: 8
+      maxWorkers: 16
       responseTimeoutSeconds: 12
       userAgent: public-edge-manager/0.8.13
     publication:
@@ -26369,8 +26389,10 @@ spec:
       - 172.31.92.79/32
       - 172.31.93.79/32
       - 172.31.94.79/32
-      # zan's currently observed Service source
+      # zan
+      - 172.31.92.16/32
       - 172.31.93.16/32
+      - 172.31.94.16/32
     runtime:
       configMapName: public-edge-runtime
     service:
