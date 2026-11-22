@@ -45,3 +45,17 @@ def test_service_targets_backend_not_frontend_listener():
     svc = next(o for o in docs if o['kind'] == 'Service' and o['metadata']['name'] == 'public-edge-manager-dns')
     assert {(p['protocol'], p['port'], p['targetPort']) for p in svc['spec']['ports']} == {
         ('UDP', 53, 1053), ('TCP', 53, 1053)}
+
+
+def test_public_queries_do_not_fall_back_to_legacy_axfr_data(monkeypatch):
+    ns = router(monkeypatch)
+    # No query name or record type may send clients back to the stale BIND zone.
+    ns['classify'] = lambda source: '198.18.2.1'
+    seen = []
+    ns['set_ecs'] = lambda packet, address, replace=False: seen.append((address, replace)) or packet
+    for packet in (b'api-query', b'NS-query', b'SOA-query', b'AAAA-query'):
+        forwarded, target = ns['routed'](packet, '192.0.2.20')
+        assert forwarded == packet
+        assert target == ns['EDGE']
+        assert target != ns['BIND']
+    assert seen == [('198.18.2.1', True)] * 4

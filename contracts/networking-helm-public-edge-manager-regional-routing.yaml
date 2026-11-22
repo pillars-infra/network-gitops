@@ -9,10 +9,10 @@ spec:
     namespace: regional-routing
   source:
     renderer: kustomize
-    revision: helm-oci@sha256:2ac43545ea1229195b64993b82e132fdafc42a813e6a244489c13d24e660aeee
+    revision: helm-oci@sha256:a854a0bb08c4dc45a02f2b57ad4fdf298ecf4b8de0424a2b644d9fc0a51c4c09
     repository: pillars-infra/network-gitops
     path: releases/networking-helm-public-edge-manager-regional-routing
-    chartOCI: oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:2ac43545ea1229195b64993b82e132fdafc42a813e6a244489c13d24e660aeee
+    chartOCI: oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:a854a0bb08c4dc45a02f2b57ad4fdf298ecf4b8de0424a2b644d9fc0a51c4c09
   provenance:
     repository: pillars-infra/network-gitops
     workflow: .github/workflows/static-release.yml
