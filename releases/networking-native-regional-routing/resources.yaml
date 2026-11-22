@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/authority-source-revision: geo-authority-router-v3
+        networking.re8ch.com/authority-source-revision: geo-authority-router-v4
       labels:
         app.kubernetes.io/name: powerdns-cloud-authorities
     spec:
@@ -400,10 +400,8 @@ data:
     \ socket.SOCK_DGRAM) as upstream:\n            upstream.settimeout(3)\n      \
     \      upstream.sendto(packet, target)\n            response, _ = upstream.recvfrom(65535)\n\
     \            listener.sendto(response, client)\n    except OSError:\n        pass\n\
-    \ndef udp_server():\n    listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n\
-    \    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n    listener.bind((LISTEN_ADDRESS,\
-    \ 53))\n    while True:\n        packet, client = listener.recvfrom(65535)\n \
-    \       threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()\n\
+    \ndef udp_server(listener):\n    while True:\n        packet, client = listener.recvfrom(65535)\n\
+    \        threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()\n\
     \ndef read_exact(stream, size):\n    data = b\"\"\n    while len(data) < size:\n\
     \        part = stream.recv(size - len(data))\n        if not part:\n        \
     \    raise ConnectionError\n        data += part\n    return data\n\ndef tcp_client(client,\
@@ -416,12 +414,25 @@ data:
     !H\", read_exact(upstream, 2))[0]\n                    reply = read_exact(upstream,\
     \ reply_size)\n                client.sendall(struct.pack(\"!H\", reply_size)\
     \ + reply)\n            except (OSError, ConnectionError, struct.error):\n   \
-    \             return\n\ndef tcp_server():\n    listener = socket.socket(socket.AF_INET,\
-    \ socket.SOCK_STREAM)\n    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,\
-    \ 1)\n    listener.bind((LISTEN_ADDRESS, 53))\n    listener.listen(128)\n    while\
-    \ True:\n        client, address = listener.accept()\n        threading.Thread(target=tcp_client,\
-    \ args=(client, address[0]), daemon=True).start()\n\nthreading.Thread(target=udp_server,\
-    \ daemon=True).start()\ntcp_server()\n"
+    \             return\n\ndef tcp_server(listener):\n    while True:\n        client,\
+    \ address = listener.accept()\n        threading.Thread(target=tcp_client, args=(client,\
+    \ address[0]), daemon=True).start()\n\ndef listener_addresses():\n    # status.hostIP\
+    \ can be the overlay address. Also receive the provider's\n    # public-DNAT traffic\
+    \ on the same default-route interface used for egress.\n    with socket.socket(socket.AF_INET,\
+    \ socket.SOCK_DGRAM) as route:\n        route.connect((\"1.1.1.1\", 53))\n   \
+    \     provider_address = route.getsockname()[0]\n    return sorted({LISTEN_ADDRESS,\
+    \ provider_address})\n\n\ndef bind_listeners(addresses):\n    listeners = []\n\
+    \    try:\n        for address in addresses:\n            for kind in (socket.SOCK_DGRAM,\
+    \ socket.SOCK_STREAM):\n                listener = socket.socket(socket.AF_INET,\
+    \ kind)\n                listeners.append((kind, listener))\n                listener.setsockopt(socket.SOL_SOCKET,\
+    \ socket.SO_REUSEADDR, 1)\n                listener.bind((address, 53))\n    \
+    \            if kind == socket.SOCK_STREAM:\n                    listener.listen(128)\n\
+    \    except OSError:\n        for _, listener in listeners:\n            listener.close()\n\
+    \        raise\n    return listeners\n\n\ndef main():\n    listeners = bind_listeners(listener_addresses())\n\
+    \    for kind, listener in listeners[:-1]:\n        target = udp_server if kind\
+    \ == socket.SOCK_DGRAM else tcp_server\n        threading.Thread(target=target,\
+    \ args=(listener,), daemon=True).start()\n    tcp_server(listeners[-1][1])\n\n\
+    \nif __name__ == \"__main__\":\n    main()\n"
   geoip.yaml: "domains:\n- domain: classify.geo.re8ch.internal\n  ttl: 30\n  records:\n\
     \    classify.geo.re8ch.internal:\n    - soa: localhost hostmaster.re8ch.com 2026112102\
     \ 60 60 86400 30\n    - ns: localhost\n    cn.classify.geo.re8ch.internal: [{a:\
