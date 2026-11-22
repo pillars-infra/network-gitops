@@ -1,0 +1,11 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: public-edge-manager
+  namespace: flux-network-system
+spec:
+  values:
+    workload:
+      # The current authority set has two nodes. Preserve one serving authority
+      # while updating; host-network listeners cannot surge on the same node.
+      maxUnavailable: 1

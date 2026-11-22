@@ -139,7 +139,7 @@ spec:
         name: nameservers
   updateStrategy:
     rollingUpdate:
-      maxUnavailable: 3
+      maxUnavailable: 1
     type: RollingUpdate
 ---
 apiVersion: apps/v1
