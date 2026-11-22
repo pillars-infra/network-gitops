@@ -44,6 +44,23 @@ def test_accepted_reconcile_can_repair_drift_but_still_checks_source_pin(monkeyp
     assert parity.check([obj()],{'healthyDigest':'sha256:accepted'},run)['initialAdoption'] is False
     assert len(calls)==1
 
+def test_complete_accepted_degraded_baseline_allows_reviewed_repairs(monkeypatch):
+    run,calls=runner(monkeypatch)
+    previous={'acceptedDigest':'sha256:baseline','appliedDigest':'sha256:baseline',
+              'inventory':['networking.advfab.org/AdvancedFabric/_/advanced-fabric'], 'blocked':False}
+    assert parity.check([obj()],previous,run)['initialAdoption'] is False
+    assert len(calls)==1
+    assert 'healthyDigest' not in previous  # Never promote degraded to healthy.
+
+@pytest.mark.parametrize('change',[{'acceptedDigest':'sha256:different'}, {'blocked':True}, {'inventory':[]}])
+def test_unaccepted_or_blocked_baseline_does_not_skip_topology_parity(monkeypatch,change):
+    previous={'acceptedDigest':'sha256:baseline','appliedDigest':'sha256:baseline',
+              'inventory':['networking.advfab.org/AdvancedFabric/_/advanced-fabric'], 'blocked':False, **change}
+    live=obj();live['spec']['nodes']=[]
+    run,_=runner(monkeypatch,live)
+    with pytest.raises(parity.TopologyParityError,match='difference count=1'):
+        parity.check([obj()],previous,run)
+
 def test_source_read_diagnostics_never_expose_contents():
     def fail(*a,**k):raise ValueError('do-not-log source or credential')
     with pytest.raises(parity.TopologyParityError) as exc:parity.check([obj()],None,fail)
