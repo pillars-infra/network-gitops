@@ -5,8 +5,8 @@
   "releases": {
     "advanced-fabric": {
       "chart": {
-        "oci": "oci://ghcr.io/advanced-fabrics/charts/advanced-fabric@sha256:50f1b59b98081f74e4cf51ad91ea2f7253b26cbd653674c1126907f3cd403819",
-        "sha256": "4cc2378800d05d144a99d1d28255ed1ca8b8050ae1ae7dea6a133fd3cb8bd757"
+        "oci": "oci://ghcr.io/advanced-fabrics/charts/advanced-fabric@sha256:7c4987683463077bd27d0bbfb581ab28f1fb972a379ece0d9dcb158ff3b2c7ff",
+        "sha256": "475ccc45f18d56e1ff9bdea0735d31ce2554ef926e4766e7e57402a7a1c540ae"
       },
       "namespace": "kube-system",
       "releaseName": "service-vip-fabric",
