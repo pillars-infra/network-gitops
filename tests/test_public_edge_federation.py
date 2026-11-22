@@ -49,8 +49,12 @@ def test_all_atlantic_ingress_points_are_reviewed_api_candidates():
     assert all(item["serviceClasses"] == ["api", "db-rw", "web", "service-pilot"]
                for item in candidates.values())
     assert values["image"]["digest"] == (
-        "sha256:8d9f78dcf2c904c628f58250d427c8b976e55943ba4650fae87ccbfd0a63a3b0"
+        "sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114"
     )
+    assert values["discovery"]["externalAuthorityEvidenceConfigMap"] == (
+        "public-edge-globalping-quality"
+    )
+    assert values["discovery"]["externalAuthorityEvidenceMaxAgeSeconds"] == 2700
 
 
 def test_public_edge_has_stable_aliases_for_external_cdns_and_access_portal():

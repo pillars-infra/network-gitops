@@ -25823,6 +25823,8 @@ spec:
         id: tencent-zan
         nameserver: ns-zan.re8ch.com.
         region: cn-guangdong
+      externalAuthorityEvidenceConfigMap: public-edge-globalping-quality
+      externalAuthorityEvidenceMaxAgeSeconds: 2700
       gatewayNamespace: kube-system
       gatewaySelector: networking.re8ch.com/public-edge-gateway=true
       ingressLabel: networking.re8ch.com/public-edge-ready
@@ -26163,10 +26165,10 @@ spec:
           cpu: 10m
           memory: 32Mi
     image:
-      digest: sha256:8d9f78dcf2c904c628f58250d427c8b976e55943ba4650fae87ccbfd0a63a3b0
+      digest: sha256:d9dd6af1df4f20f6d2a17eadc32723a530e665b72918b629762d96916744c114
       pullPolicy: IfNotPresent
       repository: ghcr.io/public-edge/public-edge-manager
-      tag: 0.8.8
+      tag: 0.8.9
     nameservers:
     - ns-bootstrap.re8ch.com.
     probe:
@@ -26174,7 +26176,7 @@ spec:
       intervalSeconds: 15
       maxWorkers: 8
       responseTimeoutSeconds: 12
-      userAgent: public-edge-manager/0.8.8
+      userAgent: public-edge-manager/0.8.9
     publication:
       adapters: {}
       enabled: false
@@ -27447,7 +27449,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:0137c1015e9cc4d452ef47a288ed5e0e51ca3046ba1581b1ac58c86522e64fab
+    digest: sha256:fc7f347f57934e0b6b49f4d9cd553cbc03ba520288e11922b60c80ff8bcdbfc3
   url: oci://ghcr.io/public-edge/charts/public-edge-manager
 ---
 apiVersion: networking.k8s.io/v1
