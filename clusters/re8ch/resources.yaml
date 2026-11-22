@@ -26290,7 +26290,7 @@ spec:
       allowedStates:
       - Ready
       - Partial
-      apiGroup: networking.re8ch.com
+      apiGroup: networking.advfab.org
       apiVersion: v1alpha2
       mode: Required
       requireNodeReady: false
@@ -26338,10 +26338,10 @@ spec:
           cpu: 10m
           memory: 32Mi
     image:
-      digest: sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
+      digest: sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003
       pullPolicy: IfNotPresent
       repository: ghcr.io/public-edge/public-edge-manager
-      tag: 0.8.13
+      tag: 0.8.14
     nameservers:
     - ns-bootstrap.re8ch.com.
     probe:
@@ -26349,7 +26349,7 @@ spec:
       intervalSeconds: 15
       maxWorkers: 16
       responseTimeoutSeconds: 12
-      userAgent: public-edge-manager/0.8.13
+      userAgent: public-edge-manager/0.8.14
     publication:
       adapters: {}
       enabled: false
@@ -27640,7 +27640,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:a854a0bb08c4dc45a02f2b57ad4fdf298ecf4b8de0424a2b644d9fc0a51c4c09
+    digest: sha256:ceb92c63fccaf6f1a65d1b3d5d99de8c1cc3dab62a524180d4050440399d42b8
   url: oci://ghcr.io/public-edge/charts/public-edge-manager
 ---
 apiVersion: networking.k8s.io/v1
