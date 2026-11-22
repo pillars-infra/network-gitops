@@ -25634,6 +25634,13 @@ spec:
           name: public-edge-manager-controller
         patch: |-
           - op: add
+            path: /spec/strategy
+            value:
+              type: RollingUpdate
+              rollingUpdate:
+                maxSurge: 0
+                maxUnavailable: 1
+          - op: add
             path: /spec/template/spec/hostNetwork
             value: true
           - op: add
