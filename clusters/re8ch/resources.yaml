@@ -25887,10 +25887,9 @@ spec:
     crd:
       install: true
     discovery:
-      addressZones:
-      - api.re8ch.com
-      - db-ro.re8ch.com
-      - db-rw.re8ch.com
+      # DNS authority readiness is SOA over both public transports for every
+      # delegated zone. Application A readiness belongs to ServiceEndpoint.
+      addressZones: []
       authorityLabel: networking.re8ch.com/public-edge-authority-ready
       authorityQualifiedLabel: networking.re8ch.com/public-edge-authority-qualified
       childZones:
@@ -25997,7 +25996,10 @@ spec:
         id: tencent-zan
         nameserver: ns-zan.re8ch.com.
         region: cn-guangdong
-      externalAuthorityEvidenceConfigMap: public-edge-globalping-quality
+      # The public observer remains telemetry. Its quota, DNS and API writes
+      # must not become a dependency for authoritative DNS admission/recovery.
+      # The controller retains bounded public SOA checks on UDP and TCP.
+      externalAuthorityEvidenceConfigMap: ""
       externalAuthorityEvidenceMaxAgeSeconds: 2700
       gatewayNamespace: kube-system
       gatewaySelector: networking.re8ch.com/public-edge-gateway=true
@@ -26014,8 +26016,7 @@ spec:
       # Docker node, where image pulls bypass Mihomo and wedge protected
       # rollouts indefinitely.
       replicas: 2
-      requiredAddressNames:
-      - headlamp.service.re8ch.com
+      requiredAddressNames: []
       # Ordinary AXFR secondaries cannot execute source-aware answers.
       # Keep public delegation owned by the existing qualified-authority election.
       secondaryNameserversByZone: {}
