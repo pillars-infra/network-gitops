@@ -41,8 +41,8 @@
     },
     "public-edge-manager": {
       "chart": {
-        "oci": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:a01f7b1bad51be882f3f0e424bed0670beabab17c5c4ce2e673f3fc586014b19",
-        "sha256": "4c866e0ba1f253225628280fa10790b9aeb9238de6b078d900a16aac46b57106"
+        "oci": "oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:2ac43545ea1229195b64993b82e132fdafc42a813e6a244489c13d24e660aeee",
+        "sha256": "2deffa77b07f3de5c61cc5c440036ca8d927051c2d1810092ea43f70404d904b"
       },
       "namespace": "regional-routing",
       "releaseName": "public-edge-manager",
