@@ -1,0 +1,47 @@
+apiVersion: networking.re8ch.com/v1alpha1
+kind: PublicEdge
+metadata:
+  name: af-canary-primary
+  labels:
+    app.kubernetes.io/part-of: af-public-ingress-canary
+spec:
+  enabled: true
+  nodeName: r640
+  region: cn-hunan
+  area: CN
+  endpoint:
+    type: PublicIP
+    value: 223.159.210.222
+  gatewayVIP: 10.251.0.4
+  gatewayRef:
+    namespace: kube-system
+    name: re8ch-gateway-canary
+  serviceClasses:
+  - af-canary
+  capacityMbps: 1
+  priority: 0
+  forwarding:
+    mode: DirectGateway
+  discovery:
+    source: AmongCluster
+    clusterRef: re8ch
+    serviceRef: spiffe://re8ch.internal/ns/af-canary/service/af-ingress-canary
+    protocol: http
+    endpointId: primary
+    advertisementRef:
+      namespace: byoc-pilot
+      name: re8ch-af-canary-af-ingress-canary
+      uid: __ADVERTISEMENT_UID__
+    importedServiceRef:
+      namespace: byoc-pilot
+      name: re8ch-af-canary-af-ingress-canary-re8ch-atlantic
+      uid: __IMPORT_UID__
+    assessmentRefs:
+      domain-ex:
+        name: tls-658aeb7d53f806e2eb4cf874
+        uid: __DOMAIN_EX_SERVICE_NPA_UID__
+        sourceNode: domain-ex
+        targetId: af-canary-cn
+        paddingBytes:
+        - 0
+        - 2048

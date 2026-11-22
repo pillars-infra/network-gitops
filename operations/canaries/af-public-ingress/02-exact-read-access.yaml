@@ -1,0 +1,39 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: af-canary-evidence-read
+  namespace: byoc-pilot
+rules:
+- apiGroups:
+  - peering.re8ch.com
+  resources:
+  - serviceadvertisements
+  resourceNames:
+  - re8ch-af-canary-af-ingress-canary
+  verbs:
+  - get
+- apiGroups:
+  - peering.re8ch.com
+  resources:
+  - importedservices
+  resourceNames:
+  - re8ch-af-canary-af-ingress-canary-re8ch-atlantic
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: af-canary-evidence-read
+  namespace: byoc-pilot
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: af-canary-evidence-read
+subjects:
+- kind: ServiceAccount
+  name: advanced-fabric
+  namespace: kube-system
+- kind: ServiceAccount
+  name: public-edge-manager
+  namespace: regional-routing

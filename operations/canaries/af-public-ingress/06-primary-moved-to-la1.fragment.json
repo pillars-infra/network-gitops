@@ -1,0 +1,26 @@
+{
+  "endpoints": [
+    {
+      "id": "primary",
+      "site": "la1",
+      "region": "us-la-1",
+      "protocol": "https",
+      "address": "179.255.126.104",
+      "port": 443,
+      "hostname": "af-canary.service.re8ch.com",
+      "path": "/transfer",
+      "revision": "canary-r2"
+    },
+    {
+      "id": "secondary",
+      "site": "r640",
+      "region": "cn-hunan",
+      "protocol": "https",
+      "address": "223.159.210.222",
+      "port": 443,
+      "hostname": "af-canary.service.re8ch.com",
+      "path": "/transfer",
+      "revision": "canary-r2"
+    }
+  ]
+}

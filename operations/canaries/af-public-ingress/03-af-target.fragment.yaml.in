@@ -1,0 +1,23 @@
+name: af-canary-cn
+sourceNodes:
+- domain-ex
+- suxunji
+- r640
+paddingBytes:
+- 0
+- 2048
+required: true
+discovery:
+  source: AmongCluster
+  clusterRef: re8ch
+  serviceRef: spiffe://re8ch.internal/ns/af-canary/service/af-ingress-canary
+  protocol: http
+  endpointId: primary
+  advertisementRef:
+    namespace: byoc-pilot
+    name: re8ch-af-canary-af-ingress-canary
+    uid: __ADVERTISEMENT_UID__
+  importedServiceRef:
+    namespace: byoc-pilot
+    name: re8ch-af-canary-af-ingress-canary-re8ch-atlantic
+    uid: __IMPORT_UID__
