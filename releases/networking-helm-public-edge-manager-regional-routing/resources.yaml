@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ee1aea9bc36edf679bea3d5a0ab5ade339372d7e167dd07c456bb3f095006e27
+        checksum/config: 5be0c7e47559bd511d31b59ee5371cb7ce7f3657c2b417e85b7f862c2f12e20d
       labels:
         app.kubernetes.io/name: public-edge-manager
     spec:
@@ -65,7 +65,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
+        image: ghcr.io/public-edge/public-edge-manager@sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003
         imagePullPolicy: IfNotPresent
         name: manager
         readinessProbe:
@@ -179,7 +179,7 @@ spec:
               fieldPath: spec.nodeName
         - name: SNI_ROUTES
           value: '{"kube-api.service.re8ch.com":{"host":"10.250.0.147","port":6443}}'
-        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
+        image: ghcr.io/public-edge/public-edge-manager@sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003
         imagePullPolicy: IfNotPresent
         name: redirector
         ports:
@@ -265,7 +265,7 @@ spec:
           value: 10.250.0.147
         - name: KUBERNETES_SERVICE_PORT_HTTPS
           value: '6443'
-        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
+        image: ghcr.io/public-edge/public-edge-manager@sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003
         imagePullPolicy: IfNotPresent
         name: cli
         securityContext:
@@ -296,7 +296,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ee1aea9bc36edf679bea3d5a0ab5ade339372d7e167dd07c456bb3f095006e27
+        checksum/config: 5be0c7e47559bd511d31b59ee5371cb7ce7f3657c2b417e85b7f862c2f12e20d
       labels:
         app.kubernetes.io/name: public-edge-manager-controller
     spec:
@@ -404,7 +404,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
+        image: ghcr.io/public-edge/public-edge-manager@sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003
         imagePullPolicy: IfNotPresent
         name: controller
         resources:
@@ -457,7 +457,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ee1aea9bc36edf679bea3d5a0ab5ade339372d7e167dd07c456bb3f095006e27
+        checksum/config: 5be0c7e47559bd511d31b59ee5371cb7ce7f3657c2b417e85b7f862c2f12e20d
       labels:
         app.kubernetes.io/name: public-edge-manager-globalping
     spec:
@@ -501,7 +501,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
+        image: ghcr.io/public-edge/public-edge-manager@sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003
         imagePullPolicy: IfNotPresent
         name: observer
         resources:
@@ -573,7 +573,7 @@ spec:
         envFrom:
         - configMapRef:
             name: public-edge-manager
-        image: ghcr.io/public-edge/public-edge-manager@sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44
+        image: ghcr.io/public-edge/public-edge-manager@sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003
         imagePullPolicy: IfNotPresent
         name: hidden-primary
         ports:
@@ -679,7 +679,7 @@ data:
   CLIENT_AREA_CIDRS_JSON: '{"CN":["198.18.1.0/24","223.5.5.0/24","119.29.29.0/24","114.114.114.0/24"],"EU-CENTRAL":["198.18.3.0/24","80.80.80.0/24","9.9.9.0/24"],"EU-NORTH":["198.18.5.0/24"],"SEA":["198.18.4.0/24"],"US-WEST":["198.18.2.0/24","8.8.8.0/24","8.8.4.0/24"]}'
   DNS_TRANSFER_ROLE: disabled
   FABRIC_EVIDENCE_ALLOWED_STATES_JSON: '["Ready","Partial"]'
-  FABRIC_EVIDENCE_API_GROUP: networking.re8ch.com
+  FABRIC_EVIDENCE_API_GROUP: networking.advfab.org
   FABRIC_EVIDENCE_API_VERSION: v1alpha2
   FABRIC_EVIDENCE_MODE: Required
   FABRIC_EVIDENCE_RESOURCE: networkpathassessments
@@ -688,7 +688,7 @@ data:
   GLOBALPING_QUALITY_MAX_AGE_SECONDS: '2700'
   GLOBALPING_QUALITY_MODE: Shadow
   NAMESERVERS: ns-bootstrap.re8ch.com.
-  PROBE_USER_AGENT: public-edge-manager/0.8.13
+  PROBE_USER_AGENT: public-edge-manager/0.8.14
   PUBLICATION_ADAPTERS_JSON: '{}'
   PUBLICATION_ENABLED: 'false'
   PUBLICATION_REFS_JSON: '{}'

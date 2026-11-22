@@ -49,8 +49,10 @@ def test_all_atlantic_ingress_points_are_reviewed_api_candidates():
     assert all(item["serviceClasses"] == ["api", "db-rw", "web", "service-pilot"]
                for item in candidates.values())
     assert values["image"]["digest"] == (
-        "sha256:b285b278e8768fb680b6530014d132aa821f6a4ad3fd17e3d6db448b7aba7f44"
+        "sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003"
     )
+    assert values["fabricEvidence"]["apiGroup"] == "networking.advfab.org"
+    assert values["fabricEvidence"]["mode"] == "Required"
     # Authoritative DNS recovery must survive an observer quota or DNS outage.
     assert values["discovery"]["externalAuthorityEvidenceConfigMap"] == ""
     assert values["discovery"]["addressZones"] == []
