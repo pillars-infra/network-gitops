@@ -378,15 +378,15 @@ spec:
         - name: CHILD_ZONES_JSON
           value: '["api.re8ch.com","db-ro.re8ch.com","db-rw.re8ch.com","service.re8ch.com","functions.re8ch.com","test.re8ch.com"]'
         - name: ADDRESS_ZONES_JSON
-          value: '["api.re8ch.com","db-ro.re8ch.com","db-rw.re8ch.com"]'
+          value: '[]'
         - name: REQUIRED_ADDRESS_NAMES_JSON
-          value: '["headlamp.service.re8ch.com"]'
+          value: '[]'
         - name: SECONDARY_NAMESERVERS_BY_ZONE_JSON
           value: '{}'
         - name: EXTERNAL_AUTHORITIES_JSON
           value: '[{"address":"223.159.210.222","enabled":false,"id":"routeros-r640","nameserver":"ns-routeros.re8ch.com.","region":"cn-hunan"},{"address":"124.220.77.50","enabled":true,"id":"tencent-domain-ex","nameserver":"ns-domain-ex.re8ch.com.","region":"cn-shanghai"},{"address":"47.103.114.218","enabled":true,"id":"aliyun-muaya-lightweight","nameserver":"ns-muaya-lightweight.re8ch.com.","region":"cn-shanghai"},{"address":"101.34.217.95","enabled":true,"id":"tencent-suxunji","nameserver":"ns-suxunji.re8ch.com.","region":"cn-shanghai"},{"address":"1.14.174.244","enabled":true,"id":"tencent-zan","nameserver":"ns-zan.re8ch.com.","region":"cn-guangdong"}]'
         - name: EXTERNAL_AUTHORITY_EVIDENCE_CONFIGMAP
-          value: public-edge-globalping-quality
+          value: ''
         - name: EXTERNAL_AUTHORITY_EVIDENCE_MAX_AGE_SECONDS
           value: '2700'
         - name: NAMESERVER_CONFIGMAP
