@@ -49,12 +49,16 @@ def test_all_atlantic_ingress_points_are_reviewed_api_candidates():
     assert all(item["serviceClasses"] == ["api", "db-rw", "web", "service-pilot"]
                for item in candidates.values())
     assert values["image"]["digest"] == (
-        "sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b"
+        "sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c"
     )
     assert values["discovery"]["externalAuthorityEvidenceConfigMap"] == (
         "public-edge-globalping-quality"
     )
     assert values["discovery"]["externalAuthorityEvidenceMaxAgeSeconds"] == 2700
+    assert values["workload"]["nodeNames"] == ["suxunji", "domain-ex"]
+    assert values["routingPolicy"]["defaultRegion"] == "US-WEST"
+    assert values["routingPolicy"]["regions"]["CN"][0]["ip"] == "223.159.210.222"
+    assert values["routingPolicy"]["regions"]["US-WEST"][0]["ip"] == "179.255.126.104"
 
 
 def test_public_edge_has_stable_aliases_for_external_cdns_and_access_portal():
