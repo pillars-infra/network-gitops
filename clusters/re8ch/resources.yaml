@@ -26172,10 +26172,10 @@ spec:
           cpu: 10m
           memory: 32Mi
     image:
-      digest: sha256:0ee9e1b226b0309261a21d3d190b0393604ad12b539c86e5b75fa79e4960ec7b
+      digest: sha256:2780af252f20b1b8b7259c18550fca7d0e99d48369206947ca933b4e678a768c
       pullPolicy: IfNotPresent
       repository: ghcr.io/public-edge/public-edge-manager
-      tag: 0.8.10
+      tag: 0.8.11
     nameservers:
     - ns-bootstrap.re8ch.com.
     probe:
@@ -26183,7 +26183,7 @@ spec:
       intervalSeconds: 15
       maxWorkers: 8
       responseTimeoutSeconds: 12
-      userAgent: public-edge-manager/0.8.10
+      userAgent: public-edge-manager/0.8.11
     publication:
       adapters: {}
       enabled: false
@@ -26211,7 +26211,7 @@ spec:
       statePath: /var/lib/public-edge/route-snapshot.json
       tlsSecretRef: ''
     routingPolicy:
-      defaultRegion: default
+      defaultRegion: US-WEST
       regions:
         CN:
         - id: r640
@@ -26543,6 +26543,9 @@ spec:
         tlsSecretRef: public-edge-overseas-la-tls
       shadowDnsPort: 5353
     workload:
+      nodeNames:
+      - suxunji
+      - domain-ex
       containerSecurityContext:
         allowPrivilegeEscalation: false
         capabilities:
@@ -27456,7 +27459,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:2cdc6d4387aafb6bc2b06329c006fa6c7c9c9bfd85a6138aa5e54870d277607a
+    digest: sha256:a01f7b1bad51be882f3f0e424bed0670beabab17c5c4ce2e673f3fc586014b19
   url: oci://ghcr.io/public-edge/charts/public-edge-manager
 ---
 apiVersion: networking.k8s.io/v1
