@@ -20658,6 +20658,71 @@ data:
         - '%cc.classify.geo.re8ch.internal'
         - '%cn.classify.geo.re8ch.internal'
         - global.classify.geo.re8ch.internal
+  geoip-source.json: |
+    {
+      "version": "2026-11",
+      "releaseTag": "geoip-dbip-country-2026-11",
+      "fileName": "dbip-country-lite-2026-11.mmdb.gz",
+      "sourceURL": "https://download.db-ip.com/free/dbip-country-lite-2026-11.mmdb.gz",
+      "artifactURL": "https://github.com/pillars-infra/network-gitops/releases/download/geoip-dbip-country-2026-11/dbip-country-lite-2026-11.mmdb.gz",
+      "sha256": "75fe430010f6d38a8c4331c202bf0df6ce3221a6e6d823b9e5a6d951e4cf9758",
+      "databaseSHA256": "145ce5dfb812d8de28547e6289bb5c5f8b3df2f1dea21d324d5b575e0431311f",
+      "upstreamDatabaseSHA1": "09eea8433fe3eed71984fd6aac9d8ab3d9ca51f0",
+      "license": "CC-BY-4.0",
+      "attribution": "IP Geolocation by DB-IP (https://db-ip.com). Unmodified DB-IP Lite country data, November 2026.",
+      "licenseURL": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  geoip-NOTICE: |
+    IP Geolocation by DB-IP (https://db-ip.com). Unmodified DB-IP Lite country data, November 2026.
+    License: https://creativecommons.org/licenses/by/4.0/
+    Source: https://download.db-ip.com/free/dbip-country-lite-2026-11.mmdb.gz
+  geoip-fetch.py: |
+    import gzip
+    import hashlib
+    import io
+    import json
+    from pathlib import Path
+    import time
+    import urllib.request
+
+
+    def fetch_to(source, destination, source_key='artifactURL'):
+        prefixes = {
+            'artifactURL': 'https://github.com/pillars-infra/network-gitops/releases/download/geoip-dbip-country-',
+            'sourceURL': 'https://download.db-ip.com/free/dbip-country-lite-',
+        }
+        if source_key not in prefixes or not source[source_key].startswith(prefixes[source_key]):
+            raise ValueError('unapproved artifact origin')
+        with urllib.request.urlopen(source[source_key], timeout=30) as response:
+            compressed = response.read(8 * 1024 * 1024 + 1)
+        if len(compressed) > 8 * 1024 * 1024 or hashlib.sha256(compressed).hexdigest() != source['sha256']:
+            raise ValueError('compressed country database digest mismatch')
+        with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as stream:
+            database = stream.read(16 * 1024 * 1024 + 1)
+        if len(database) > 16 * 1024 * 1024 or hashlib.sha256(database).hexdigest() != source['databaseSHA256']:
+            raise ValueError('country database digest mismatch')
+        temporary = destination.with_suffix('.tmp')
+        temporary.write_bytes(database)
+        temporary.replace(destination)
+        return compressed
+
+
+    def main():
+        source = json.loads(Path('/etc/powerdns/geoip-source.json').read_text())
+        destination = Path('/var/lib/geoip-country/country.mmdb')
+        for attempt in range(3):
+            try:
+                fetch_to(source, destination)
+                print('verified country database ' + source['version'], flush=True)
+                return
+            except (OSError, ValueError):
+                if attempt == 2:
+                    raise
+                time.sleep(2)
+
+
+    if __name__ == '__main__':
+        main()
   dns-router.py: |
     import os
     import socket
@@ -20781,6 +20846,7 @@ data:
             packet, target = routed(packet, client[0])
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as upstream:
                 upstream.settimeout(3)
+                upstream.bind((LISTEN_ADDRESS, 0))
                 upstream.sendto(packet, target)
                 response, _ = upstream.recvfrom(65535)
                 listener.sendto(response, client)
@@ -20809,7 +20875,7 @@ data:
                     size = struct.unpack("!H", read_exact(client, 2))[0]
                     packet = read_exact(client, size)
                     packet, target = routed(packet, client_ip)
-                    with socket.create_connection(target, timeout=3) as upstream:
+                    with socket.create_connection(target, timeout=3, source_address=(LISTEN_ADDRESS, 0)) as upstream:
                         upstream.sendall(struct.pack("!H", len(packet)) + packet)
                         reply_size = struct.unpack("!H", read_exact(upstream, 2))[0]
                         reply = read_exact(upstream, reply_size)
@@ -22356,7 +22422,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/authority-source-revision: geo-authority-router-v5
+        networking.re8ch.com/authority-source-revision: geo-authority-router-v6
       labels:
         app.kubernetes.io/name: powerdns-cloud-authorities
     spec:
@@ -22407,7 +22473,7 @@ spec:
         - mountPath: /var/lib/powerdns
           name: data
       - args:
-        - "mkdir -p /tmp/pdns-geo\nexec /usr/local/sbin/pdns_server --daemon=no --guardian=no \\\n  --config-dir=/tmp/pdns-geo --launch=geoip \\\n  --geoip-zones-file=/etc/powerdns/geoip.yaml \\\n  --geoip-database-files=/usr/share/GeoIP/GeoIP.dat,/usr/share/GeoIP/GeoIPv6.dat \\\n  --local-address=127.0.0.1 --local-port=5301 \\\n  --socket-dir=/tmp/pdns-geo --disable-syslog=yes --edns-subnet-processing=yes \\\n  --version-string=anonymous\n"
+        - "mkdir -p /tmp/pdns-geo\nexec /usr/local/sbin/pdns_server --daemon=no --guardian=no \\\n  --config-dir=/tmp/pdns-geo --launch=geoip \\\n  --geoip-zones-file=/etc/powerdns/geoip.yaml \\\n  --geoip-database-files=mmdb:/var/lib/geoip-country/country.mmdb \\\n  --local-address=127.0.0.1 --local-port=5301 \\\n  --socket-dir=/tmp/pdns-geo --disable-syslog=yes --edns-subnet-processing=yes \\\n  --version-string=anonymous\n"
         command:
         - sh
         - -ec
@@ -22439,6 +22505,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/powerdns
           name: config
+          readOnly: true
+        - mountPath: /var/lib/geoip-country
+          name: geoip-country
           readOnly: true
       - args:
         - /etc/powerdns/dns-router.py
@@ -22472,9 +22541,26 @@ spec:
         - mountPath: /etc/powerdns
           name: config
           readOnly: true
-      dnsPolicy: ClusterFirstWithHostNet
+      dnsPolicy: None
+      dnsConfig:
+        nameservers: ['1.1.1.1', '8.8.8.8']
+      automountServiceAccountToken: false
       hostNetwork: true
       initContainers:
+      - name: geoip-country
+        image: python:3.13-alpine@sha256:540c7d91f98ff6880174c40e99067bf5941eb54d818a7a5e094d188b196a934d
+        command: [python3, /etc/powerdns/geoip-fetch.py]
+        resources:
+          requests: {cpu: 10m, memory: 24Mi}
+          limits: {cpu: 100m, memory: 64Mi}
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: config, mountPath: /etc/powerdns, readOnly: true}
+        - {name: geoip-country, mountPath: /var/lib/geoip-country}
       - command:
         - sh
         - -c
@@ -22497,6 +22583,8 @@ spec:
         key: node.cilium.io/agent-not-ready
         operator: Exists
       volumes:
+      - name: geoip-country
+        emptyDir: {sizeLimit: 16Mi}
       - configMap:
           name: powerdns-cloud-authorities
         name: config

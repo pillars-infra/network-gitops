@@ -1,0 +1,63 @@
+name: Publish pinned GeoIP data
+on:
+  push:
+    tags: ['geoip-dbip-country-*']
+permissions: {contents: read}
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions: {contents: write, id-token: write, attestations: write}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: {persist-credentials: false}
+      - run: python -m pip install --disable-pip-version-check PyYAML==6.0.3
+      - name: Prepare exact reviewed database and attribution
+        env: {GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess,yaml
+          root=pathlib.Path('dist');root.mkdir()
+          cm=next(o for o in yaml.safe_load_all(pathlib.Path('clusters/re8ch/resources.yaml').read_text())
+                  if o and o.get('kind')=='ConfigMap' and o['metadata']['name']=='powerdns-cloud-authorities')
+          source=json.loads(cm['data']['geoip-source.json'])
+          assert source['releaseTag']==os.environ['GITHUB_REF_NAME']
+          archive=root/source['fileName']
+          exists=subprocess.run(['gh','release','view',source['releaseTag']],capture_output=True).returncode==0
+          if exists:
+              subprocess.run(['gh','release','download',source['releaseTag'],'--pattern',source['fileName'],'--dir',str(root)],check=True)
+              assert hashlib.sha256(archive.read_bytes()).hexdigest()==source['sha256']
+          else:
+              namespace={'__name__':'publisher'}
+              exec(compile(cm['data']['geoip-fetch.py'],'geoip-fetch.py','exec'),namespace)
+              country=root/'country.mmdb'
+              archive.write_bytes(namespace['fetch_to'](source,country,source_key='sourceURL'))
+              country.unlink()
+          (root/'manifest.json').write_text(json.dumps(source,indent=2)+'\n')
+          (root/'NOTICE.txt').write_text(cm['data']['geoip-NOTICE'])
+          (root/'SHA256SUMS').write_text(source['sha256']+'  '+source['fileName']+'\n')
+          PY
+      - name: Attest retained database provenance
+        id: attest
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f
+        with: {subject-path: 'dist/*.mmdb.gz'}
+      - name: Publish once and verify retained evidence
+        env: {GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'}
+        run: |
+          cp '${{ steps.attest.outputs.bundle-path }}' dist/country.provenance.json
+          gh attestation verify dist/*.mmdb.gz --repo "$GITHUB_REPOSITORY"
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" dist/* --verify-tag \
+              --title "DB-IP country data $GITHUB_REF_NAME" --notes-file dist/NOTICE.txt
+          fi
+      - name: Preserve workflow failure evidence
+        if: failure()
+        run: |
+          python -c 'import datetime as dt,json,os; print(json.dumps({"apiVersion":"delivery.re8ch.com/workflow-failure/v1alpha1","outcome":"failed","finishedAt":dt.datetime.now(dt.timezone.utc).isoformat(),"runId":os.environ.get("GITHUB_RUN_ID"),"job":os.environ.get("GITHUB_JOB"),"health":{"status":"unknown","reason":"workflow step failed; inspect this run before trusting older accepted state"}}))' > "$RUNNER_TEMP/workflow-failure.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: failure()
+        with:
+          name: 'workflow-failure-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}'
+          path: '${{ runner.temp }}/workflow-failure.json'
+          retention-days: 30
+          if-no-files-found: error
