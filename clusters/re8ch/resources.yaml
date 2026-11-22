@@ -26603,7 +26603,7 @@ spec:
       kubernetesApiFallbackUrls:
       - https://10.250.0.1:6443
       - https://10.181.22.128:6443
-      maxUnavailable: 2
+      maxUnavailable: 3
       tolerations:
       - effect: NoSchedule
         key: scheduling.re8ch.com/capacity-window
