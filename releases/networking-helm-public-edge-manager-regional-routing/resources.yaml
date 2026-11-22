@@ -45,7 +45,7 @@ spec:
         - name: HTTP_PORT
           value: '18080'
         - name: DNS_PORT
-          value: '53'
+          value: '1053'
         - name: PROBE_CONNECT_TIMEOUT_SECONDS
           value: '5'
         - name: PROBE_RESPONSE_TIMEOUT_SECONDS
@@ -54,6 +54,10 @@ spec:
           value: '15'
         - name: PROBE_MAX_WORKERS
           value: '8'
+        - name: BIND_ADDRESS
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         envFrom:
         - configMapRef:
             name: public-edge-manager
@@ -714,11 +718,11 @@ spec:
   - name: dns-udp
     port: 53
     protocol: UDP
-    targetPort: 53
+    targetPort: 1053
   - name: dns-tcp
     port: 53
     protocol: TCP
-    targetPort: 53
+    targetPort: 1053
   selector:
     app.kubernetes.io/name: public-edge-manager
   type: ClusterIP

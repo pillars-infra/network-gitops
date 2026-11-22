@@ -20787,10 +20787,7 @@ data:
         except OSError:
             pass
 
-    def udp_server():
-        listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind((LISTEN_ADDRESS, 53))
+    def udp_server(listener):
         while True:
             packet, client = listener.recvfrom(65535)
             threading.Thread(target=udp_query, args=(listener, packet, client), daemon=True).start()
@@ -20820,17 +20817,48 @@ data:
                 except (OSError, ConnectionError, struct.error):
                     return
 
-    def tcp_server():
-        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind((LISTEN_ADDRESS, 53))
-        listener.listen(128)
+    def tcp_server(listener):
         while True:
             client, address = listener.accept()
             threading.Thread(target=tcp_client, args=(client, address[0]), daemon=True).start()
 
-    threading.Thread(target=udp_server, daemon=True).start()
-    tcp_server()
+    def listener_addresses():
+        # status.hostIP can be the overlay address. Also receive the provider's
+        # public-DNAT traffic on the same default-route interface used for egress.
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as route:
+            route.connect(("1.1.1.1", 53))
+            provider_address = route.getsockname()[0]
+        return sorted({LISTEN_ADDRESS, provider_address})
+
+
+    def bind_listeners(addresses):
+        listeners = []
+        try:
+            for address in addresses:
+                for kind in (socket.SOCK_DGRAM, socket.SOCK_STREAM):
+                    listener = socket.socket(socket.AF_INET, kind)
+                    listeners.append((kind, listener))
+                    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    listener.bind((address, 53))
+                    if kind == socket.SOCK_STREAM:
+                        listener.listen(128)
+        except OSError:
+            for _, listener in listeners:
+                listener.close()
+            raise
+        return listeners
+
+
+    def main():
+        listeners = bind_listeners(listener_addresses())
+        for kind, listener in listeners[:-1]:
+            target = udp_server if kind == socket.SOCK_DGRAM else tcp_server
+            threading.Thread(target=target, args=(listener,), daemon=True).start()
+        tcp_server(listeners[-1][1])
+
+
+    if __name__ == "__main__":
+        main()
   pdns.conf: 'launch=bind
 
     bind-config=/etc/powerdns/named.conf
@@ -22328,7 +22356,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/authority-source-revision: geo-authority-router-v3
+        networking.re8ch.com/authority-source-revision: geo-authority-router-v4
       labels:
         app.kubernetes.io/name: powerdns-cloud-authorities
     spec:
@@ -25668,6 +25696,19 @@ spec:
                     labelSelector:
                       matchLabels:
                         app.kubernetes.io/name: public-edge-manager-controller
+      - target:
+          group: apps
+          version: v1
+          kind: DaemonSet
+          name: public-edge-manager
+        patch: |-
+          - op: add
+            path: /spec/template/spec/containers/0/env/-
+            value:
+              name: BIND_ADDRESS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
   releaseName: public-edge-manager
   rollback:
     cleanupOnFail: true
@@ -26543,6 +26584,7 @@ spec:
         tlsSecretRef: public-edge-overseas-la-tls
       shadowDnsPort: 5353
     workload:
+      dnsPort: 1053
       nodeNames:
       - suxunji
       - domain-ex
