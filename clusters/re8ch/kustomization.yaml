@@ -15,6 +15,13 @@ resources:
   - mihomos-authority-resources.yaml
   - among-clusters-atlantic-peer.yaml
 patches:
+  - path: public-edge-authority-rollout.yaml
+    target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      namespace: flux-network-system
+      name: public-edge-manager
   - path: advanced-fabric-control-plane-offload.yaml
     target:
       group: helm.toolkit.fluxcd.io
