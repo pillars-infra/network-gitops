@@ -403,7 +403,8 @@ class Executor:
             desired = spec.get("replicas", 1)
             return status.get("availableReplicas", 0) >= desired, "replicas unavailable"
         if ref["kind"] == "DaemonSet":
-            return status.get("numberAvailable", 0) >= status.get("desiredNumberScheduled", 0), "daemon pods unavailable"
+            return (status.get("numberAvailable", 0) >= status.get("desiredNumberScheduled", 0)
+                    and status.get("updatedNumberScheduled", 0) >= status.get("desiredNumberScheduled", 0)), "daemon rollout incomplete"
         if ref["kind"] == "Job":
             return status.get("succeeded", 0) >= spec.get("completions", 1), "job incomplete"
         return True, "healthy"

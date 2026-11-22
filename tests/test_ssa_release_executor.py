@@ -562,3 +562,16 @@ def test_failed_rollback_remains_blocked_on_next_cloud_worker(tmp_path, monkeypa
     assert recovered["blocked"] is False
     assert "blockedReason" not in recovered
     assert runner.calls == []
+
+
+@pytest.mark.parametrize('updated, expected', [(0, False), (1, False), (2, True)])
+def test_daemonset_old_available_pods_do_not_prove_rollout(updated, expected):
+    runner = Runner(live={'metadata': {'generation': 207}, 'spec': {}, 'status': {
+        'observedGeneration': 207, 'desiredNumberScheduled': 2,
+        'numberAvailable': 2, 'numberReady': 2, 'numberMisscheduled': 2,
+        'updatedNumberScheduled': updated}})
+    item = {'apiVersion': 'apps/v1', 'kind': 'DaemonSet',
+            'metadata': {'name': 'public-edge-manager', 'namespace': 'regional-routing'}}
+    healthy, reason = executor.Executor(runner=runner).healthy(item)
+    assert healthy is expected
+    assert reason == 'daemon rollout incomplete'
