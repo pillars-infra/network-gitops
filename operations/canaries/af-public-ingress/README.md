@@ -41,7 +41,7 @@ These are individually previewed Admin MCP inputs, not a new controller/planner.
    ConfigMap, compare the one-leaf change, then preview/apply through Admin MCP. Never replace
    the JSON with this fragment or reset model/routes. `requireFederatedContract` disables fallback.
 4. Probe A=223.159.210.222 and B=179.255.126.104 directly with SNI set to the canary hostname.
-   Check validated TLS, HTTP 200 and the exact 32768-byte `/transfer` body. B is a proposed relay,
+   Check validated TLS, HTTP 200 and the exact 16384-byte `/transfer` body. B is a proposed relay,
    not assumed healthy for a newly added hostname. If relay policy rejects it, report the actual
    failure and stop this phase; do not patch shared allowlists, public routing or authority.
 5. Preview/apply the policy in `01-enable-reviewed-export.yaml`, then the Service document.
@@ -81,9 +81,21 @@ These are individually previewed Admin MCP inputs, not a new controller/planner.
 - Revoke: restore the unexported Service document from foundation; observe source/hub revocation,
   AF withdrawal and PE/DNS exclusion while test backend stays healthy. For QUIC, prove a **new**
   stream is refused; existing streams retain their explicitly documented policy and are not killed.
-- TTL: verify local expiry rejection independently of stale Active/Ready status. A runtime expiry
-  drill needs an isolated publication pause; never stop the shared production agent or claim ordinary
-  revocation proves TTL timing. Report this case unexecuted if it cannot be isolated safely.
+- TTL isolation: do not stop the shared source agent, block its control channel, pause the whole
+  issuer snapshot or expire other advertisements. Producer IP movement and Service export/revocation
+  above must use the real agent chain and cannot be replaced by this consumer-only test.
+  For TTL, use `07-consumer-ttl-snapshot.yaml.in`: an explicitly labelled, separate controlled
+  advertisement/import UID pair (no publisher identity or credentials are created). It has no
+  agent publisher-management label, so it is neither renewed nor removed by the normal snapshot.
+  This diagnostic object does not claim to have passed real publisher admission. Late-bind its own
+  exact get-only access/ref UIDs, temporarily point only the canary AF/PE refs at it, and keep HTTP
+  healthy. Start its five-minute timestamp only immediately before apply. Prove it was eligible
+  first; then observe expiry despite stale Active/Ready and prove AF/PE/DNS withdraws.
+  This shadow pair does not control the real publisher's QUIC lease: QUIC new-stream denial
+  must be verified separately with real source export withdrawal above.
+  Record this as **isolated consumer TTL acceptance**, never producer heartbeat-pause acceptance.
+  Restore the real producer refs and delete only the diagnostic pair/access objects afterwards.
+  If it never becomes eligible or isolation is unavailable, mark the case unexecuted/blocked.
 - Body fault: change only canary publicIngress.path to `/stalled-body`. Record headers 200 but failed
   body/latency evidence and ineligible DNS; never inject faults into tools, db-rw or tenant-api.
 - Restore source `/transfer` and fresh revisions/evidence before cleanup. Revoke export, remove canary
@@ -96,3 +108,7 @@ These are individually previewed Admin MCP inputs, not a new controller/planner.
 Keep raw measurements, ad/import/NPA samples and audit outputs outside Git. Commit only the
 reviewed input and stable conclusions. Late-bound UIDs and opaque digests are identifiers, not Secrets.
 No fixture modifies shared publication adapters or adds a second reconciliation authority.
+The transfer body is 16 KiB: the collector's 32768-byte response cap includes headers,
+so a 32 KiB body would be invalid. `verify_collector_contract.py --collector-source <reviewed
+conformance-probe.py>` checks this actual server against the actual strict collector function
+with an ephemeral local test CA. It is a local contract check, not cluster/host+pod acceptance.

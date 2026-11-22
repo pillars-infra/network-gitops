@@ -20,7 +20,7 @@ data:
     import time
 
     CAPACITY = threading.BoundedSemaphore(4)
-    BODY = (b"AF-CANARY/fixture-v1\n" * 2048)[:32768]
+    BODY = (b"AF-CANARY/fixture-v1\n" * 2048)[:16384]
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             if not CAPACITY.acquire(blocking=False):

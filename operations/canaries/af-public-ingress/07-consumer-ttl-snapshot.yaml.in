@@ -1,0 +1,98 @@
+apiVersion: peering.re8ch.com/v1alpha1
+kind: ServiceAdvertisement
+metadata:
+  name: af-canary-consumer-ttl
+  namespace: byoc-pilot
+  labels:
+    test.re8ch.com/acceptance-mode: consumer-ttl-snapshot
+  annotations:
+    peering.re8ch.com/last-published-at: __CURRENT_UTC_IMMEDIATELY_BEFORE_APPLY__
+spec:
+  publisherRef: re8ch
+  serviceIdentity: spiffe://re8ch.internal/ns/af-canary/service/af-ingress-canary
+  serviceClass: network.canary.http
+  protocol: http
+  port: 8080
+  localServiceRef:
+    name: af-ingress-canary
+  gatewayEndpoints: []
+  targetPeers:
+  - re8ch-atlantic
+  ttlSeconds: 300
+  generation: 1
+  policyRef: af-canary-export
+  revoked: false
+  publicIngress:
+    endpoints:
+    - id: primary
+      site: r640
+      region: cn-hunan
+      protocol: https
+      address: 223.159.210.222
+      port: 443
+      hostname: af-canary.service.re8ch.com
+      path: /transfer
+      revision: canary-r1
+    - id: secondary
+      site: la1
+      region: us-la-1
+      protocol: https
+      address: 179.255.126.104
+      port: 443
+      hostname: af-canary.service.re8ch.com
+      path: /transfer
+      revision: canary-r1
+---
+apiVersion: peering.re8ch.com/v1alpha1
+kind: ImportedService
+metadata:
+  name: af-canary-consumer-ttl-re8ch-atlantic
+  namespace: byoc-pilot
+  labels:
+    test.re8ch.com/acceptance-mode: consumer-ttl-snapshot
+spec:
+  advertisementRef: af-canary-consumer-ttl
+  peerRef: re8ch-atlantic
+  localServiceName: af-canary-ttl-import
+  localPort: 28443
+  suspended: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: af-canary-ttl-evidence-read
+  namespace: byoc-pilot
+rules:
+- apiGroups:
+  - peering.re8ch.com
+  resources:
+  - serviceadvertisements
+  resourceNames:
+  - af-canary-consumer-ttl
+  verbs:
+  - get
+- apiGroups:
+  - peering.re8ch.com
+  resources:
+  - importedservices
+  resourceNames:
+  - af-canary-consumer-ttl-re8ch-atlantic
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: af-canary-ttl-evidence-read
+  namespace: byoc-pilot
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: af-canary-ttl-evidence-read
+subjects:
+- kind: ServiceAccount
+  name: advanced-fabric
+  namespace: kube-system
+- kind: ServiceAccount
+  name: public-edge-manager
+  namespace: regional-routing
