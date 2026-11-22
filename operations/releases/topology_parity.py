@@ -45,7 +45,15 @@ def check(objects,previous,command):
         source=json.loads(result.stdout)['data']['bundle.json']
         if hashlib.sha256(source.encode()).hexdigest()!=SOURCE_SHA256:
             raise TopologyParityError('restricted topology source pin mismatch')
-        if previous and previous.get('healthyDigest'):
+        # Adoption and runtime readiness are separate state machines. The
+        # executor persists acceptedDigest only after successful application
+        # (including explicitly observe-only readiness). A degraded but fully
+        # accepted baseline must allow reviewed repairs to its desired topology.
+        accepted = bool(previous and not previous.get('blocked') and
+                        previous.get('acceptedDigest') and
+                        previous.get('acceptedDigest') == previous.get('appliedDigest') and
+                        'networking.advfab.org/AdvancedFabric/_/advanced-fabric' in previous.get('inventory', []))
+        if previous and not previous.get('blocked') and (previous.get('healthyDigest') or accepted):
             return {'sourcePinMatches':True,'initialAdoption':False}
         result=command(['kubectl','get','advancedfabrics.networking.advfab.org','advanced-fabric','-o','json'],timeout=60,redact=True)
         live=json.loads(result.stdout)
