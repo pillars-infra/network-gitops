@@ -12,6 +12,7 @@ spec:
     metadata:
       annotations:
         networking.re8ch.com/config-revision: outer-sni-v1
+        networking.re8ch.com/return-policy-code-sha256: 11829925d743df135251f858261a14019c418ce026d54202c9464b66e37a986f
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:
@@ -160,8 +161,20 @@ data:
     \ PUBLIC FORWARD\",\n  \"outerSniBackend\": \"192.168.88.251\",\n  \"outerSniPort\"\
     : \"10443\",\n  \"outerSniRules\": [\n    \"RE8CH priority public web direct to\
     \ Cilium Loudi Gateway VIP\",\n    \"RE8CH public web LAN VPN hairpin to Cilium\
-    \ Loudi VIP\"\n  ],\n  \"forwards\": [\n    {\"protocol\": \"tcp\", \"port\":\
-    \ \"6443\", \"toPort\": \"6443\"}\n  ]\n}\n"
+    \ Loudi VIP\"\n  ],\n  \"forwards\": [\n    {\n      \"protocol\": \"tcp\",\n\
+    \      \"port\": \"6443\",\n      \"toPort\": \"6443\"\n    }\n  ],\n  \"podReturnPolicy\"\
+    : {\n    \"peerAddress\": \"192.168.88.251\",\n    \"peerASN\": 4200000128,\n\
+    \    \"localAddress\": \"192.168.88.1\",\n    \"filterChain\": \"re8ch-v2-r640-in\"\
+    ,\n    \"routingTable\": \"re8ch-service-fast\",\n    \"commentPrefix\": \"RE8CH\
+    \ GITOPS R640 POD RETURN\",\n    \"poolRefs\": [\n      \"platform-system\",\n\
+    \      \"tenant-apps\",\n      \"jobs-sandbox\",\n      \"regulated-egress\"\n\
+    \    ],\n    \"approvedPools\": [\n      {\n        \"poolRef\": \"jobs-sandbox\"\
+    ,\n        \"cidr\": \"10.72.0.0/15\",\n        \"maskSize\": 24\n      },\n \
+    \     {\n        \"poolRef\": \"platform-system\",\n        \"cidr\": \"10.64.0.0/14\"\
+    ,\n        \"maskSize\": 24\n      },\n      {\n        \"poolRef\": \"regulated-egress\"\
+    ,\n        \"cidr\": \"10.74.0.0/15\",\n        \"maskSize\": 24\n      },\n \
+    \     {\n        \"poolRef\": \"tenant-apps\",\n        \"cidr\": \"10.68.0.0/14\"\
+    ,\n        \"maskSize\": 24\n      }\n    ]\n  }\n}\n"
   observe.py: "#!/usr/bin/env python3\n\"\"\"Read-only, destination-scoped RouterOS\
     \ diagnostics through the existing owner.\"\"\"\nimport argparse\nimport ipaddress\n\
     import json\nfrom urllib.parse import urlencode\n\nSOURCES = ipaddress.ip_network('10.68.9.0/24')\n\
@@ -234,27 +247,133 @@ data:
     \ args.source_port)\n    except Exception as error:\n        print(json.dumps({'state':\
     \ 'failed', 'errorType': type(error).__name__}))\n        return 1\n    print(json.dumps(result,\
     \ sort_keys=True))\n    return 0\n\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n"
+  pod_return_policy.py: "\"\"\"Bounded pool-family admission for the existing R640\
+    \ RouterOS peer.\"\"\"\nimport ipaddress\nimport re\nfrom urllib.parse import\
+    \ urlencode\n\nOWNER = 'RE8CH GITOPS R640 POD RETURN'\nCHAIN = 're8ch-v2-r640-in'\n\
+    TABLE = 're8ch-service-fast'\nPEER = '192.168.88.251'\nASN = '4200000128'\nLOCAL\
+    \ = '192.168.88.1'\nNATIVE = ipaddress.ip_network('10.64.0.0/12')\n# Retain failed\
+    \ refreshes in-process; startup refresh covers interrupted writes.\n_refresh_pending\
+    \ = True\n\n\ndef validate_policy(policy):\n    if not policy:\n        return\
+    \ []\n    if (policy.get('peerAddress') != PEER or str(policy.get('peerASN'))\
+    \ != ASN or\n            policy.get('localAddress') != LOCAL or policy.get('filterChain')\
+    \ != CHAIN or\n            policy.get('routingTable') != TABLE or policy.get('commentPrefix')\
+    \ != OWNER):\n        raise ValueError('Pod-return authority differs')\n    refs\
+    \ = policy.get('poolRefs', [])\n    pools = policy.get('approvedPools', [])\n\
+    \    if not refs or len(set(refs)) != len(refs) or not pools:\n        raise ValueError('reviewed\
+    \ pool projection is required')\n    networks, seen = [], set()\n    for pool\
+    \ in pools:\n        network = ipaddress.ip_network(pool['cidr'], strict=True)\n\
+    \        if (pool.get('poolRef') not in refs or pool.get('maskSize') != 24 or\n\
+    \                network.version != 4 or not network.subnet_of(NATIVE) or network.prefixlen\
+    \ > 24 or\n                any(network.overlaps(prior) for prior in networks)):\n\
+    \            raise ValueError('Pod-return pool projection differs')\n        networks.append(network)\n\
+    \        seen.add(pool['poolRef'])\n    if seen != set(refs):\n        raise ValueError('incomplete\
+    \ pool projection')\n    return sorted(str(network) for network in networks)\n\
+    \n\ndef identity(value):\n    if not isinstance(value, str) or not re.fullmatch(r'\\\
+    *[0-9a-fA-F]+', value):\n        raise ValueError('exact RouterOS object identity\
+    \ is required')\n    return value\n\n\ndef enabled(row):\n    return str(row.get('disabled',\
+    \ 'false')).lower() not in {'true', 'yes'}\n\n\ndef peer_matches(row):\n    return\
+    \ (str(row.get('remote.address', '')).split('/')[0] == PEER and\n            str(row.get('remote.as'))\
+    \ == ASN and row.get('local.address') == LOCAL)\n\n\ndef rows(router, path):\n\
+    \    fields = {\n        '/routing/bgp/connection': ('.id','name','remote.address','remote.as','local.address','input.filter','routing-table','disabled'),\n\
+    \        '/routing/table': ('.id','name','fib','disabled'),\n        '/routing/filter/rule':\
+    \ ('.id','chain','rule','comment','disabled'),\n        '/routing/rule': ('.id','dst-address','src-address','interface','routing-mark','action','table','comment','disabled'),\n\
+    \        '/routing/bgp/session': ('.id','name','remote.address','remote.as','local.address','established','remote.capabilities'),\n\
+    \    }[path]\n    result = router.request(path + '?' + urlencode({'.proplist':\
+    \ ','.join(fields)}))\n    if not isinstance(result, list) or any(not isinstance(row,\
+    \ dict) for row in result):\n        raise ValueError('unexpected RouterOS observation\
+    \ shape')\n    return [{key: value for key, value in row.items() if key in fields}\
+    \ for row in result]\n\n\ndef plan_pod_return(router, policy):\n    aggregates\
+    \ = validate_policy(policy)\n    if not policy:\n        return {'actions': [],\
+    \ 'refresh': None}\n    connections = rows(router, '/routing/bgp/connection')\n\
+    \    active = [row for row in connections if enabled(row) and row.get('input.filter')\
+    \ == CHAIN]\n    if len(active) != 1 or not peer_matches(active[0]) or active[0].get('routing-table')\
+    \ != TABLE:\n        raise ValueError('dedicated R640 peer differs')\n    tables\
+    \ = rows(router, '/routing/table')\n    if len([row for row in tables if row.get('name')\
+    \ == TABLE]) != 1:\n        raise ValueError('existing routing table differs')\n\
+    \    filters = rows(router, '/routing/filter/rule')\n    routes = rows(router,\
+    \ '/routing/rule')\n    rejects = [row for row in filters if row.get('chain')\
+    \ == CHAIN and enabled(row) and row.get('rule', '').strip() == 'reject']\n   \
+    \ anchors = [row for row in routes if enabled(row) and row.get('dst-address')\
+    \ == '10.42.0.0/16'\n               and row.get('action') == 'lookup' and row.get('table')\
+    \ == TABLE\n               and not any(row.get(key) for key in ('src-address','interface','routing-mark'))]\n\
+    \    if len(rejects) != 1 or len(anchors) != 1:\n        raise ValueError('existing\
+    \ admission or routing anchor differs')\n    # Existing legacy/VIP rules stay\
+    \ untouched. Reject a different chain sharing\n    # our namespace rather than\
+    \ moving, taking over or deleting foreign rules.\n    for row in filters:\n  \
+    \      if str(row.get('comment') or '').startswith(OWNER + ' ') and row.get('chain')\
+    \ != CHAIN:\n            raise ValueError('filter ownership conflict')\n    for\
+    \ row in routes:\n        if str(row.get('comment') or '').startswith(OWNER +\
+    \ ' ') and row.get('table') != TABLE:\n            raise ValueError('routing-rule\
+    \ ownership conflict')\n    actions = []\n    import_changed = False\n    for\
+    \ path, observed, anchor, mode in [\n            ('/routing/filter/rule', filters,\
+    \ rejects[0], 'import'),\n            ('/routing/rule', routes, anchors[0], 'lookup')]:\n\
+    \        desired = []\n        for aggregate in aggregates:\n            comment\
+    \ = OWNER + ' ' + mode + ' ' + aggregate\n            if mode == 'import':\n \
+    \               body = {'chain': CHAIN, 'rule': 'if (dst in ' + aggregate + '\
+    \ && dst-len == 24) { accept }',\n                        'comment': comment,\
+    \ 'disabled': 'false'}\n            else:\n                body = {'dst-address':\
+    \ aggregate, 'action': 'lookup', 'table': TABLE,\n                        'comment':\
+    \ comment, 'disabled': 'false'}\n            desired.append(comment)\n       \
+    \     prior = [row for row in observed if row.get('comment') == comment]\n   \
+    \         if len(prior) > 1:\n                raise ValueError('duplicate owned\
+    \ policy rule')\n            if not prior:\n                actions.append(('create',\
+    \ path, None, body, identity(anchor['.id'])))\n                import_changed\
+    \ |= mode == 'import'\n            else:\n                row = prior[0]\n   \
+    \             if any(str(row.get(key, 'false' if key == 'disabled' else '')) !=\
+    \ value for key, value in body.items()):\n                    actions.append(('patch',\
+    \ path, identity(row['.id']), body, None))\n                    import_changed\
+    \ |= mode == 'import'\n                if observed.index(row) > observed.index(anchor):\n\
+    \                    actions.append(('move', path, identity(row['.id']), None,\
+    \ identity(anchor['.id'])))\n                    import_changed |= mode == 'import'\n\
+    \        for row in observed:\n            if str(row.get('comment') or '').startswith(OWNER\
+    \ + ' ' + mode + ' ') and row['comment'] not in desired:\n                actions.append(('delete',\
+    \ path, identity(row['.id']), None, None))\n                import_changed |=\
+    \ mode == 'import'\n    refresh = None\n    if import_changed or _refresh_pending:\n\
+    \        sessions = rows(router, '/routing/bgp/session')\n        selected = [row\
+    \ for row in sessions if peer_matches(row) and\n                    str(row.get('established',\
+    \ '')).lower() == 'true' and\n                    'rr' in str(row.get('remote.capabilities',\
+    \ '')).split(',')]\n        if len(selected) != 1 or not selected[0].get('.id'):\n\
+    \            raise ValueError('fresh exact route-refresh session is unavailable')\n\
+    \        refresh = identity(selected[0]['.id'])\n    return {'actions': actions,\
+    \ 'refresh': refresh}\n\n\ndef apply_pod_return(router, plan):\n    global _refresh_pending\n\
+    \    if plan['refresh']:\n        _refresh_pending = True\n    for action, path,\
+    \ row_id, body, anchor in plan['actions']:\n        if action == 'create':\n \
+    \           row = router.request(path, 'PUT', body)\n            if not isinstance(row,\
+    \ dict) or not row.get('.id'):\n                raise ValueError('created policy\
+    \ identity is unavailable')\n            router.request(path + '/move', 'POST',\
+    \ {'numbers': identity(row['.id']), 'destination': identity(anchor)})\n      \
+    \  elif action == 'patch':\n            router.request(path + '/' + identity(row_id),\
+    \ 'PATCH', body)\n        elif action == 'move':\n            router.request(path\
+    \ + '/move', 'POST', {'numbers': identity(row_id), 'destination': identity(anchor)})\n\
+    \        elif action == 'delete':\n            router.request(path + '/' + identity(row_id),\
+    \ 'DELETE')\n        else:\n            raise ValueError('unknown policy action')\n\
+    \    if plan['refresh']:\n        # Soft refresh is limited to the currently observed\
+    \ exact peer/session.\n        # No reset, disable, reconnect, all-peer operation\
+    \ or business replay.\n        router.request('/routing/bgp/session/refresh',\
+    \ 'POST', {'numbers': identity(plan['refresh']), 'address-family': 'ip'})\n  \
+    \      _refresh_pending = False\n    return len(plan['actions'])\n"
   reconcile.py: "#!/usr/bin/env python3\n\"\"\"Reconcile explicitly owned public RouterOS\
     \ forwards before the fallback rule.\"\"\"\nimport base64\nimport ipaddress\n\
-    import json\nfrom pathlib import Path\nimport time\nimport urllib.request\n\n\n\
-    def validate(spec):\n    if spec[\"managementIp\"] != \"192.168.88.1\":\n    \
-    \    raise ValueError(\"RouterOS management authority differs\")\n    if spec[\"\
-    publicEndpoint\"] != \"223.159.210.222\":\n        raise ValueError(\"public endpoint\
-    \ authority differs\")\n    if spec[\"gatewayVip\"] != \"10.251.0.4\":\n     \
-    \   raise ValueError(\"Gateway VIP authority differs\")\n    if spec[\"anchorComment\"\
-    ] != \"RE8CH default WAN TCP same-port DNAT to R640\":\n        raise ValueError(\"\
-    fallback anchor differs\")\n    if spec[\"returnAnchorComment\"] != \"defconf:\
-    \ masquerade after symmetric rules\":\n        raise ValueError(\"return anchor\
-    \ differs\")\n    if spec[\"commentPrefix\"] != \"RE8CH GITOPS PUBLIC FORWARD\"\
-    :\n        raise ValueError(\"ownership prefix differs\")\n    if spec[\"outerSniBackend\"\
-    ] != \"192.168.88.251\" or spec[\"outerSniPort\"] != \"10443\":\n        raise\
-    \ ValueError(\"outer SNI authority differs\")\n    if spec[\"outerSniRules\"]\
-    \ != [\n        \"RE8CH priority public web direct to Cilium Loudi Gateway VIP\"\
-    ,\n        \"RE8CH public web LAN VPN hairpin to Cilium Loudi VIP\",\n    ]:\n\
-    \        raise ValueError(\"outer SNI rule ownership differs\")\n    if spec[\"\
-    forwards\"] != [{\"protocol\": \"tcp\", \"port\": \"6443\", \"toPort\": \"6443\"\
-    }]:\n        raise ValueError(\"unexpected public forwards\")\n    ipaddress.ip_address(spec[\"\
-    managementIp\"])\n    ipaddress.ip_address(spec[\"publicEndpoint\"])\n    ipaddress.ip_address(spec[\"\
+    import json\nfrom pathlib import Path\nimport time\nimport urllib.request\nfrom\
+    \ pod_return_policy import plan_pod_return, apply_pod_return\n\n\ndef validate(spec):\n\
+    \    if spec[\"managementIp\"] != \"192.168.88.1\":\n        raise ValueError(\"\
+    RouterOS management authority differs\")\n    if spec[\"publicEndpoint\"] != \"\
+    223.159.210.222\":\n        raise ValueError(\"public endpoint authority differs\"\
+    )\n    if spec[\"gatewayVip\"] != \"10.251.0.4\":\n        raise ValueError(\"\
+    Gateway VIP authority differs\")\n    if spec[\"anchorComment\"] != \"RE8CH default\
+    \ WAN TCP same-port DNAT to R640\":\n        raise ValueError(\"fallback anchor\
+    \ differs\")\n    if spec[\"returnAnchorComment\"] != \"defconf: masquerade after\
+    \ symmetric rules\":\n        raise ValueError(\"return anchor differs\")\n  \
+    \  if spec[\"commentPrefix\"] != \"RE8CH GITOPS PUBLIC FORWARD\":\n        raise\
+    \ ValueError(\"ownership prefix differs\")\n    if spec[\"outerSniBackend\"] !=\
+    \ \"192.168.88.251\" or spec[\"outerSniPort\"] != \"10443\":\n        raise ValueError(\"\
+    outer SNI authority differs\")\n    if spec[\"outerSniRules\"] != [\n        \"\
+    RE8CH priority public web direct to Cilium Loudi Gateway VIP\",\n        \"RE8CH\
+    \ public web LAN VPN hairpin to Cilium Loudi VIP\",\n    ]:\n        raise ValueError(\"\
+    outer SNI rule ownership differs\")\n    if spec[\"forwards\"] != [{\"protocol\"\
+    : \"tcp\", \"port\": \"6443\", \"toPort\": \"6443\"}]:\n        raise ValueError(\"\
+    unexpected public forwards\")\n    ipaddress.ip_address(spec[\"managementIp\"\
+    ])\n    ipaddress.ip_address(spec[\"publicEndpoint\"])\n    ipaddress.ip_address(spec[\"\
     gatewayVip\"])\n    ipaddress.ip_address(spec[\"outerSniBackend\"])\n\n\nclass\
     \ Router:\n    def __init__(self, address):\n        user = Path(\"/credential/username\"\
     ).read_bytes().strip()\n        password = Path(\"/credential/password\").read_bytes()\n\
@@ -267,7 +386,8 @@ data:
     \            data=json.dumps(body).encode() if body is not None else None,\n \
     \       )\n        with self.opener.open(request, timeout=10) as response:\n \
     \           raw = response.read()\n        return json.loads(raw) if raw else\
-    \ {}\n\n\ndef reconcile(router, spec):\n    validate(spec)\n    rows = router.request(\"\
+    \ {}\n\n\ndef reconcile(router, spec):\n    validate(spec)\n    pod_return_plan\
+    \ = plan_pod_return(router, spec.get(\"podReturnPolicy\"))\n    rows = router.request(\"\
     /ip/firewall/nat\")\n    anchors = [row for row in rows if row.get(\"comment\"\
     ) == spec[\"anchorComment\"]]\n    if len(anchors) != 1:\n        raise ValueError(\"\
     fallback anchor missing or ambiguous\")\n    anchor = anchors[0]\n    return_anchors\
@@ -319,15 +439,19 @@ data:
     \      )\n    for row in rows:\n        comment = row.get(\"comment\", \"\")\n\
     \        if comment.startswith(spec[\"commentPrefix\"] + \" \") and comment not\
     \ in wanted:\n            router.request(\"/ip/firewall/nat/\" + row[\".id\"],\
-    \ \"DELETE\")\n            changes += 1\n    return {\"changes\": changes, \"\
-    forwards\": len(spec[\"forwards\"])}\n\n\ndef main():\n    while True:\n     \
-    \   try:\n            spec = json.loads(Path(\"/config/desired.json\").read_text())\n\
-    \            result = reconcile(Router(spec[\"managementIp\"]), spec)\n      \
-    \      Path(\"/tmp/routeros-public-forward-ready\").touch()\n            print(json.dumps({\"\
-    state\": \"reconciled\", **result}), flush=True)\n        except Exception as\
-    \ exc:\n            Path(\"/tmp/routeros-public-forward-ready\").unlink(missing_ok=True)\n\
-    \            print(json.dumps({\"state\": \"failed\", \"errorType\": type(exc).__name__}),\
-    \ flush=True)\n        time.sleep(30)\n\n\nif __name__ == \"__main__\":\n    main()\n"
+    \ \"DELETE\")\n            changes += 1\n    pod_return_changes = apply_pod_return(router,\
+    \ pod_return_plan)\n    if pod_return_changes and plan_pod_return(router, spec.get(\"\
+    podReturnPolicy\"))[\"actions\"]:\n        raise ValueError(\"Pod-return policy\
+    \ readback differs\")\n    return {\"changes\": changes, \"forwards\": len(spec[\"\
+    forwards\"]),\n            \"podReturnChanges\": pod_return_changes}\n\n\ndef\
+    \ main():\n    while True:\n        try:\n            spec = json.loads(Path(\"\
+    /config/desired.json\").read_text())\n            result = reconcile(Router(spec[\"\
+    managementIp\"]), spec)\n            Path(\"/tmp/routeros-public-forward-ready\"\
+    ).touch()\n            print(json.dumps({\"state\": \"reconciled\", **result}),\
+    \ flush=True)\n        except Exception as exc:\n            Path(\"/tmp/routeros-public-forward-ready\"\
+    ).unlink(missing_ok=True)\n            print(json.dumps({\"state\": \"failed\"\
+    , \"errorType\": type(exc).__name__}), flush=True)\n        time.sleep(30)\n\n\
+    \nif __name__ == \"__main__\":\n    main()\n"
 kind: ConfigMap
 metadata:
   name: routeros-public-forward-controller
