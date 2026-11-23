@@ -162,6 +162,78 @@ data:
     \ Cilium Loudi Gateway VIP\",\n    \"RE8CH public web LAN VPN hairpin to Cilium\
     \ Loudi VIP\"\n  ],\n  \"forwards\": [\n    {\"protocol\": \"tcp\", \"port\":\
     \ \"6443\", \"toPort\": \"6443\"}\n  ]\n}\n"
+  observe.py: "#!/usr/bin/env python3\n\"\"\"Read-only, destination-scoped RouterOS\
+    \ diagnostics through the existing owner.\"\"\"\nimport argparse\nimport ipaddress\n\
+    import json\nfrom urllib.parse import urlencode\n\nSOURCES = ipaddress.ip_network('10.68.9.0/24')\n\
+    DESTINATIONS = {'101.34.217.95', '124.220.77.50', '1.14.174.244'}\nNAT_FIELDS\
+    \ = ('chain', 'action', 'src-address', 'dst-address', 'protocol', 'dst-port',\n\
+    \              'to-addresses', 'to-ports', 'in-interface', 'out-interface', 'disabled')\n\
+    ROUTE_FIELDS = ('dst-address', 'gateway', 'active', 'routing-table', 'distance',\
+    \ 'dynamic')\nCONNECTION_FIELDS = ('src-address', 'dst-address', 'reply-src-address',\
+    \ 'reply-dst-address',\n                     'protocol', 'srcnat', 'dstnat', 'seen-reply',\
+    \ 'assured')\n\n\ndef validate(source, destination, source_port):\n    source\
+    \ = str(ipaddress.IPv4Address(source))\n    destination = str(ipaddress.IPv4Address(destination))\n\
+    \    if ipaddress.ip_address(source) not in SOURCES or destination not in DESTINATIONS:\n\
+    \        raise ValueError('diagnostic scope is not reviewed')\n    if not 1024\
+    \ <= source_port <= 65535:\n        raise ValueError('invalid diagnostic source\
+    \ port')\n    return source, destination\n\n\ndef projected(row, fields):\n  \
+    \  # Only printable bounded scalar fields, never comments, auth or arbitrary response\
+    \ keys.\n    return {key: str(row[key]) for key in fields if key in row and\n\
+    \            isinstance(row[key], (str, bool, int)) and len(str(row[key])) <=\
+    \ 160 and\n            all(32 <= ord(char) < 127 for char in str(row[key]))}\n\
+    \n\ndef get_rows(router, path, fields, filters=None):\n    query = {'.proplist':\
+    \ ','.join(fields)}\n    query.update(filters or {})\n    rows = router.request(path\
+    \ + '?' + urlencode(query), method='GET')\n    if not isinstance(rows, list) or\
+    \ any(not isinstance(row, dict) for row in rows):\n        raise ValueError('unexpected\
+    \ RouterOS response shape')\n    return rows\n\n\ndef covers(value, address):\n\
+    \    if not value:\n        return True\n    try:\n        return ipaddress.ip_address(address)\
+    \ in ipaddress.ip_network(value, strict=False)\n    except ValueError:\n     \
+    \   return None\n\n\ndef port_covers(value, port):\n    if not value:\n      \
+    \  return True\n    try:\n        for part in value.split(','):\n            bounds\
+    \ = [int(item) for item in part.split('-')]\n            if len(bounds) == 1 and\
+    \ bounds[0] == port:\n                return True\n            if len(bounds)\
+    \ == 2 and bounds[0] <= port <= bounds[1]:\n                return True\n    \
+    \    return False\n    except (ValueError, AttributeError):\n        return None\n\
+    \n\ndef observe(router, source, destination, source_port):\n    source, destination\
+    \ = validate(source, destination, source_port)\n    routes = get_rows(router,\
+    \ '/ip/route', ROUTE_FIELDS)\n    relevant_routes = []\n    for row in routes:\n\
+    \        if covers(row.get('dst-address'), source) is True:\n            relevant_routes.append(projected(row,\
+    \ ROUTE_FIELDS))\n    nat = get_rows(router, '/ip/firewall/nat', NAT_FIELDS)\n\
+    \    relevant_nat = []\n    unknown_selectors = 0\n    for row in nat:\n     \
+    \   if str(row.get('disabled', 'false')).lower() == 'true':\n            continue\n\
+    \        if row.get('protocol') not in (None, '', 'udp', 'tcp'):\n           \
+    \ continue\n        # Report possible matching rules in original order. Unknown/range/inverted\n\
+    \        # selectors remain candidates, not proof that a particular rule matched.\n\
+    \        match = [covers(row.get('src-address'), source), covers(row.get('dst-address'),\
+    \ destination),\n                 port_covers(row.get('dst-port'), 53)]\n    \
+    \    reverse = [covers(row.get('src-address'), destination), covers(row.get('dst-address'),\
+    \ source),\n                   port_covers(row.get('dst-port'), source_port)]\n\
+    \        if False in match and False in reverse:\n            continue\n     \
+    \   unknown_selectors += int(None in match or None in reverse)\n        relevant_nat.append(projected(row,\
+    \ NAT_FIELDS))\n    filters = {'src-address': source + ':' + str(source_port),\
+    \ 'dst-address': destination + ':53',\n               'protocol': 'udp'}\n   \
+    \ connections = get_rows(router, '/ip/firewall/connection', CONNECTION_FIELDS,\
+    \ filters)\n    # Verify exact scope again even if the provider ignores URL filters.\
+    \ Never\n    # output an unrelated connection or treat an absent/expired entry\
+    \ as success.\n    selected = [projected(row, CONNECTION_FIELDS) for row in connections\n\
+    \                if all(str(row.get(key, '')) == value for key, value in filters.items())]\n\
+    \    return {'definition': 'routeros-public-dns-return-v1', 'source': source,\n\
+    \            'destination': destination, 'sourcePort': source_port, 'destinationPort':\
+    \ 53,\n            'routesCoveringSource': relevant_routes, 'possibleNatRulesInOrder':\
+    \ relevant_nat,\n            'unknownNatSelectors': unknown_selectors, 'exactUdpConnections':\
+    \ selected,\n            'connectionObservation': 'present' if selected else 'absent-or-expired',\n\
+    \            'claim': 'read-only snapshot; rule candidates are not packet-hit\
+    \ proof'}\n\n\ndef main(argv=None):\n    parser = argparse.ArgumentParser(description=__doc__)\n\
+    \    parser.add_argument('--source-address', required=True)\n    parser.add_argument('--destination-address',\
+    \ required=True)\n    parser.add_argument('--source-port', required=True, type=int)\n\
+    \    args = parser.parse_args(argv)\n    source, destination = validate(args.source_address,\
+    \ args.destination_address, args.source_port)\n    # Import is safe: reviewed\
+    \ owner has a guarded __main__. Reuse its mounted\n    # credential reference\
+    \ and HTTP adapter; never print/read credentials here.\n    from reconcile import\
+    \ Router\n    try:\n        result = observe(Router('192.168.88.1'), source, destination,\
+    \ args.source_port)\n    except Exception as error:\n        print(json.dumps({'state':\
+    \ 'failed', 'errorType': type(error).__name__}))\n        return 1\n    print(json.dumps(result,\
+    \ sort_keys=True))\n    return 0\n\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n"
   reconcile.py: "#!/usr/bin/env python3\n\"\"\"Reconcile explicitly owned public RouterOS\
     \ forwards before the fallback rule.\"\"\"\nimport base64\nimport ipaddress\n\
     import json\nfrom pathlib import Path\nimport time\nimport urllib.request\n\n\n\
