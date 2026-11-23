@@ -30,7 +30,7 @@ def ledger(prefixes, uid='node-uid'):
 
 
 def run_helper(tmp_path, nodes, previous=None, desired='10.42.1.0/24\n10.68.1.0/24',
-               static=None, bgp=None, program=None, members=None):
+               static=None, bgp=None, program=None, members=None, configured=None):
     helper = tmp_path/'helper.sh'
     helper.write_text(source()['data']['owned-prefixes.sh'])
     inventory = tmp_path/'inventory.json'
@@ -44,12 +44,17 @@ def run_helper(tmp_path, nodes, previous=None, desired='10.42.1.0/24\n10.68.1.0/
         state.write_text(json.dumps(previous))
     (tmp_path/'static.json').write_text(json.dumps(static or {}))
     (tmp_path/'bgp.json').write_text(json.dumps(bgp or {}))
+    prefixes = list(dict.fromkeys((previous or {}).get('prefixes', []) + [v for v in desired.splitlines() if v] + list((static or {}).keys())))
+    if configured is None:
+        configured = '\n'.join([f'ip route {v} Null0 254' for v in prefixes] + ['router bgp 4200010001', ' address-family ipv4 unicast'] + [f'  network {v}' for v in prefixes]) + '\n'
+    (tmp_path/'frr-config.txt').write_text(configured)
     calls = tmp_path/'calls'
     script = '''set -eu
 . "$HELPER"
 host() {
   printf '%s\\n' "$*" >> "$CALLS"
   case "$*" in
+    *'show running-config'*) cat "$TEST_FRR_CONFIG" ;;
     *'show ip route '*) cat "$STATIC" ;;
     *'show bgp ipv4 unicast '*) cat "$BGP" ;;
     *) return 1 ;;
@@ -64,7 +69,7 @@ commit_owned_prefix_reconciliation
 '''
     env = {**os.environ, 'HELPER': str(helper), 'NODE_NAME': 'local', 'cilium_nodes': str(snapshot),
            'owned_prefix_ledger': str(state), 'owned_pod_cidrs': desired,
-           'STATIC': str(tmp_path/'static.json'), 'BGP': str(tmp_path/'bgp.json'), 'CALLS': str(calls)}
+           'STATIC': str(tmp_path/'static.json'), 'TEST_FRR_CONFIG': str(tmp_path/'frr-config.txt'), 'asn': '4200010001', 'BGP': str(tmp_path/'bgp.json'), 'CALLS': str(calls)}
     result = subprocess.run(['sh', '-c', script], env=env, text=True, capture_output=True)
     return result, json.loads(state.read_text()) if state.exists() else None, calls.read_text() if calls.exists() else ''
 
@@ -80,7 +85,7 @@ def test_multiple_allocations_are_kept_and_only_previous_owned_are_withdrawn(tmp
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == ['no ip route 10.68.12.0/24 Null0 254', 'no network 10.68.12.0/24']
     assert state == ledger(['10.42.1.0/24', '10.68.1.0/24', '10.68.22.0/24']) | {'sourceResourceVersion': '123'}
-    assert calls == ''
+    assert all(line == 'vtysh -c show running-config' for line in calls.splitlines())
 
 
 @pytest.mark.parametrize('snapshot', [[], [node(missing=True)], [node(cidrs=['10.68.1.0/24']), node('other', ['10.68.1.0/24'])]])
@@ -192,6 +197,7 @@ def test_native_command_mode_stops_failed_batch_before_readback_or_ledger_commit
     program = '''
 host() {
   printf '%s\\n' "$*" >> "$CALLS"
+  if [ "$3" = "show running-config" ]; then cat "$TEST_FRR_CONFIG"; return 0; fi
   if [ "$1" = vtysh ] && [ "$2" = -c ] && [ "$3" = 'invalid-command
 must-not-execute' ]; then return 17; fi
   return 0
@@ -211,6 +217,7 @@ def test_daemon_warning_zero_exit_without_actual_ownership_does_not_commit(tmp_p
 host() {
   printf '%s\\n' "$*" >> "$CALLS"
   case "$3" in
+    *'show running-config'*) cat "$TEST_FRR_CONFIG" ;;
     *'show ip route '*) printf '{}\\n' ;;
     *'show bgp '*) printf '{"paths":[]}\\n' ;;
     *) printf '%% daemon rejected ownership change\\n' ;;
@@ -231,6 +238,7 @@ def test_successful_native_batch_readback_commits_observed_ownership(tmp_path):
 host() {
   printf '%s\\n' "$*" >> "$CALLS"
   case "$3" in
+    *'show running-config'*) cat "$TEST_FRR_CONFIG" ;;
     *'show ip route '*) cat "$STATIC" ;;
     *'show bgp '*) cat "$BGP" ;;
     *) printf 'applied\\n' ;;
@@ -400,3 +408,109 @@ def test_missing_pool_cidrs_remains_unknown_and_transition_to_empty_changes_refr
     assert result.returncode == 0, result.stderr
     assert result.stdout == '' and state == ledger(['10.68.12.0/24'])
     assert snapshot_hash(tmp_path/'partial', [partial]) != snapshot_hash(tmp_path/'complete', [complete])
+
+
+def test_absent_retirement_does_not_emit_real_frr_noop_errors_or_block_replay(tmp_path):
+    previous = ledger(['10.68.12.0/24'])
+    program = '''
+host() {
+  printf '%s\\n' "$*" >> "$CALLS"
+  case "$3" in
+    *'show running-config'*) cat "$TEST_FRR_CONFIG" ;;
+    *'show ip route '*) printf '{}\\n' ;;
+    *'show bgp '*) printf '{"paths":[]}\\n' ;;
+    *'no ip route '*|*'no network '*)
+      printf '%% Refusing to remove a non-existent route\\n%% Can\\047t find static route specified\\n' >&2
+      return 1 ;;
+    *) printf 'applied\\n' ;;
+  esac
+}
+retirement="$(retired_prefix_routes; retired_prefix_networks)"
+printf 'configure terminal\\n%s\\nend\\n' "$retirement" | apply_owned_frr_batch
+'''
+    result, state, calls = run_helper(tmp_path, [node(cidrs=[])], previous, desired='',
+                                      configured='router bgp 4200010001\n address-family ipv4 unicast\n', program=program)
+    assert result.returncode == 0, result.stderr
+    assert state['prefixes'] == []
+    assert 'no ip route' not in calls and 'no network' not in calls
+    assert 'non-existent route' not in result.stderr and 'static route specified' not in result.stderr
+
+
+def test_partially_removed_route_replays_only_remaining_configured_network(tmp_path):
+    program = '''
+host() {
+  printf '%s\\n' "$*" >> "$CALLS"
+  case "$3" in
+    *'show running-config'*) cat "$TEST_FRR_CONFIG" ;;
+    *'show ip route '*) printf '{}\\n' ;;
+    *'show bgp '*) printf '{"paths":[]}\\n' ;;
+    *'no ip route '*) printf '%% Refusing to remove a non-existent route\\n' >&2; return 1 ;;
+    *'no network 10.68.12.0/24'*)
+      grep -v '^  network 10.68.12.0/24$' "$TEST_FRR_CONFIG" > "$TEST_FRR_CONFIG.next"
+      mv "$TEST_FRR_CONFIG.next" "$TEST_FRR_CONFIG" ;;
+    *) : ;;
+  esac
+}
+retirement="$(retired_prefix_routes; retired_prefix_networks)"
+printf 'configure terminal\\n%s\\nend\\n' "$retirement" | apply_owned_frr_batch
+'''
+    result, state, calls = run_helper(tmp_path, [node(cidrs=[])], ledger(['10.68.12.0/24']), desired='',
+                                      configured='router bgp 4200010001\n address-family ipv4 unicast\n  network 10.68.12.0/24\n', program=program)
+    assert result.returncode == 0, result.stderr
+    assert state['prefixes'] == []
+    assert 'no network 10.68.12.0/24' in calls and 'no ip route' not in calls
+
+
+def test_retirement_never_touches_other_default_asn_or_vrf_static_configuration(tmp_path):
+    result, state, _ = run_helper(tmp_path, [node(cidrs=[])], ledger(['10.68.12.0/24']), desired='',
+                                  configured='ip route 10.68.12.0/24 Null0 254\nrouter bgp 4200019999\n  network 10.68.12.0/24\n')
+    assert result.returncode != 0 and result.stdout == '' and state == ledger(['10.68.12.0/24'])
+    nested = tmp_path/'vrf'
+    nested.mkdir()
+    configured = '''vrf other
+ ip route 10.68.12.0/24 Null0 254
+exit-vrf
+ip route 10.68.12.0/24 Null0 10
+router bgp 4200010001
+ address-family ipv4 unicast
+ exit-address-family
+router bgp 4200010001 vrf other
+ address-family ipv4 unicast
+  network 10.68.12.0/24
+'''
+    result, _, _ = run_helper(nested, [node(cidrs=[])], ledger(['10.68.12.0/24']), desired='', configured=configured)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ''
+
+
+def test_config_metadata_reader_never_exports_neighbour_credentials(tmp_path):
+    configured = '''ip route 10.68.12.0/24 Null0 254
+router bgp 4200010001
+ neighbor 192.0.2.2 password synthetic-sensitive-do-not-export
+ address-family ipv4 unicast
+  network 10.68.12.0/24
+'''
+    result, _, _ = run_helper(tmp_path, [node(cidrs=[])], desired='', configured=configured,
+                              program='frr_configured_prefixes\n')
+    assert result.returncode == 0, result.stderr
+    assert set(result.stdout.splitlines()) == {'route 10.68.12.0/24', 'default-asn 4200010001', 'network 10.68.12.0/24'}
+    assert 'synthetic-sensitive' not in result.stdout and 'password' not in result.stdout
+
+
+def test_inactive_retired_network_configuration_must_be_removed_before_ledger_commit(tmp_path):
+    program = '''
+host() {
+  printf '%s\\n' "$*" >> "$CALLS"
+  case "$3" in
+    *'show running-config'*) cat "$TEST_FRR_CONFIG" ;;
+    *'show ip route '*) printf '{}\\n' ;;
+    *'show bgp '*) printf '{"paths":[]}\\n' ;;
+    *) printf 'applied\\n' ;;
+  esac
+}
+printf 'configure terminal\\nend\\n' | apply_owned_frr_batch
+'''
+    previous = ledger(['10.68.12.0/24'])
+    result, state, _ = run_helper(tmp_path, [node(cidrs=[])], previous, desired='',
+                                  configured='router bgp 4200010001\n address-family ipv4 unicast\n  network 10.68.12.0/24\n', program=program)
+    assert result.returncode != 0 and state == previous
