@@ -22,3 +22,21 @@ stale evidence or unavailable source does not count as passing acceptance.
 
 The change reuses the verified rc16 artifact and existing signed SSA release.
 It changes only reviewed target configuration and does not rebuild AF.
+
+## Collector resources
+
+The first actual measurements exposed collector throttling: both conformance
+containers had a hard-coded 100m CPU ceiling. R640's pod collector recorded
+193 throttled periods out of 464 and 12.686 seconds of throttling. One complete
+HTTP 200 transfer took 1135 ms, exceeding the existing 1000 ms budget. That
+failure is retained; the latency budget is not relaxed. The reported connect
+duration currently also includes local TLS-context initialization and must not
+be treated as a pure TCP handshake measurement or proof of packet loss.
+
+The existing Helm post-renderer now reserves 100m CPU and 64 MiB per collector,
+with burst capacity of two CPUs and 256 MiB. Observed average CPU consumption
+was approximately 50m; this reserves twice that average and permits the two
+TLS workers to initialize without a 100m quota. Only the host/pod conformance
+containers change; the verified rc16 artifact is reused. Confirm actual
+resources, fresh complete evidence and cgroup throttling after rollout rather
+than assuming the resource change alone passes acceptance.
