@@ -13,8 +13,11 @@ def project(deployment):
     if len(containers) != 1:
         raise ValueError('unexpected Agent container layout')
     container = containers[0]
+    status = deployment.get('status', {})
     env = {item['name']: item.get('value', '') for item in container.get('env', [])}
     return {'uid': metadata['uid'], 'generation': metadata['generation'],
+            'rollout': {key: status.get(key, 0) for key in ['observedGeneration', 'replicas', 'updatedReplicas', 'readyReplicas', 'availableReplicas', 'unavailableReplicas']},
+            'desiredReplicas': deployment['spec'].get('replicas', 1),
             'reviewedImage': container['image'] == EXPECTED_IMAGE,
             'clusterIdentityMatches': env.get('CLUSTER_ID') == 're8ch-atlantic',
             'brokerConfigured': bool(env.get('BROKER_ENDPOINT')),
