@@ -277,6 +277,16 @@ jobs:
           cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com "${verify_args[@]}" "$immutable" >/dev/null
           flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
+          if [[ "$CONTRACT" == contracts/networking-native-atlantic-among-clusters.yaml ]] && \
+              python operations/releases/legacy_agent_state.py needed --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json"; then
+            previous="$(python operations/releases/legacy_agent_state.py reference --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json")"
+            cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com "${previous#oci://}" > "$RUNNER_TEMP/legacy-signatures.json"
+            flux pull artifact "$previous" --output "$RUNNER_TEMP/legacy-accepted"
+            python operations/releases/legacy_agent_state.py adopt --contract "$CONTRACT" \
+              --configmap "$RUNNER_TEMP/state-cm.json" --signatures "$RUNNER_TEMP/legacy-signatures.json" \
+              --bundle "$RUNNER_TEMP/legacy-accepted/release.bundle" > "$RUNNER_TEMP/legacy-agent-state-adoption.json"
+          fi
           python operations/releases/operation_materialize.py hydrate --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
             --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json")
@@ -300,6 +310,14 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with: {name: 'static-release-preflight-${{ github.run_id }}', path: static-release-preflight.json, retention-days: 30, if-no-files-found: warn}
+      - name: Preserve verified legacy Agent target adoption
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always() && inputs.contract == 'contracts/networking-native-atlantic-among-clusters.yaml'
+        with:
+          name: legacy-agent-state-${{ github.job }}-${{ github.run_id }}
+          path: '${{ runner.temp }}/legacy-agent-state-adoption.json'
+          retention-days: 30
+          if-no-files-found: warn
       - name: Preserve workflow failure evidence
         if: failure()
         run: |
@@ -395,6 +413,16 @@ jobs:
           cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com "${verify_args[@]}" "$immutable" >/dev/null
           flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
+          if [[ "$CONTRACT" == contracts/networking-native-atlantic-among-clusters.yaml ]] && \
+              python operations/releases/legacy_agent_state.py needed --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json"; then
+            previous="$(python operations/releases/legacy_agent_state.py reference --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json")"
+            cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com "${previous#oci://}" > "$RUNNER_TEMP/legacy-signatures.json"
+            flux pull artifact "$previous" --output "$RUNNER_TEMP/legacy-accepted"
+            python operations/releases/legacy_agent_state.py adopt --contract "$CONTRACT" \
+              --configmap "$RUNNER_TEMP/state-cm.json" --signatures "$RUNNER_TEMP/legacy-signatures.json" \
+              --bundle "$RUNNER_TEMP/legacy-accepted/release.bundle" > "$RUNNER_TEMP/legacy-agent-state-adoption.json"
+          fi
           python operations/releases/operation_materialize.py hydrate --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
             --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json")
@@ -439,6 +467,14 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with: {name: 'static-release-result-${{ github.run_id }}', path: static-release-result.json, retention-days: 30, if-no-files-found: warn}
+      - name: Preserve verified legacy Agent target adoption
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always() && inputs.contract == 'contracts/networking-native-atlantic-among-clusters.yaml'
+        with:
+          name: legacy-agent-state-${{ github.job }}-${{ github.run_id }}
+          path: '${{ runner.temp }}/legacy-agent-state-adoption.json'
+          retention-days: 30
+          if-no-files-found: warn
       - name: Preserve workflow failure evidence
         if: failure()
         run: |
