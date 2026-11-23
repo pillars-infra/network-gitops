@@ -19,7 +19,7 @@ spec:
                 - matchExpressions:
                     - key: kubernetes.io/hostname
                       operator: In
-                      values: [b1-wsl-zt, r640]
+                      values: [a1-wsl-zt, amdwsl-zt, b1-wsl-zt, r640]
           podAntiAffinity:
             requiredDuringSchedulingIgnoredDuringExecution: []
             preferredDuringSchedulingIgnoredDuringExecution:
