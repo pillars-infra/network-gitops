@@ -27628,7 +27628,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83
+    digest: sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b
   url: oci://ghcr.io/among-clusters/charts/among-clusters-hub
 ---
 apiVersion: source.toolkit.fluxcd.io/v1

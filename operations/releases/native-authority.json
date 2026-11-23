@@ -2442,6 +2442,48 @@
             "get",
             "use"
           ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resourceNames": [
+            "re8ch-atlantic-default-kubernetes"
+          ],
+          "resources": [
+            "serviceadvertisements"
+          ],
+          "verbs": [
+            "get"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resourceNames": [
+            "re8ch-atlantic-default-kubernetes-re8ch-atlantic"
+          ],
+          "resources": [
+            "importedservices"
+          ],
+          "verbs": [
+            "get"
+          ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resourceNames": [
+            "re8ch-atlantic"
+          ],
+          "resources": [
+            "peers"
+          ],
+          "verbs": [
+            "get"
+          ]
         }
       ]
     },

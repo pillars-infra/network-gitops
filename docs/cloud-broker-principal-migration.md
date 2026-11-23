@@ -25,8 +25,10 @@ it must not be equated with a SaaS organization. The CR has no organizationRef
 or tenant application ownerRef. Its historical Headlamp name does not replace
 these explicit source, peer, approval, UID and expiry checks.
 
-The namespaced bootstrap Role permits only `get` and `use` of that one existing
-grant, bound only to the actual Cloud ServiceAccount. `get` is needed for the
+The namespaced bootstrap Role permits `get` and `use` of that one existing
+grant, plus `get` of its exact reviewed advertisement, import and peer objects,
+bound only to the actual Cloud ServiceAccount. It grants no list/watch or
+unrelated-object read. `get` is needed for the
 caller to validate current UID, approval, revocation, expiry and peer before
 using the broker. The UID annotation records the reviewed object; Kubernetes
 RBAC itself binds names, not UIDs. Cloud target binding must check the UID and

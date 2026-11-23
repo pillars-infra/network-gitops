@@ -23,8 +23,8 @@
     },
     "among-clusters-hub": {
       "chart": {
-        "oci": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:0b4bff5fcbc8df6daf8f647158628cdf9a8e7cb0b976879e21fcd9112494ca83",
-        "sha256": "01910b61146f655590770a1d5d442672e4378306cf4dc206dde644f8212b3a84"
+        "oci": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b",
+        "sha256": "b05f6e1fd24530f5933a9526055b4f5c6f691b721d4c96d65579bd9dfaa6959e"
       },
       "namespace": "among-clusters",
       "releaseName": "among-clusters-hub",
