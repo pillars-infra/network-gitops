@@ -329,7 +329,6 @@
       "inventory": [
         "core/Service/byoc-pilot/artc-default-kubernetes-re8ch-artc",
         "core/Service/byoc-pilot/qwen-default-kubernetes-re8ch-qwen",
-        "core/Service/byoc-pilot/re8ch-atlantic-default-kubernetes-re8ch-atlantic",
         "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-artc",
         "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-qwen",
         "peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-sijie",
@@ -355,8 +354,7 @@
           ],
           "resourceNames": [
             "artc-default-kubernetes-re8ch-artc",
-            "qwen-default-kubernetes-re8ch-qwen",
-            "re8ch-atlantic-default-kubernetes-re8ch-atlantic"
+            "qwen-default-kubernetes-re8ch-qwen"
           ],
           "verbs": [
             "get",
@@ -2883,6 +2881,10 @@
     {
       "identity": "core/Secret/regional-routing/routeros-authority-bundle-key",
       "reason": "restricted-sops"
+    },
+    {
+      "identity": "core/Service/byoc-pilot/re8ch-atlantic-default-kubernetes-re8ch-atlantic",
+      "reason": "controller-owned-runtime-result"
     },
     {
       "identity": "helm.cattle.io/HelmChart/kube-system/cert-manager",

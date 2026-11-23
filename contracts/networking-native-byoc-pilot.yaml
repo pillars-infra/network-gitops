@@ -38,7 +38,6 @@ spec:
     - qwen-kubernetes-api
     - re8ch-artc
     - re8ch-atlantic
-    - re8ch-atlantic-default-kubernetes-re8ch-atlantic
     - re8ch-atlantic-headlamp-admin
     - re8ch-atlantic-kubernetes-api
     - re8ch-mihomos-egress
@@ -47,7 +46,6 @@ spec:
     forceConflictObjects:
     - core/Service/byoc-pilot/artc-default-kubernetes-re8ch-artc
     - core/Service/byoc-pilot/qwen-default-kubernetes-re8ch-qwen
-    - core/Service/byoc-pilot/re8ch-atlantic-default-kubernetes-re8ch-atlantic
     - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-artc
     - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-qwen
     - peering.re8ch.com/AuthenticatedLink/byoc-pilot/re8ch-sijie
@@ -63,7 +61,7 @@ spec:
     - peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-atlantic-kubernetes-api
     - peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-mihomos-egress
   inventory:
-    digest: sha256:8ce22e0f95c4ff7b846a5391909b778d08a583e38951bbde31f0277120e2f786
+    digest: sha256:64f2203f08c387b80c79e7a26babc184625aea4b2a246dd60228535da9f42c1f
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

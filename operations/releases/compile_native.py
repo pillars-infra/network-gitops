@@ -27,6 +27,12 @@ DEDICATED_NATIVE_RELEASES={
     'core/ConfigMap/egress-fabric/mihomos-node-configs': 'networking-native-mihomo-routing',
     'core/Service/egress-fabric/mihomos-global-exit-atlantic': 'networking-native-mihomo-routing',
 }
+# Reviewed bootstrap bridge adopted in place by the existing ImportedService.
+# Keep the source as migration evidence, but never statically reapply its result.
+CONTROLLER_OWNED_RUNTIME_RESULTS={
+    'core/Service/byoc-pilot/re8ch-atlantic-default-kubernetes-re8ch-atlantic':
+        'atlantic-kubernetes-import.among-clusters.svc.cluster.local',
+}
 OBSERVED_READINESS_RELEASES={
     'networking-helm-cilium-kube-system',
     'networking-native-kube-system',
@@ -41,6 +47,12 @@ EXTERNAL_NATIVE_RELEASES={
 }
 
 def classify(document):
+    identity=object_identity(document)
+    if identity in CONTROLLER_OWNED_RUNTIME_RESULTS:
+        spec=document.get('spec',{})
+        if spec.get('type')!='ExternalName' or spec.get('externalName')!=CONTROLLER_OWNED_RUNTIME_RESULTS[identity]:
+            raise ValueError('reviewed controller-owned bridge differs from bootstrap source')
+        return 'controller-owned-runtime-result'
     if 'sops' in document:
         if document['kind']!='ConfigMap':return 'restricted-sops'
         validate_envelope(document)
