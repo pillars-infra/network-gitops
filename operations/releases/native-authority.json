@@ -689,6 +689,7 @@
         "apps/DaemonSet/egress-fabric/mihomos-node-cn",
         "apps/DaemonSet/egress-fabric/mihomos-node-global",
         "apps/DaemonSet/egress-fabric/mihomos-status-agent",
+        "apps/Deployment/egress-fabric/identity-egress",
         "apps/Deployment/egress-fabric/mihomo-node-labeler",
         "core/ConfigMap/egress-fabric/identity-egress-config",
         "core/ConfigMap/egress-fabric/mihomo-node-labeler-code-k4fm8c7g7t",
@@ -741,6 +742,7 @@
             "deployments"
           ],
           "resourceNames": [
+            "identity-egress",
             "mihomo-node-labeler"
           ],
           "verbs": [
@@ -2983,10 +2985,6 @@
     }
   ],
   "omitted": [
-    {
-      "identity": "apps/Deployment/egress-fabric/identity-egress",
-      "reason": "image-digest-required"
-    },
     {
       "identity": "apps/Deployment/egress-fabric/path-controller",
       "reason": "image-digest-required"

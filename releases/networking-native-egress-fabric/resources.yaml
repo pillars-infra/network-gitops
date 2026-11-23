@@ -466,6 +466,154 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  labels:
+    app.kubernetes.io/name: identity-egress
+  name: identity-egress
+  namespace: egress-fabric
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: identity-egress
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'false'
+      labels:
+        app.kubernetes.io/name: identity-egress
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - overseas-kl
+                - overseas-la
+                - r640
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: identity-egress
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - -d
+        - /var/lib/mihomo
+        - -f
+        - /work/config.yaml
+        image: docker.io/metacubex/mihomo:v1.19.29@sha256:e1d7dadaa9368a52d420d65007e0e0d87cb148d292faa67326eda3fef5757f59
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /version
+            port: controller
+          periodSeconds: 20
+        name: proxy
+        ports:
+        - containerPort: 17893
+          name: proxy
+          protocol: TCP
+        - containerPort: 19091
+          name: controller
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /proxies/DIRECT/delay?url=https%3A%2F%2Faccounts.google.com%2F.well-known%2Fopenid-configuration&timeout=5000
+            port: controller
+          periodSeconds: 10
+          timeoutSeconds: 7
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /version
+            port: controller
+          periodSeconds: 2
+        volumeMounts:
+        - mountPath: /work
+          name: rendered-config
+          readOnly: true
+        - mountPath: /var/lib/mihomo
+          name: state
+      dnsPolicy: ClusterFirst
+      hostNetwork: false
+      initContainers:
+      - args:
+        - 'if [ "$NODE_NAME" = r640 ]; then cp /base/config.yaml /work/config.yaml;
+          else sed "s|bind-address: 0.0.0.0|bind-address: ${POD_IP}|" /base/config.yaml
+          > /work/config.yaml; fi'
+        command:
+        - /bin/sh
+        - -ec
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: docker.io/library/alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
+        imagePullPolicy: IfNotPresent
+        name: bind-node-address
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /base
+          name: config
+          readOnly: true
+        - mountPath: /work
+          name: rendered-config
+      priorityClassName: system-cluster-critical
+      securityContext:
+        fsGroup: 65532
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+      - operator: Exists
+      volumes:
+      - configMap:
+          name: identity-egress-config
+        name: config
+      - emptyDir: {}
+        name: rendered-config
+      - emptyDir: {}
+        name: state
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: mihomo-node-labeler
   namespace: egress-fabric
 spec:

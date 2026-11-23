@@ -21768,11 +21768,13 @@ spec:
                 - overseas-la
                 - r640
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: identity-egress
-            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: identity-egress
+              topologyKey: kubernetes.io/hostname
       automountServiceAccountToken: false
       containers:
       - args:
@@ -21826,8 +21828,8 @@ spec:
           readOnly: true
         - mountPath: /var/lib/mihomo
           name: state
-      dnsPolicy: Default
-      hostNetwork: true
+      dnsPolicy: ClusterFirst
+      hostNetwork: false
       initContainers:
       - args:
         - 'if [ "$NODE_NAME" = r640 ]; then cp /base/config.yaml /work/config.yaml;
@@ -21845,7 +21847,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: alpine:3.22
+        image: docker.io/library/alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
         imagePullPolicy: IfNotPresent
         name: bind-node-address
         securityContext:
