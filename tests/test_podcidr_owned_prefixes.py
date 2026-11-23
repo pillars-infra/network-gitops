@@ -185,3 +185,80 @@ def test_missing_owner_reference_is_unknown_not_authoritative_empty(tmp_path):
     result, state, _ = run_helper(tmp_path, [observed], previous, desired='')
     assert result.returncode == 0, result.stderr
     assert result.stdout == '' and state == previous
+
+
+def test_native_command_mode_stops_failed_batch_before_readback_or_ledger_commit(tmp_path):
+    previous = ledger(['10.68.12.0/24'])
+    program = '''
+host() {
+  printf '%s\\n' "$*" >> "$CALLS"
+  if [ "$1" = vtysh ] && [ "$2" = -c ] && [ "$3" = 'invalid-command
+must-not-execute' ]; then return 17; fi
+  return 0
+}
+printf 'invalid-command\\nmust-not-execute\\n' | apply_owned_frr_batch
+'''
+    result, state, calls = run_helper(tmp_path, [node(cidrs=['10.68.1.0/24'])], previous,
+                                      program=program)
+    assert result.returncode != 0 and state == previous
+    assert 'vtysh -c invalid-command' in calls
+    assert 'show ip route' not in calls and 'show bgp' not in calls
+
+
+def test_daemon_warning_zero_exit_without_actual_ownership_does_not_commit(tmp_path):
+    previous = ledger(['10.68.12.0/24'])
+    program = '''
+host() {
+  printf '%s\\n' "$*" >> "$CALLS"
+  case "$3" in
+    *'show ip route '*) printf '{}\\n' ;;
+    *'show bgp '*) printf '{"paths":[]}\\n' ;;
+    *) printf '%% daemon rejected ownership change\\n' ;;
+  esac
+  return 0
+}
+printf 'configure terminal\\nnetwork rejected\\nend\\n' | apply_owned_frr_batch
+'''
+    result, state, calls = run_helper(tmp_path, [node(cidrs=['10.68.1.0/24'])], previous,
+                                      program=program)
+    assert result.returncode != 0 and state == previous
+    assert 'FRR ownership readback did not match' in result.stderr
+    assert 'show ip route' in calls
+
+
+def test_successful_native_batch_readback_commits_observed_ownership(tmp_path):
+    program = '''
+host() {
+  printf '%s\\n' "$*" >> "$CALLS"
+  case "$3" in
+    *'show ip route '*) cat "$STATIC" ;;
+    *'show bgp '*) cat "$BGP" ;;
+    *) printf 'applied\\n' ;;
+  esac
+}
+printf 'configure terminal\\nend\\n' | apply_owned_frr_batch
+'''
+    result, state, calls = run_helper(tmp_path, [node(cidrs=['10.68.1.0/24'])],
+                                      desired='10.68.1.0/24', static=blackhole('10.68.1.0/24'),
+                                      bgp={'paths': [{'local': True, 'sourced': True}]}, program=program)
+    assert result.returncode == 0, result.stderr
+    assert state['prefixes'] == ['10.68.1.0/24']
+    assert 'vtysh -c configure terminal\nend' in calls
+    assert 'show ip route' in calls and 'show bgp' in calls
+
+
+def test_retired_origin_remaining_after_zero_exit_cannot_commit(tmp_path):
+    previous = ledger(['10.68.12.0/24'])
+    program = '''
+host() {
+  printf '%s\\n' "$*" >> "$CALLS"
+  case "$3" in
+    *'show ip route '*) printf '{}\\n' ;;
+    *'show bgp '*) printf '{"paths":[{"local":true,"sourced":true}]}\\n' ;;
+    *) printf 'applied\\n' ;;
+  esac
+}
+printf 'configure terminal\\nend\\n' | apply_owned_frr_batch
+'''
+    result, state, _ = run_helper(tmp_path, [node(cidrs=[])], previous, desired='', program=program)
+    assert result.returncode != 0 and state == previous
