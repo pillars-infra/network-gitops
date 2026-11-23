@@ -23,6 +23,13 @@ patches:
       kind: HelmRelease
       namespace: flux-network-system
       name: public-edge-manager
+  - path: advanced-fabric-allocation-observation.yaml
+    target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      namespace: flux-network-system
+      name: advanced-fabric
   - path: advanced-fabric-control-plane-offload.yaml
     target:
       group: helm.toolkit.fluxcd.io
