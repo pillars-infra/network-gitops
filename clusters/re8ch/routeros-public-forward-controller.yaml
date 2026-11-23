@@ -22,6 +22,134 @@ data:
         {"protocol": "tcp", "port": "6443", "toPort": "6443"}
       ]
     }
+  observe.py: |
+    #!/usr/bin/env python3
+    """Read-only, destination-scoped RouterOS diagnostics through the existing owner."""
+    import argparse
+    import ipaddress
+    import json
+    from urllib.parse import urlencode
+
+    SOURCES = ipaddress.ip_network('10.68.9.0/24')
+    DESTINATIONS = {'101.34.217.95', '124.220.77.50', '1.14.174.244'}
+    NAT_FIELDS = ('chain', 'action', 'src-address', 'dst-address', 'protocol', 'dst-port',
+                  'to-addresses', 'to-ports', 'in-interface', 'out-interface', 'disabled')
+    ROUTE_FIELDS = ('dst-address', 'gateway', 'active', 'routing-table', 'distance', 'dynamic')
+    CONNECTION_FIELDS = ('src-address', 'dst-address', 'reply-src-address', 'reply-dst-address',
+                         'protocol', 'srcnat', 'dstnat', 'seen-reply', 'assured')
+
+
+    def validate(source, destination, source_port):
+        source = str(ipaddress.IPv4Address(source))
+        destination = str(ipaddress.IPv4Address(destination))
+        if ipaddress.ip_address(source) not in SOURCES or destination not in DESTINATIONS:
+            raise ValueError('diagnostic scope is not reviewed')
+        if not 1024 <= source_port <= 65535:
+            raise ValueError('invalid diagnostic source port')
+        return source, destination
+
+
+    def projected(row, fields):
+        # Only printable bounded scalar fields, never comments, auth or arbitrary response keys.
+        return {key: str(row[key]) for key in fields if key in row and
+                isinstance(row[key], (str, bool, int)) and len(str(row[key])) <= 160 and
+                all(32 <= ord(char) < 127 for char in str(row[key]))}
+
+
+    def get_rows(router, path, fields, filters=None):
+        query = {'.proplist': ','.join(fields)}
+        query.update(filters or {})
+        rows = router.request(path + '?' + urlencode(query), method='GET')
+        if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+            raise ValueError('unexpected RouterOS response shape')
+        return rows
+
+
+    def covers(value, address):
+        if not value:
+            return True
+        try:
+            return ipaddress.ip_address(address) in ipaddress.ip_network(value, strict=False)
+        except ValueError:
+            return None
+
+
+    def port_covers(value, port):
+        if not value:
+            return True
+        try:
+            for part in value.split(','):
+                bounds = [int(item) for item in part.split('-')]
+                if len(bounds) == 1 and bounds[0] == port:
+                    return True
+                if len(bounds) == 2 and bounds[0] <= port <= bounds[1]:
+                    return True
+            return False
+        except (ValueError, AttributeError):
+            return None
+
+
+    def observe(router, source, destination, source_port):
+        source, destination = validate(source, destination, source_port)
+        routes = get_rows(router, '/ip/route', ROUTE_FIELDS)
+        relevant_routes = []
+        for row in routes:
+            if covers(row.get('dst-address'), source) is True:
+                relevant_routes.append(projected(row, ROUTE_FIELDS))
+        nat = get_rows(router, '/ip/firewall/nat', NAT_FIELDS)
+        relevant_nat = []
+        unknown_selectors = 0
+        for row in nat:
+            if str(row.get('disabled', 'false')).lower() == 'true':
+                continue
+            if row.get('protocol') not in (None, '', 'udp', 'tcp'):
+                continue
+            # Report possible matching rules in original order. Unknown/range/inverted
+            # selectors remain candidates, not proof that a particular rule matched.
+            match = [covers(row.get('src-address'), source), covers(row.get('dst-address'), destination),
+                     port_covers(row.get('dst-port'), 53)]
+            reverse = [covers(row.get('src-address'), destination), covers(row.get('dst-address'), source),
+                       port_covers(row.get('dst-port'), source_port)]
+            if False in match and False in reverse:
+                continue
+            unknown_selectors += int(None in match or None in reverse)
+            relevant_nat.append(projected(row, NAT_FIELDS))
+        filters = {'src-address': source + ':' + str(source_port), 'dst-address': destination + ':53',
+                   'protocol': 'udp'}
+        connections = get_rows(router, '/ip/firewall/connection', CONNECTION_FIELDS, filters)
+        # Verify exact scope again even if the provider ignores URL filters. Never
+        # output an unrelated connection or treat an absent/expired entry as success.
+        selected = [projected(row, CONNECTION_FIELDS) for row in connections
+                    if all(str(row.get(key, '')) == value for key, value in filters.items())]
+        return {'definition': 'routeros-public-dns-return-v1', 'source': source,
+                'destination': destination, 'sourcePort': source_port, 'destinationPort': 53,
+                'routesCoveringSource': relevant_routes, 'possibleNatRulesInOrder': relevant_nat,
+                'unknownNatSelectors': unknown_selectors, 'exactUdpConnections': selected,
+                'connectionObservation': 'present' if selected else 'absent-or-expired',
+                'claim': 'read-only snapshot; rule candidates are not packet-hit proof'}
+
+
+    def main(argv=None):
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument('--source-address', required=True)
+        parser.add_argument('--destination-address', required=True)
+        parser.add_argument('--source-port', required=True, type=int)
+        args = parser.parse_args(argv)
+        source, destination = validate(args.source_address, args.destination_address, args.source_port)
+        # Import is safe: reviewed owner has a guarded __main__. Reuse its mounted
+        # credential reference and HTTP adapter; never print/read credentials here.
+        from reconcile import Router
+        try:
+            result = observe(Router('192.168.88.1'), source, destination, args.source_port)
+        except Exception as error:
+            print(json.dumps({'state': 'failed', 'errorType': type(error).__name__}))
+            return 1
+        print(json.dumps(result, sort_keys=True))
+        return 0
+
+
+    if __name__ == '__main__':
+        raise SystemExit(main())
   reconcile.py: |
     #!/usr/bin/env python3
     """Reconcile explicitly owned public RouterOS forwards before the fallback rule."""
