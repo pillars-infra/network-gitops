@@ -21,7 +21,11 @@ spec:
                       operator: In
                       values: [a1-wsl-zt, amdwsl-zt, b1-wsl-zt, r640]
           podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution: []
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: advanced-fabric-doh
+                topologyKey: kubernetes.io/hostname
             preferredDuringSchedulingIgnoredDuringExecution:
               - weight: 100
                 podAffinityTerm:
