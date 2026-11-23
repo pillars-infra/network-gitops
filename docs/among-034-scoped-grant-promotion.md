@@ -14,8 +14,10 @@ provenance/SBOM statements match their image subject digests; provenance VCS
 source/revision match this source exactly. Every OCI chart archive matches the
 GitHub release asset byte for byte. No artifact is rebuilt for promotion.
 
-Promote only the existing Hub runtime cohort first. Broker and main Agent image
-values remain unchanged. Bootstrap additive resourceNames and the reviewed
+Promote the existing Hub runtime cohort first. After actual Hub readiness, promote
+the main Agent/gateway cohort to the same verified digest. Its existing chart
+shares one image value for both binaries. Keep the broker image, cluster identity,
+grants and managedAccess setting unchanged. Bootstrap additive resourceNames and the reviewed
 Kubernetes-native set schemas from this chart; the previous uniqueItems=true
 schema was rejected by server dry-run and must not be reapplied. Upgrade the
 actual Atlantic Agent after the Hub. The new Agent requires grant.poll.v2;
