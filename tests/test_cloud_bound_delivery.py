@@ -238,3 +238,15 @@ def test_agent_bootstrap_cannot_change_existing_only_scope(monkeypatch,change):
     monkeypatch.setattr(profile.yaml,'safe_load',lambda _:contract)
     with pytest.raises(ValueError,match='legacy remote'):
         profile.validate_contract(path,for_execution=True)
+
+
+def test_agent_bootstrap_observation_never_publishes_unreviewed_env_or_secret_values():
+    from agent_bootstrap_observation import project
+    deployment={'metadata':{'name':'among-clusters-agent','namespace':'among-clusters','uid':'remote-agent-uid','generation':7},'spec':{'template':{'spec':{'containers':[{'image':'old-digest','env':[{'name':'CLUSTER_ID','value':'re8ch-atlantic'},{'name':'BROKER_ENDPOINT','value':'https://unreviewed.invalid/?secret=must-not-appear'},{'name':'PRIVATE_KEY','value':'must-not-appear'}]}]}}}}
+    result=project(deployment)
+    assert result['uid']=='remote-agent-uid' and result['clusterIdentityMatches']
+    assert result['brokerConfigured'] and not result['brokerEndpointMatches']
+    assert 'must-not-appear' not in json.dumps(result)
+    assert 'unreviewed.invalid' not in json.dumps(result)
+    deployment['metadata']['namespace']='other'
+    with pytest.raises(ValueError,match='unexpected bootstrap object'):project(deployment)

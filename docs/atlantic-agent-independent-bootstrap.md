@@ -20,7 +20,11 @@ application and no-prune are mandatory. Other unbound remote contracts remain
 rejected, and the independent path remains excluded from automatic replay.
 
 First run the existing workflow with execute=false and dry_run=true. Preserve
-the current Agent identity/configuration and server authorization evidence,
+the current Agent identity/configuration and server authorization evidence.
+The exact Deployment GET publishes only its UID/generation and boolean
+comparisons against reviewed image, cluster identity, broker endpoint and
+sync interval; environment values and credential references are not logged.
+Preserve the separate observation artifact even if state hydration fails,
 and compare intended changes against the reviewed 0.3.34 image-only promotion.
 Then reuse that immutable bundle for bounded application. Observe the original
 grant UID and credential expiry advance through natural Agent polling; do not

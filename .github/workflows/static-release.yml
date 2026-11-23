@@ -236,6 +236,15 @@ jobs:
           EXECUTOR_TOKEN="$token" python operations/releases/kube_endpoint.py
           echo "KUBECONFIG=$kubeconfig" >> "$GITHUB_ENV"
           echo "EXECUTOR_AUDIENCE=$EXECUTOR_AUDIENCE" >> "$GITHUB_ENV"
+      - name: Observe exact independent Agent bootstrap configuration
+        if: inputs.contract == 'contracts/networking-native-atlantic-among-clusters.yaml'
+        run: |
+          set -euo pipefail
+          kubectl --request-timeout=10s get deployment among-clusters-agent -n among-clusters -o json | \
+            python operations/releases/agent_bootstrap_observation.py > agent-bootstrap-observation.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always() && inputs.contract == 'contracts/networking-native-atlantic-among-clusters.yaml'
+        with: {name: 'agent-bootstrap-observation-${{ github.run_id }}', path: agent-bootstrap-observation.json, retention-days: 30, if-no-files-found: warn}
       - name: Verify signed artifact and perform bounded server-side preflight
         env:
           CONTRACT: '${{ inputs.contract }}'
