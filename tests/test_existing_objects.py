@@ -144,3 +144,32 @@ def test_existing_object_get_does_not_retry_non_transient_failure(tmp_path):
         executor.Executor(runner=runner,now=lambda:NOW,sleeper=lambda _:None).reconcile(value,op,path,tmp_path/'state')
     reads=[argv for argv,_ in runner.calls if argv[:2]==['kubectl','get']]
     assert len(reads)==1
+
+
+def test_rollback_refreshes_resource_version_after_dry_run(tmp_path):
+    class RacingRollbackRunner(ExistingRunner):
+        def __init__(self):super().__init__();self.version=17;self.applies=0
+        def __call__(self,argv,**kwargs):
+            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+                self.calls.append((argv,kwargs.get('input')))
+                return subprocess.CompletedProcess(argv,0,str(self.version),'')
+            if argv[:2]==['kubectl','apply']:
+                self.calls.append((argv,kwargs.get('input')))
+                current=json.loads(kwargs['input'])['metadata']['resourceVersion']
+                if current!=str(self.version):
+                    return subprocess.CompletedProcess(argv,1,'','the object has been modified')
+                self.applies+=1
+                self.version+=1  # An independent status update after each exchange.
+                return subprocess.CompletedProcess(argv,0,'','')
+            return super().__call__(argv,**kwargs)
+    value,op,path=fixture(tmp_path)
+    manifest,objects=executor.load_archive(path)
+    store=executor.Store(tmp_path/'rollback-state','demo')
+    store.cache_bundle(path,op['bundle']['digest'])
+    previous={'appliedDigest':op['bundle']['digest'],'payloadDigest':op['bundle']['payloadDigest'],
+              'bundleReference':op['bundle']['reference'],'inventory':manifest['inventory'],
+              'objectRefs':[executor.object_ref(item) for item in objects]}
+    runner=RacingRollbackRunner()
+    observed,_=executor.Executor(runner=runner,now=lambda:NOW,sleeper=lambda _:None).rollback(
+        previous,manifest,objects,value,op,'re8ch-release/demo',store,'forward apply failure')
+    assert observed==previous['appliedDigest'] and runner.applies==2

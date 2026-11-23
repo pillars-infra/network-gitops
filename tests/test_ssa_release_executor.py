@@ -545,6 +545,7 @@ def test_failed_rollback_remains_blocked_on_next_cloud_worker(tmp_path, monkeypa
     assert patch["metadata"] == {"resourceVersion": "71"}
     assert set(patch["data"]) == {"accepted-state.json"}
     assert json.loads(patch["data"]["accepted-state.json"])["blocked"] is True
+    assert "not ready; rollback failed" in json.loads(patch["data"]["accepted-state.json"])["blockedReason"]
     cm["data"].update(patch["data"])
     cm_path.write_text(json.dumps(cm))
     next_root = tmp_path / "fresh-cloud-worker"
