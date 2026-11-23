@@ -74,6 +74,15 @@ spec:
   inventory:
     digest: sha256:7a573c30902149bd88e40b1f21598e11aeddb1a38b09799662d3155b89dc9883
   lifecycle:
+    stages:
+    - name: configuration
+      kinds: [ConfigMap, ServiceAccount, Service, Issuer, IngressClass, PodDisruptionBudget]
+    - name: certificates
+      kinds: [Certificate]
+    - name: custom-resources
+      kinds: [AdvancedFabric]
+    - name: runtime
+      kinds: [DaemonSet, Deployment]
     prune: false
     healthTimeoutSeconds: 300
     readinessPolicy: observe

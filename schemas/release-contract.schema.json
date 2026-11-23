@@ -118,7 +118,7 @@
                 "type": "object", "additionalProperties": false,
                 "required": ["name", "kinds"],
                 "properties": {
-                  "name": {"enum": ["crd-schema", "cluster-rbac", "runtime", "custom-resources", "storage-class", "health-acceptance"]},
+                  "name": {"enum": ["crd-schema", "cluster-rbac", "configuration", "certificates", "runtime", "custom-resources", "storage-class", "health-acceptance"]},
                   "kinds": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
                   "automaticRollback": {"type": "boolean"}
                 }
