@@ -142,7 +142,7 @@ def test_real_tls_keeps_native_selected_endpoint_ca_and_sni(tmp_path,monkeypatch
     class API(http.server.BaseHTTPRequestHandler):
         def do_GET(self):self.send_response(200);self.end_headers();self.wfile.write(b'{"gitVersion":"tls-fixture"}')
         def log_message(self,*a):pass
-    server=http.server.ThreadingHTTPServer(('127.0.0.1',0),API);ctx=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER);ctx.load_cert_chain(cert,key);server.socket=ctx.wrap_socket(server.socket,server_side=True);t=threading.Thread(target=server.serve_forever,daemon=True);t.start()
+    server=http.server.ThreadingHTTPServer(('127.0.0.1',0),API);ctx=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER);ctx.minimum_version=ssl.TLSVersion.TLSv1_2;ctx.load_cert_chain(cert,key);server.socket=ctx.wrap_socket(server.socket,server_side=True);t=threading.Thread(target=server.serve_forever,daemon=True);t.start()
     cfg={'current-context':'main','contexts':[{'name':'main','context':{'cluster':'re8ch'}}], 'clusters':[{'name':'re8ch','cluster':{'server':f'https://127.0.0.1:{server.server_port}','tls-server-name':'main.transport.test','certificate-authority-data':base64.b64encode(cert.read_bytes()).decode()}}], 'users':[{'name':'ignored','user':{'token':'must-not-be-forwarded'}}]}
     path=tmp_path/'main-config';path.write_text(yaml.safe_dump(cfg));monkeypatch.setenv('KUBECONFIG',str(path))
     try:
