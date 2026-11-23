@@ -27035,6 +27035,12 @@ spec:
         class: service-pilot
         probePath: /
         service: mail-service
+      open.service.re8ch.com.:
+        acceptedStatuses:
+        - 401
+        class: service-pilot
+        probePath: /oauth-applications/v1/list
+        service: open-oauth-service
       opensandbox.service.re8ch.com.:
         class: service-pilot
         probePath: /
