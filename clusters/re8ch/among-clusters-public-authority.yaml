@@ -54,12 +54,12 @@ spec:
               - op: add
                 path: /spec/template/spec/dnsPolicy
                 value: ClusterFirstWithHostNet
-              # hostNetwork already exposes the process listeners. Leaving
-              # containerPort entries makes the scheduler reserve them as
-              # hostPorts and reject the pod even when no socket is occupied.
+              # Keep the other host listeners implicit. Reserve only the
+              # dedicated Atlantic bridge, distinct from the CN SOCKS exit.
               - op: replace
                 path: /spec/template/spec/containers/0/ports
-                value: []
+                value:
+                  - {name: atl-exit, containerPort: 31080, protocol: TCP}
               - op: replace
                 path: /spec/template/spec/containers/0/env/2/value
                 value: '[{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","target":"10.43.0.1:443","targetPeers":["re8ch-atlantic"]},{"serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","target":"10.251.0.4:443","targetPeers":["re8ch-atlantic"]}]'
@@ -80,9 +80,12 @@ spec:
               - op: replace
                 path: /spec/ports/3/targetPort
                 value: 33768
+              - op: test
+                path: /spec/ports/4/name
+                value: atl-exit
               - op: replace
                 path: /spec/ports/4/targetPort
-                value: 1080
+                value: 31080
               - op: replace
                 path: /spec/ports/5/targetPort
                 value: 18080
@@ -92,6 +95,21 @@ spec:
               - op: replace
                 path: /spec/ports/7/targetPort
                 value: 18082
+          - target:
+              group: networking.k8s.io
+              version: v1
+              kind: NetworkPolicy
+              name: among-clusters-gateway
+            patch: |-
+              - op: add
+                path: /spec/ingress/-
+                value:
+                  from:
+                    - namespaceSelector:
+                        matchLabels:
+                          kubernetes.io/metadata.name: egress-fabric
+                  ports:
+                    - {protocol: TCP, port: 31080}
   values:
     # The post-rendered workload talks directly to the co-located hub Service;
     # this chart value remains only as the stable upstream chart input.

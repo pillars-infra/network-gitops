@@ -25898,7 +25898,7 @@ spec:
                   matchLabels:
                     kubernetes.io/metadata.name: egress-fabric
               ports:
-              - {protocol: TCP, port: 1080}
+              - {protocol: TCP, port: 31080}
         target:
           group: networking.k8s.io
           kind: NetworkPolicy
@@ -25964,7 +25964,7 @@ spec:
         serviceIdentity: spiffe://atlantic.re8ch.com/ns/default/service/kubernetes
         sessionOnly: true
       - expectedSPIFFEID: spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
-        listen: :1080
+        listen: :31080
         name: atl-exit
         port: 1080
         serviceIdentity: spiffe://atlantic.re8ch.com/ns/egress-fabric/service/mihomos-global-exit-atlantic
