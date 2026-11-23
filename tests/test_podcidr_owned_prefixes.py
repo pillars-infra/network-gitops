@@ -341,3 +341,11 @@ def test_rr_interconnect_is_aggregate_and_not_filtered_as_a_single_spoke(tmp_pat
                               program="fabric_rr_transit_allowed_ips '192.0.2.2/32'\n")
     assert result.returncode == 0, result.stderr
     assert set(result.stdout.strip().split(',')) == {'192.0.2.2/32', '10.68.22.0/24', '10.68.9.0/24'}
+
+
+def test_rr_interconnect_unknown_snapshot_does_not_append_or_reassign_sources(tmp_path):
+    observed = [node(missing=True), node('other', ['10.68.22.0/24'])]
+    result, _, _ = run_helper(tmp_path, observed,
+                              program="fabric_rr_transit_allowed_ips '192.0.2.2/32,10.68.9.0/24'\n")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == '192.0.2.2/32,10.68.9.0/24\n'
