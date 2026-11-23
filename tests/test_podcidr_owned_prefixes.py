@@ -262,3 +262,29 @@ printf 'configure terminal\\nend\\n' | apply_owned_frr_batch
 '''
     result, state, _ = run_helper(tmp_path, [node(cidrs=[])], previous, desired='', program=program)
     assert result.returncode != 0 and state == previous
+
+
+def test_rr_transit_sources_include_every_exact_pool_cidr_of_declared_other_members(tmp_path):
+    observed = [node(cidrs=['10.68.1.0/24']),
+                node('other', ['10.68.9.0/24', '10.68.22.0/24', '10.68.12.0/24']),
+                node('not-a-fabric-member', ['10.68.99.0/24'])]
+    result, _, _ = run_helper(tmp_path, observed, program='fabric_transit_pod_cidrs\n')
+    assert result.returncode == 0, result.stderr
+    assert set(result.stdout.splitlines()) == {'10.68.9.0/24', '10.68.22.0/24', '10.68.12.0/24'}
+    assert '10.68.1.0/24' not in result.stdout and '10.68.99.0/24' not in result.stdout
+    assert '10.64.0.0/12' not in result.stdout and '0.0.0.0/0' not in result.stdout
+
+
+def test_rr_transit_allowed_ips_preserve_other_owners_and_deduplicate_observed_allocations(tmp_path):
+    observed = [node(cidrs=['10.68.1.0/24']), node('other', ['10.68.9.0/24', '10.68.22.0/24'])]
+    result, _, _ = run_helper(tmp_path, observed,
+                              program='fabric_rr_transit_allowed_ips "192.0.2.1/32,10.68.9.0/24"\n')
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip().split(',') == ['192.0.2.1/32', '10.68.9.0/24', '10.68.22.0/24']
+
+
+def test_rr_transit_empty_allocation_does_not_introduce_a_broad_fallback(tmp_path):
+    result, _, _ = run_helper(tmp_path, [node(cidrs=[]), node('other', [])],
+                              program='fabric_rr_transit_allowed_ips "192.0.2.1/32"\n')
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == '192.0.2.1/32\n'
