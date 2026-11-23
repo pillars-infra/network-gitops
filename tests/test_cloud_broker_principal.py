@@ -62,7 +62,13 @@ def test_platform_bootstrap_binds_only_existing_grant_to_actual_cloud_sa():
     assert role['metadata']['namespace'] == binding['metadata']['namespace'] == 'byoc-pilot'
     assert role['rules'] == [{'apiGroups': ['peering.re8ch.com'],
         'resources': ['managedaccessgrants'],
-        'resourceNames': ['re8ch-atlantic-headlamp-admin'], 'verbs': ['get', 'use']}]
+        'resourceNames': ['re8ch-atlantic-headlamp-admin'], 'verbs': ['get', 'use']},
+        {'apiGroups': ['peering.re8ch.com'], 'resources': ['serviceadvertisements'],
+         'resourceNames': ['re8ch-atlantic-default-kubernetes'], 'verbs': ['get']},
+        {'apiGroups': ['peering.re8ch.com'], 'resources': ['importedservices'],
+         'resourceNames': ['re8ch-atlantic-default-kubernetes-re8ch-atlantic'], 'verbs': ['get']},
+        {'apiGroups': ['peering.re8ch.com'], 'resources': ['peers'],
+         'resourceNames': ['re8ch-atlantic'], 'verbs': ['get']}]
     assert binding['subjects'] == [{'kind': 'ServiceAccount',
         'name': 're8ch-cloud-platform', 'namespace': 'ai-operations'}]
     assert binding['roleRef'] == {'apiGroup': 'rbac.authorization.k8s.io',

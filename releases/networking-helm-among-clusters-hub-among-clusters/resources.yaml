@@ -26,7 +26,7 @@ spec:
           value: 'true'
         - name: RECONCILE_INTERVAL
           value: 60s
-        image: ghcr.io/among-clusters/among-clusters@sha256:a80367067b256d0c2989485a0926a9a669affed89f224b6f0adb4cf18bf9be05
+        image: ghcr.io/among-clusters/among-clusters@sha256:dfec9b42b6f9ebcb67228b5c50fff83c75069da8da40ae9ffd88c8990cfd70c7
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
