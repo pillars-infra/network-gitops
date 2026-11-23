@@ -107,3 +107,52 @@ def test_unreviewed_vip_never_renders_partial_boundary_commands(tmp_path):
     program = PROGRAM.replace('10.251.0.4/32', '0.0.0.0/0')
     result, _, _ = run(tmp_path, [node('r640', [])], program=program)
     assert result.returncode != 0 and result.stdout == ''
+
+
+def expected_entries():
+    prefixes = ['10.42.6.0/24', '10.68.22.0/24', '10.68.9.0/24']
+    return [{'sequenceNumber': (i + 1) * 10, 'type': 'permit', 'prefix': p} for i, p in enumerate(prefixes)] + [
+        {'sequenceNumber': 100010, 'type': 'permit', 'prefix': VIP},
+        {'sequenceNumber': 200000, 'type': 'deny', 'prefix': '0.0.0.0/0', 'maximumPrefixLength': 32},
+    ]
+
+
+def native_program(tmp_path, entries, *, status=0):
+    response = tmp_path / 'prefix-list.json'
+    response.write_text(json.dumps({daemon: {'ROS-R640-SERVICE-OUT': {'entries': entries}}
+                                    for daemon in ['zebra', 'bgpd']}))
+    return PROGRAM.split('routeros_boundary_owned_prefix_lines')[0] + f'''
+host() {{
+  printf '%s\\n' "$*" >> "$CALLS"
+  if [ "$3" = 'show ip prefix-list ROS-R640-SERVICE-OUT json' ]; then cat '{response}'; return 0; fi
+  return {status}
+}}
+printf 'configure terminal\\nrouter bgp 4200000128\\nend\\n' | apply_routeros_boundary_batch
+commit_owned_prefix_reconciliation
+'''
+
+
+def test_native_batch_verifies_both_actual_daemon_prefix_lists(tmp_path):
+    result, state, calls = run(tmp_path, [node('r640', ['10.68.9.0/24', '10.68.22.0/24'])],
+                               program=native_program(tmp_path, expected_entries()))
+    assert result.returncode == 0, result.stderr
+    assert 'vtysh -c configure terminal\nrouter bgp 4200000128\nend' in calls
+    assert 'vtysh -c show ip prefix-list ROS-R640-SERVICE-OUT json' in calls
+    assert state['prefixes']
+
+
+def test_native_command_failure_prevents_readback_and_new_ledger_commit(tmp_path):
+    before = previous(['10.68.9.0/24'])
+    result, state, calls = run(tmp_path, [node('r640', ['10.68.9.0/24'])], before,
+                               program=native_program(tmp_path, expected_entries(), status=17))
+    assert result.returncode != 0 and state == before
+    assert 'show ip prefix-list' not in calls
+
+
+def test_successful_exit_with_stale_daemon_exports_is_not_acceptance(tmp_path):
+    before = previous(['10.68.9.0/24'])
+    stale = [{'sequenceNumber': 5, 'type': 'permit', 'prefix': '10.42.6.0/24'}]
+    result, state, _ = run(tmp_path, [node('r640', ['10.68.9.0/24'])], before,
+                           program=native_program(tmp_path, stale))
+    assert result.returncode != 0 and state == before
+    assert 'readback did not match' in result.stderr

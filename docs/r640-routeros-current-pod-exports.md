@@ -27,8 +27,10 @@ service `/32` VIPs. It never touches other FRR prefix-lists. The existing global
 origination/retirement ledger remains the authority for BGP networks and Null0
 ownership; this patch does not add routes or a second ledger.
 
-The restricted reconciler source changed only from its old single-prefix render
-block to one call to this helper. Its live non-Secret code was first checked
+The restricted reconciler source changes its old single-prefix render block to
+one call to this helper and uses a native fail-fast batch adapter. Both zebra
+and bgpd prefix-lists are independently read back; a zero exit with stale
+exports is not accepted. Its live non-Secret code was first checked
 against the existing authenticated source digest, then resealed using the
 repository's existing public age recipient. No local SOPS decryption or Secret
 value access was used. Both restricted-code and clear-helper digests are updated,
