@@ -215,3 +215,26 @@ def test_observer_never_reads_main_for_a_different_operation_target(tmp_path,mon
     monkeypatch.setattr(observe_runtime,'Executor',lambda:pytest.fail('cross-target observation must not construct a client'))
     result=observe_runtime.observe(tmp_path,contract=c)
     assert result['health']['status']=='unknown'
+
+
+def test_independent_agent_bootstrap_preserves_original_exact_identity(monkeypatch):
+    monkeypatch.chdir(ROOT)
+    path=Path('contracts/networking-native-atlantic-among-clusters.yaml')
+    result=profile.validate_contract(path,for_execution=True)
+    assert result['cluster']==result['control-cluster']=='re8ch-atlantic'
+    assert result['environment']=='release-executor-networking-atlantic'
+    assert result['audience'].endswith('/release-executor-networking-atlantic')
+    assert all(x['release-id'] != result['release-id'] for x in profile.replay_matrix())
+
+
+@pytest.mark.parametrize('change', ['namespace','requireExisting','prune'])
+def test_agent_bootstrap_cannot_change_existing_only_scope(monkeypatch,change):
+    monkeypatch.chdir(ROOT)
+    path=Path('contracts/networking-native-atlantic-among-clusters.yaml')
+    contract=yaml.safe_load(path.read_text())
+    if change=='namespace':contract['spec']['target']['namespace']='default'
+    elif change=='requireExisting':contract['spec']['authorization']['requireExisting']=False
+    else:contract['spec']['lifecycle']['prune']=True
+    monkeypatch.setattr(profile.yaml,'safe_load',lambda _:contract)
+    with pytest.raises(ValueError,match='legacy remote'):
+        profile.validate_contract(path,for_execution=True)
