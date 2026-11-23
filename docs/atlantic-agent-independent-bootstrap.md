@@ -35,3 +35,19 @@ Recovery is complete only after the same current Admin plugin can read the
 Atlantic API identity, perform SSA revision 1 and 2 with read-back, and clean up
 the reviewed conformance object. The independent Actions application is not a
 substitute for those BYOC acceptance checks.
+
+The first independent preflight on 2026-11-23 authenticated successfully and
+read Agent UID `e8261e68-80fb-4da9-a16c-e2500e6ddb90` (generation 32). Its
+cluster identity, broker endpoint and five-minute interval match reviewed
+configuration, while its image predates 0.3.34. Hydration then rejected retained
+state as belonging to another target; no runtime object was written.
+
+A pre-target-field state may be adopted only with proof from its existing
+signed OCI artifact. Verify the exact signer/issuer and digest, verify the
+payload and inventory against state, then load the previous contract at the
+verified certificate's GitHub source revision. Its canonical digest must equal
+the archived manifest's contractDigest and its exact cluster/namespace must
+match this recovery contract. Only a missing clusterRef can be populated in
+the local hydration copy. An explicit conflicting cluster or binding remains
+rejected. Blocked flags, sequence, history and all digests are preserved; there
+is no reset. Normal successful SSA persistence records the proven target.
