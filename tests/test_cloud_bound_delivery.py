@@ -250,3 +250,30 @@ def test_agent_bootstrap_observation_never_publishes_unreviewed_env_or_secret_va
     assert 'unreviewed.invalid' not in json.dumps(result)
     deployment['metadata']['namespace']='other'
     with pytest.raises(ValueError,match='unexpected bootstrap object'):project(deployment)
+
+
+def test_independent_observer_never_reads_pods_or_logs_when_permission_is_denied():
+    from agent_bootstrap_observation import observer_facts
+    calls=[]
+    def runner(argv, **kwargs):
+        calls.append(argv)
+        assert argv[2:4]==['auth','can-i']
+        return subprocess.CompletedProcess(argv,1,'no\n','')
+    assert observer_facts(runner)=={'observerPermissions':{'pods':False,'logs':False}}
+    assert len(calls)==2
+
+
+def test_independent_observer_projects_only_authorized_agent_metadata_and_safe_errors():
+    from agent_bootstrap_observation import observer_facts
+    pod={'metadata':{'name':'among-clusters-agent-test123','uid':'actual-pod-uid'},'spec':{'nodeName':'atlantic-node','containers':[{'env':[{'value':'secret-must-not-appear'}]}]},'status':{'phase':'Running','containerStatuses':[{'name':'agent','ready':True,'restartCount':0,'imageID':'image-digest'}]}}
+    def runner(argv, **kwargs):
+        assert '-n' in argv and argv[argv.index('-n')+1]=='among-clusters'
+        if 'can-i' in argv:return subprocess.CompletedProcess(argv,0,'yes\n','')
+        if 'get' in argv:
+            assert 'app.kubernetes.io/name=among-clusters-agent' in argv
+            return subprocess.CompletedProcess(argv,0,json.dumps({'items':[pod]}),'')
+        assert 'logs' in argv and 'among-clusters-agent-test123' in argv
+        return subprocess.CompletedProcess(argv,0,'managed access: credential broker returned 401 Unauthorized secret-must-not-appear Bearer bad-secret\n','')
+    result=observer_facts(runner)
+    assert result['pods'][0]['safeErrors']==[{'category':'managed-access-error','upstream':'credential broker','status':401,'resources':[]}]
+    assert 'secret-must-not-appear' not in json.dumps(result) and 'bad-secret' not in json.dumps(result)
