@@ -15,6 +15,7 @@ resources:
   - mihomos-authority-resources.yaml
   - among-clusters-atlantic-peer.yaml
   - among-clusters-cloud-broker-access.yaml
+  - cloud-target-delivery-bootstrap.yaml
 patches:
   - path: advanced-fabric-service-observation.yaml
     target:

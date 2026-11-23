@@ -8,7 +8,7 @@ persists accepted state, and prunes only explicitly authorized stale objects.
 """
 from __future__ import annotations
 
-from profile import replay_provenance, REPLAY_AUDIENCE
+from profile import replay_provenance, REPLAY_AUDIENCE, CLOUD_CANARY_RELEASES
 import argparse
 import contextlib
 import datetime as dt
@@ -162,6 +162,20 @@ class Executor:
         self._initial_topology_adoption = False
         self._kube_token: str | None = None
         self._kube_token_refresh_at = 0.0
+        self.cluster_target = None
+        self.cluster_release_id = None
+        self._self_binding_verified = False
+
+    def bind_cluster_target(self, contract):
+        validate_schema(contract, "release-contract.schema.json")
+        target = contract["spec"]["target"]
+        self.cluster_release_id = contract["metadata"]["name"]
+        if self.cluster_release_id in CLOUD_CANARY_RELEASES and (target["cluster"] != CLOUD_CANARY_RELEASES[self.cluster_release_id] or not target.get("clusterBindingDigest")):
+            raise Rejected("cloud canary requires its exact reviewed cluster binding")
+        self._self_binding_verified = False
+        if target["cluster"] != "re8ch" and not target.get("clusterBindingDigest"):
+            raise Rejected("remote execution requires the reviewed cluster binding digest")
+        self.cluster_target = target if target.get("clusterBindingDigest") else None
 
     def actions_kube_token(self) -> str | None:
         request_url = os.environ.get("ACTIONS_ID_TOKEN_REQUEST_URL")
@@ -194,14 +208,31 @@ class Executor:
         self._kube_token_refresh_at = now + 180
         return token
 
-    def command(self, argv: list[str], stdin: str | None = None, timeout: int = 60, redact: bool = False) -> subprocess.CompletedProcess[str]:
+    def command(self, argv: list[str], stdin: str | None = None, timeout: int = 60, redact: bool = False):
+        if argv and argv[0] == "kubectl" and self.cluster_target:
+            from cluster_transport import transport, verify_self
+            if self.cluster_target["cluster"] == "re8ch" and not self._self_binding_verified:
+                try:
+                    verify_self(self.cluster_target["clusterBindingDigest"], self.actions_kube_token)
+                except ValueError:
+                    raise Rejected("self cluster binding verification failed") from None
+                self._self_binding_verified = True
+            with transport(self.cluster_target["cluster"], self.cluster_target["clusterBindingDigest"],
+                           self.actions_kube_token, release_id=self.cluster_release_id) as config:
+                return self._command(argv, stdin, timeout, redact, kubeconfig=config)
+        return self._command(argv, stdin, timeout, redact)
+
+    def _command(self, argv: list[str], stdin: str | None = None, timeout: int = 60, redact: bool = False, kubeconfig: str | None = None) -> subprocess.CompletedProcess[str]:
         effective = list(argv)
         if effective and effective[0] == "sops" and not (os.environ.get("SOPS_AGE_KEY") or os.environ.get("SOPS_AGE_KEY_FILE")):
             raise Rejected("restricted age identity was not provisioned")
         if effective and effective[0] == "kubectl":
-            token = self.actions_kube_token()
-            if token:
-                effective.insert(1, "--token=" + token)
+            if kubeconfig:
+                effective[1:1] = ["--kubeconfig", kubeconfig]
+            else:
+                token = self.actions_kube_token()
+                if token:
+                    effective.insert(1, "--token=" + token)
         read_only = argv[:2] == ["kubectl", "get"]
         for attempt in range(3 if read_only else 1):
             try:
@@ -241,6 +272,11 @@ class Executor:
         now = self.now()
         if parse_time(operation["issuedAt"]) > now + dt.timedelta(minutes=2) or parse_time(operation["expiresAt"]) <= now:
             raise Rejected("operation is stale or not yet valid")
+        target = contract["spec"]["target"]
+        if operation["target"] != target["cluster"]+"/"+target["namespace"]:
+            raise Rejected("target mismatch")
+        if operation["contractDigest"] != digest(canonical(contract)):
+            raise Rejected("contract digest mismatch")
         request_digest = digest(canonical(operation))
         prior_result = store.result(operation["operationId"])
         if prior_result:
@@ -248,6 +284,11 @@ class Executor:
                 raise Rejected("operation ID was reused with different content")
             return {}, [], request_digest
         state = store.state()
+        target = contract["spec"]["target"]
+        if state and state.get("clusterRef", "re8ch") != target["cluster"]:
+            raise Rejected("accepted state belongs to another cluster target")
+        if state and target.get("clusterBindingDigest") and state.get("clusterBindingDigest") != target["clusterBindingDigest"]:
+            raise Rejected("accepted state belongs to another cluster binding")
         if state and state.get("blocked") and operation["action"] != "reset":
             raise Rejected(f"release is blocked: {state.get('blockedReason', 'manual recovery required')}")
         expected_sequence = 1 if state is None else state["sequence"] + 1
@@ -309,7 +350,7 @@ class Executor:
         self.command(["cosign", "verify", "--certificate-identity", bundle["signer"],
                       "--certificate-oidc-issuer", bundle["issuer"], reference], timeout=120)
 
-    def with_audit(self, objects: list[dict], operation: dict) -> list[dict]:
+    def with_audit(self, objects: list[dict], operation: dict, artifact_digest: str | None = None) -> list[dict]:
         annotated = json.loads(json.dumps(objects))
         for index, item in enumerate(annotated):
             from restricted_object import FIELD, decrypt
@@ -330,7 +371,8 @@ class Executor:
             annotated[index] = item
             annotations = item.setdefault("metadata", {}).setdefault("annotations", {})
             annotations["delivery.re8ch.com/release-id"] = operation["releaseId"]
-            annotations["delivery.re8ch.com/operation-id"] = operation["operationId"]
+            annotations.pop("delivery.re8ch.com/operation-id", None)
+            annotations["delivery.re8ch.com/artifact-digest"] = artifact_digest or operation["bundle"]["digest"]
         return annotated
 
     def with_existing_versions(self, objects: list[dict]) -> list[dict]:
@@ -476,8 +518,14 @@ class Executor:
                     raise Rejected("rollback bundle payload is unavailable or has the wrong digest")
                 store.cache_bundle(fetched, rollback_digest)
         _, rollback_objects = load_archive(rollback_path)
-        rollback_objects = self.with_audit(rollback_objects, operation)
+        rollback_objects = self.with_audit(rollback_objects, operation, artifact_digest=rollback_digest)
         if contract["spec"]["authorization"].get("requireExisting", False):
+            expected={object_identity(item):item['metadata'].get('uid') for item in attempted_objects}
+            for item in rollback_objects:
+                identity=object_identity(item)
+                if not expected.get(identity):
+                    raise Rejected('rollback object was not bound in this adoption attempt: '+identity)
+                item['metadata']['uid']=expected[identity]
             rollback_objects = self.with_existing_versions(rollback_objects)
         manual = set(contract["spec"]["lifecycle"].get("manualRollbackKinds", []))
         if any(item["kind"] in manual or item["kind"] in PROTECTED_KINDS for item in attempted_objects):
@@ -553,6 +601,7 @@ class Executor:
                   current_bundle_path: Path | None = None, rollback_stages: set[str] | None = None,
                   observe_only: bool = False) -> dict:
         started = self.now()
+        self.bind_cluster_target(contract)
         validate_schema(operation, "release-operation.schema.json")
         store = Store(state_root, operation["releaseId"])
         with store.lock():
@@ -720,6 +769,7 @@ class Executor:
             history = list({item["appliedDigest"]: item for item in history}.values())[-10:]
             state = {
                 "schemaVersion": "delivery.re8ch.com/accepted-state/v1alpha1",
+                "clusterRef": contract["spec"]["target"]["cluster"],
                 "releaseId": operation["releaseId"], "lastOperationId": operation["operationId"],
                 "requestDigest": request_digest, "bundleReference": operation["bundle"]["reference"],
                 "payloadDigest": operation["bundle"]["payloadDigest"],
@@ -731,6 +781,8 @@ class Executor:
             }
             if healthy:
                 state["healthyDigest"] = operation["bundle"]["digest"]
+            if self.cluster_target:
+                state["clusterBindingDigest"] = self.cluster_target["clusterBindingDigest"]
             if self.apply_only:
                 state["acceptedDigest"] = operation["bundle"]["digest"]
                 state.pop("healthyDigest", None)

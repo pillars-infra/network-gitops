@@ -31,7 +31,7 @@ def test_explicit_routing_and_non_gateway_parent_are_preserved():
 def test_executor_applies_default_equivalent_object_without_changing_source():
     source=route({'parentRefs':[{'name':'edge'}],'rules':[{'filters':[{'type':'RequestRedirect','requestRedirect':{'scheme':'https'}}]}]})
     before=deepcopy(source)
-    applied=executor.Executor().with_audit([source],{'releaseId':'demo','operationId':'fixture'})[0]
+    applied=executor.Executor().with_audit([source],{'releaseId':'demo','operationId':'fixture','bundle':{'digest':'sha256:'+'a'*64}})[0]
     assert source==before
     assert applied['spec']==explicit_http_route_defaults(source)['spec']
-    assert applied['metadata']['annotations']['delivery.re8ch.com/operation-id']=='fixture'
+    assert applied['metadata']['annotations']['delivery.re8ch.com/artifact-digest']=='sha256:'+'a'*64

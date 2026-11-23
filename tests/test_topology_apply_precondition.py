@@ -23,7 +23,7 @@ def test_initial_adoption_rechecks_spec_and_rebinds_each_conflicted_apply(monkey
             if argv[2] == 'configmap':
                 return subprocess.CompletedProcess(argv, 0, json.dumps({'data': {'bundle.json': 'fixture'}}), '')
             if argv[-1].startswith('jsonpath='):
-                return subprocess.CompletedProcess(argv, 0, 'earlier-version', '')
+                return subprocess.CompletedProcess(argv, 0, 'same-object earlier-version', '')
             reads += 1
             live = copy.deepcopy(desired)
             live['metadata']['resourceVersion'] = str(reads)

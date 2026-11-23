@@ -13,7 +13,7 @@ import yaml
 from unified_bundle import api_group, canonical, compile_bundle, digest, object_identity, assert_pinned_images
 from operation_materialize import state_configmap_name
 from restricted_configmap import validate_envelope, bind_source
-from profile import REPOSITORY, WORKFLOW, ENVIRONMENT, AUDIENCE, SIGNER
+from profile import REPOSITORY, WORKFLOW, ENVIRONMENT, AUDIENCE, SIGNER, CLOUD_CANARY_RELEASES
 ROOT=Path(__file__).resolve().parents[2]
 PLURALS={'NetworkPolicy':'networkpolicies','CiliumNetworkPolicy':'ciliumnetworkpolicies','PeerPolicy':'peerpolicies','BackendTLSPolicy':'backendtlspolicies','Ingress':'ingresses'}
 KUBE_API_RELEASE_OBJECTS={
@@ -38,6 +38,8 @@ OBSERVED_READINESS_RELEASES={
     'networking-native-kube-system',
 }
 EXTERNAL_NATIVE_RELEASES={
+    'networking-native-self-cloud-target-canary',
+    'networking-native-atlantic-cloud-target-canary',
     'networking-native-atlantic-bootstrap',
     'networking-native-atlantic-among-clusters',
     'networking-native-atlantic-mihomo-global-exit',
@@ -46,8 +48,16 @@ EXTERNAL_NATIVE_RELEASES={
     'networking-native-atlantic-mail-system',
 }
 
+CLOUD_STATE_BOOTSTRAP={
+    'core/ConfigMap/default/'+state_configmap_name(name) for name in CLOUD_CANARY_RELEASES
+}
+
 def classify(document):
     identity=object_identity(document)
+    if identity in CLOUD_STATE_BOOTSTRAP:
+        if document.get('data',{}) != {}:
+            raise ValueError('bootstrap state declaration must not contain runtime acceptance')
+        return 'platform-bootstrap-state'
     if identity in CONTROLLER_OWNED_RUNTIME_RESULTS:
         spec=document.get('spec',{})
         if spec.get('type')!='ExternalName' or spec.get('externalName')!=CONTROLLER_OWNED_RUNTIME_RESULTS[identity]:
@@ -73,7 +83,7 @@ def project(documents, prefix="networking-native", source_context=None):
         reason=classify(d)
         if reason:
             omitted.append({'identity':object_identity(d),'reason':reason})
-            if reason=='platform-bootstrap-rbac':bootstrap.append(d)
+            if reason in {'platform-bootstrap-rbac','platform-bootstrap-state'}:bootstrap.append(d)
             continue
         namespace=d['metadata']['namespace']
         identity=object_identity(d)

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: re8ch-cloud-target-canary
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: networking-delivery
+data:
+  purpose: reviewed managed cluster delivery conformance
+  target: re8ch

@@ -32,6 +32,14 @@ def compact(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
+def assert_state_target(state, contract):
+    target=contract["spec"]["target"]
+    if state.get("clusterRef", "re8ch") != target["cluster"]:
+        raise ValueError("accepted state belongs to another cluster target")
+    if target.get("clusterBindingDigest") and state.get("clusterBindingDigest") != target["clusterBindingDigest"]:
+        raise ValueError("accepted state belongs to another cluster binding")
+
+
 def accepted_bundle(configmap: Path, contract_path: Path) -> dict[str, str]:
     """Resolve a replay from durable acceptance, never from an arbitrary caller URL."""
     contract = yaml.safe_load(contract_path.read_text())
@@ -43,6 +51,7 @@ def accepted_bundle(configmap: Path, contract_path: Path) -> dict[str, str]:
         raise ValueError("accepted state ConfigMap does not match the release target")
     state = json.loads(cm.get("data", {}).get("accepted-state.json", "{}"))
     validate_schema(state, "release-accepted-state.schema.json")
+    assert_state_target(state, contract)
     if state["releaseId"] != release_id:
         raise ValueError("accepted state belongs to another release")
     if state["blocked"] or state.get("suspended"):
@@ -58,13 +67,24 @@ def accepted_bundle(configmap: Path, contract_path: Path) -> dict[str, str]:
     return {"reference": expected, "digest": state["appliedDigest"]}
 
 
-def hydrate(configmap: Path, state_dir: Path, release_id: str) -> None:
-    data = json.loads(configmap.read_text()).get("data", {})
+def hydrate(configmap: Path, state_dir: Path, release_id: str, contract_path: Path | None = None) -> None:
+    cm = json.loads(configmap.read_text())
+    if contract_path:
+        contract=yaml.safe_load(contract_path.read_text())
+        if cm.get("metadata",{}).get("name") != state_configmap_name(release_id) or cm.get("metadata",{}).get("namespace") != contract["spec"]["target"]["namespace"]:
+            raise ValueError("state ConfigMap does not match the release target")
+    data = cm.get("data", {})
     (state_dir / "state").mkdir(parents=True, exist_ok=True)
     (state_dir / "results" / release_id).mkdir(parents=True, exist_ok=True)
     if "accepted-state.json" in data:
         state = json.loads(data["accepted-state.json"])
         validate_schema(state, "release-accepted-state.schema.json")
+        if state["releaseId"] != release_id:
+            raise ValueError("accepted state belongs to another release")
+        if state.get('clusterBindingDigest') and not contract_path:
+            raise ValueError('bound state hydrate requires its contract')
+        if contract_path:
+            assert_state_target(state, yaml.safe_load(contract_path.read_text()))
         (state_dir / "state" / f"{release_id}.json").write_text(compact(state))
     if "last-result.json" in data:
         result = json.loads(data["last-result.json"])
@@ -80,6 +100,8 @@ def request(contract_path: Path, metadata_path: Path, state_dir: Path, reference
     release_id = contract["metadata"]["name"]
     state_path = state_dir / "state" / f"{release_id}.json"
     state = json.loads(state_path.read_text()) if state_path.exists() else None
+    if state:
+        assert_state_target(state, contract)
     now = dt.datetime.now(dt.timezone.utc)
     provenance = contract["spec"]["provenance"]
     operation = {
@@ -112,9 +134,16 @@ def request(contract_path: Path, metadata_path: Path, state_dir: Path, reference
     output.write_text(compact(operation))
 
 
-def persist(state_dir: Path, release_id: str, namespace: str, result_path: Path, output: Path) -> None:
+def persist(state_dir: Path, release_id: str, namespace: str, result_path: Path, output: Path, contract_path: Path | None = None) -> None:
     state = json.loads((state_dir / "state" / f"{release_id}.json").read_text())
     result = json.loads(result_path.read_text())
+    if state.get('clusterBindingDigest') and not contract_path:
+        raise ValueError('bound state persistence requires its contract')
+    if contract_path:
+        contract=yaml.safe_load(contract_path.read_text())
+        if namespace != contract['spec']['target']['namespace']:
+            raise ValueError('state namespace mismatch')
+        assert_state_target(state,contract)
     validate_schema(state, "release-accepted-state.schema.json")
     validate_schema(result, "release-operation-result.schema.json")
     output.write_text(compact({
@@ -125,18 +154,27 @@ def persist(state_dir: Path, release_id: str, namespace: str, result_path: Path,
     }))
 
 
-def state_patch(configmap: Path, state_dir: Path, release_id: str, result_path: Path, output: Path) -> None:
+def state_patch(configmap: Path, state_dir: Path, release_id: str, result_path: Path, output: Path, contract_path: Path | None = None) -> None:
     """Persist changed state even after failure, without overwriting concurrent edits."""
     cm = json.loads(configmap.read_text())
     metadata = cm.get("metadata", {})
     if metadata.get("name") != state_configmap_name(release_id) or not metadata.get("resourceVersion"):
         raise ValueError("state patch requires the original release ConfigMap and resourceVersion")
+    contract=yaml.safe_load(contract_path.read_text()) if contract_path else None
+    if contract and metadata.get("namespace") != contract["spec"]["target"]["namespace"]:
+        raise ValueError("state ConfigMap namespace mismatch")
     state_path = state_dir / "state" / f"{release_id}.json"
     original = cm.get("data", {})
     changed = {}
     if state_path.exists():
         state = json.loads(state_path.read_text())
         validate_schema(state, "release-accepted-state.schema.json")
+        if state.get('clusterBindingDigest') and not contract:
+            raise ValueError('bound state patch requires its contract')
+        if contract:
+            assert_state_target(state, contract)
+            prior=json.loads(original.get('accepted-state.json','{}'))
+            if prior:assert_state_target(prior,contract)
         if state["releaseId"] != release_id:
             raise ValueError("state patch belongs to another release")
         if state != json.loads(original.get("accepted-state.json", "{}")):
@@ -160,6 +198,7 @@ def main() -> int:
     load = sub.add_parser("hydrate")
     load.add_argument("--configmap", type=Path, required=True); load.add_argument("--state-dir", type=Path, required=True)
     load.add_argument("--release-id", required=True)
+    load.add_argument("--contract", type=Path)
     make = sub.add_parser("request")
     make.add_argument("--contract", type=Path, required=True); make.add_argument("--metadata", type=Path, required=True)
     make.add_argument("--state-dir", type=Path, required=True); make.add_argument("--reference", required=True)
@@ -170,6 +209,7 @@ def main() -> int:
     save = sub.add_parser("persist")
     save.add_argument("--state-dir", type=Path, required=True); save.add_argument("--release-id", required=True)
     save.add_argument("--namespace", required=True)
+    save.add_argument("--contract", type=Path)
     save.add_argument("--result", type=Path, required=True); save.add_argument("--output", type=Path, required=True)
     state_name = sub.add_parser("state-name")
     state_name.add_argument("--release-id", required=True)
@@ -182,12 +222,13 @@ def main() -> int:
     patch.add_argument("--release-id", required=True)
     patch.add_argument("--result", type=Path, required=True)
     patch.add_argument("--output", type=Path, required=True)
+    patch.add_argument("--contract", type=Path)
     args = parser.parse_args()
-    if args.command == "hydrate": hydrate(args.configmap, args.state_dir, args.release_id)
+    if args.command == "hydrate": hydrate(args.configmap, args.state_dir, args.release_id, args.contract)
     elif args.command == "request": request(args.contract, args.metadata, args.state_dir, args.reference, args.digest, args.output, args.action, args.force_object, args.replay_only)
-    elif args.command == "persist": persist(args.state_dir, args.release_id, args.namespace, args.result, args.output)
+    elif args.command == "persist": persist(args.state_dir, args.release_id, args.namespace, args.result, args.output, args.contract)
     elif args.command == "accepted-bundle": print(compact(accepted_bundle(args.configmap, args.contract)))
-    elif args.command == "state-patch": state_patch(args.configmap, args.state_dir, args.release_id, args.result, args.output)
+    elif args.command == "state-patch": state_patch(args.configmap, args.state_dir, args.release_id, args.result, args.output, args.contract)
     else: print(state_configmap_name(args.release_id))
     return 0
 
