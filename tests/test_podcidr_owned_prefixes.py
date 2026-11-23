@@ -30,11 +30,11 @@ def ledger(prefixes, uid='node-uid'):
 
 
 def run_helper(tmp_path, nodes, previous=None, desired='10.42.1.0/24\n10.68.1.0/24',
-               static=None, bgp=None, program=None):
+               static=None, bgp=None, program=None, members=None):
     helper = tmp_path/'helper.sh'
     helper.write_text(source()['data']['owned-prefixes.sh'])
     inventory = tmp_path/'inventory.json'
-    inventory.write_text(json.dumps({'nodes': [{'name': 'local'}, {'name': 'other'}], 'routeServers': []}))
+    inventory.write_text(json.dumps({'nodes': [{'name': n} for n in (members or ['local', 'other'])], 'routeServers': []}))
     helper.write_text(helper.read_text().replace('/config/inventory.json', str(inventory)))
     snapshot = tmp_path/'snapshot.json'
     snapshot.write_text(json.dumps({'items': nodes}))
@@ -288,3 +288,56 @@ def test_rr_transit_empty_allocation_does_not_introduce_a_broad_fallback(tmp_pat
                               program='fabric_rr_transit_allowed_ips "192.0.2.1/32"\n')
     assert result.returncode == 0, result.stderr
     assert result.stdout == '192.0.2.1/32\n'
+
+
+def test_spoke_reassignment_cleans_old_peer_so_later_set_cannot_steal_current_owner(tmp_path):
+    observed = [node(cidrs=['10.68.1.0/24']), node('other', ['10.68.22.0/24']), node('old', ['10.68.9.0/24'])]
+    program = '''
+fabric_spoke_allowed_ips other '192.0.2.2/32' '10.68.22.0/24'
+fabric_spoke_allowed_ips old '192.0.2.3/32,10.68.22.0/24,10.68.9.0/24' '10.68.9.0/24'
+'''
+    result, _, _ = run_helper(tmp_path, observed, program=program, members=['local', 'other', 'old'])
+    assert result.returncode == 0, result.stderr
+    new_allowed, old_allowed = [line.split(',') for line in result.stdout.splitlines()]
+    assert '10.68.22.0/24' in new_allowed and '10.68.22.0/24' not in old_allowed
+    assert old_allowed == ['192.0.2.3/32', '10.68.9.0/24']
+    # WireGuard has one owner per exact prefix on an interface. Both peer
+    # reconciliation orders must now assign the moved prefix to its new owner.
+    for order in [('new', 'old'), ('old', 'new')]:
+        owners = {}
+        for peer in order:
+            for prefix in {'new': new_allowed, 'old': old_allowed}[peer]:
+                owners[prefix] = peer
+        assert owners['10.68.22.0/24'] == 'new'
+
+
+def test_stale_desired_prefix_cannot_readd_allocation_now_owned_by_another_member(tmp_path):
+    observed = [node(cidrs=['10.68.1.0/24']), node('other', ['10.68.22.0/24']), node('old', [])]
+    result, _, _ = run_helper(tmp_path, observed, members=['local', 'other', 'old'],
+                              program="fabric_spoke_allowed_ips old '192.0.2.3/32' '10.68.22.0/24'\n")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == '192.0.2.3/32\n'
+
+
+def test_spoke_unknown_snapshot_preserves_current_entries_without_reassigning(tmp_path):
+    result, _, _ = run_helper(tmp_path, [node(missing=True), node('other', ['10.68.22.0/24'])],
+                              program="fabric_spoke_allowed_ips old '192.0.2.3/32,10.68.22.0/24' '10.68.9.0/24'\n")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == '192.0.2.3/32,10.68.22.0/24\n'
+
+
+def test_spoke_pruning_preserves_unassigned_unregistered_and_explicit_relay_sources(tmp_path):
+    observed = [node(cidrs=['10.68.1.0/24']), node('other', ['10.68.22.0/24']),
+                node('relay', ['10.68.12.0/24']), node('unregistered', ['10.68.99.0/24'])]
+    program = "fabric_spoke_allowed_ips other '192.0.2.2/32,10.68.12.0/24,10.68.99.0/24,10.68.88.0/24' '10.68.22.0/24' relay\n"
+    result, _, _ = run_helper(tmp_path, observed, members=['local', 'other', 'relay'], program=program)
+    assert result.returncode == 0, result.stderr
+    assert set(result.stdout.strip().split(',')) == {'192.0.2.2/32', '10.68.12.0/24', '10.68.99.0/24', '10.68.88.0/24', '10.68.22.0/24'}
+
+
+def test_rr_interconnect_is_aggregate_and_not_filtered_as_a_single_spoke(tmp_path):
+    observed = [node(cidrs=['10.68.1.0/24']), node('other', ['10.68.22.0/24']), node('old', ['10.68.9.0/24'])]
+    result, _, _ = run_helper(tmp_path, observed, members=['local', 'other', 'old'],
+                              program="fabric_rr_transit_allowed_ips '192.0.2.2/32'\n")
+    assert result.returncode == 0, result.stderr
+    assert set(result.stdout.strip().split(',')) == {'192.0.2.2/32', '10.68.22.0/24', '10.68.9.0/24'}
