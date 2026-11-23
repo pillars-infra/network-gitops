@@ -104,6 +104,13 @@ def project(documents, prefix="networking-native", source_context=None):
         inventory=sorted(object_identity(o) for o in objects)
         lifecycle={'prune':False,'healthTimeoutSeconds':300,'protectedKinds':['Namespace','CustomResourceDefinition','PersistentVolume','PersistentVolumeClaim','StorageClass'],'deletionAllowlist':[]}
         if name in OBSERVED_READINESS_RELEASES:lifecycle['readinessPolicy']='observe'
+        if name == 'networking-native-kube-system':
+            # Host reconcilers read projected scripts at process startup. A new
+            # workload checksum is not proof that its ConfigMap was installed.
+            lifecycle['stages'] = [
+                {'name': 'configuration', 'kinds': ['ConfigMap']},
+                {'name': 'runtime', 'kinds': sorted({o['kind'] for o in objects} - {'ConfigMap'})},
+            ]
         contract={'apiVersion':'delivery.re8ch.com/v1alpha1','kind':'ReleaseContract','metadata':{'name':name},'spec':{
             'authorityDomain':'networking','target':{'cluster':'re8ch','namespace':namespace},
             'source':{'renderer':'kustomize','revision':'github-main-reviewed','repository':REPOSITORY,'path':folder,**(source_context or {})},

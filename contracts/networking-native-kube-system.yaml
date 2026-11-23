@@ -120,3 +120,17 @@ spec:
     - StorageClass
     deletionAllowlist: []
     readinessPolicy: observe
+    stages:
+    - name: configuration
+      kinds:
+      - ConfigMap
+    - name: runtime
+      kinds:
+      - Certificate
+      - CiliumGatewayClassConfig
+      - CiliumNodeConfig
+      - DaemonSet
+      - Deployment
+      - Gateway
+      - Service
+      - ServiceAccount
