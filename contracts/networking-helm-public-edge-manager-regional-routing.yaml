@@ -9,10 +9,10 @@ spec:
     namespace: regional-routing
   source:
     renderer: kustomize
-    revision: helm-oci@sha256:ceb92c63fccaf6f1a65d1b3d5d99de8c1cc3dab62a524180d4050440399d42b8
+    revision: helm-oci@sha256:b8851656a0a2bfe80be53dfe4fc54d8d3ae799c052516b0ecb5b8286c8f0c1d6
     repository: pillars-infra/network-gitops
     path: releases/networking-helm-public-edge-manager-regional-routing
-    chartOCI: oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:ceb92c63fccaf6f1a65d1b3d5d99de8c1cc3dab62a524180d4050440399d42b8
+    chartOCI: oci://ghcr.io/public-edge/charts/public-edge-manager@sha256:b8851656a0a2bfe80be53dfe4fc54d8d3ae799c052516b0ecb5b8286c8f0c1d6
   provenance:
     repository: pillars-infra/network-gitops
     workflow: .github/workflows/static-release.yml
@@ -64,3 +64,13 @@ spec:
     - PersistentVolumeClaim
     - StorageClass
     deletionAllowlist: []
+    stages:
+    - name: configuration
+      kinds:
+      - ConfigMap
+    - name: runtime
+      kinds:
+      - DaemonSet
+      - Deployment
+      - Service
+      - ServiceAccount

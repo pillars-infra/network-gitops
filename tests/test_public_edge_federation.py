@@ -49,7 +49,7 @@ def test_all_atlantic_ingress_points_are_reviewed_api_candidates():
     assert all(item["serviceClasses"] == ["api", "db-rw", "web", "service-pilot"]
                for item in candidates.values())
     assert values["image"]["digest"] == (
-        "sha256:306cda3342c46fa307bb2c5ae68d89300a796c3b6f034e38804d1372010e7003"
+        "sha256:7681129722c6b11a8922b8ee6207e9232ba83bd2a1b4ab1ca6c7a2340356cfb2"
     )
     assert values["fabricEvidence"]["apiGroup"] == "networking.advfab.org"
     assert values["fabricEvidence"]["mode"] == "Required"

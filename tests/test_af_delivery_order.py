@@ -42,3 +42,19 @@ def test_rollback_uses_current_configuration_before_workload_order(tmp_path):
         previous, manifest, objects, value, operation, 're8ch-release/demo', store, 'forward failure')
     kinds = [json.loads(data)['kind'] for argv, data in runner.calls if argv[:2] == ['kubectl', 'apply']]
     assert kinds == ['ConfigMap', 'Deployment', 'ConfigMap', 'Deployment']
+
+
+def test_publicedge_compilation_installs_env_configuration_before_every_workload():
+    from compile_native import project
+    objects = list(yaml.safe_load_all((ROOT/'releases/networking-helm-public-edge-manager-regional-routing/resources.yaml').read_text()))
+    files, _ = project(objects, prefix='networking-helm-public-edge-manager')
+    name = 'contracts/networking-helm-public-edge-manager-regional-routing.yaml'
+    generated = yaml.safe_load(files[name])
+    actual = yaml.safe_load((ROOT/name).read_text())
+    assert generated['spec']['lifecycle'] == actual['spec']['lifecycle']
+    _, manifest = compile_bundle(actual, yaml.safe_dump_all(objects).encode())
+    positions = {identity: index for index, stage in enumerate(manifest['stages']) for identity in stage['inventory']}
+    config = positions['core/ConfigMap/regional-routing/public-edge-manager']
+    for item in objects:
+        if item['kind'] in {'Deployment', 'DaemonSet'}:
+            assert config < positions['apps/'+item['kind']+'/regional-routing/'+item['metadata']['name']]
