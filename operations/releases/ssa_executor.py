@@ -363,7 +363,7 @@ class Executor:
                         self.sleeper(2 ** attempt)
                         continue
                     if not rebind_existing or attempt == 2 or not any(value in str(error) for value in ("the object has been modified", "category=resource-version-conflict;")):
-                        raise
+                        raise Rejected(f"{object_identity(item)}: {error}") from error
 
     @staticmethod
     def pointer(value: object, pointer: str) -> object:
@@ -482,8 +482,9 @@ class Executor:
         manual = set(contract["spec"]["lifecycle"].get("manualRollbackKinds", []))
         if any(item["kind"] in manual or item["kind"] in PROTECTED_KINDS for item in attempted_objects):
             raise Rejected("manual rollback approval required for protected Ceph/schema objects")
-        self.apply(rollback_objects, manager, dry_run=True)
-        self.apply(rollback_objects, manager, dry_run=False)
+        existing_only = contract["spec"]["authorization"].get("requireExisting", False)
+        self.apply(rollback_objects, manager, dry_run=True, rebind_existing=existing_only)
+        self.apply(rollback_objects, manager, dry_run=False, rebind_existing=existing_only)
         attempted_state = {
             "inventory": attempted_manifest["inventory"],
             "objectRefs": [object_ref(item) for item in attempted_objects],
@@ -706,7 +707,7 @@ class Executor:
                     previous, manifest, selected_objects, contract, operation, manager, store, reason)
                 outcome, healthy = "rolled-back", True
             except Rejected as error:
-                blocked = {**previous, "blocked": True, "blockedReason": f"rollback failed: {error}", "updatedAt": self.now().isoformat()}
+                blocked = {**previous, "blocked": True, "blockedReason": f"{reason}; rollback failed: {error}", "updatedAt": self.now().isoformat()}
                 store.accept(blocked)
                 raise Rejected(blocked["blockedReason"]) from error
         elif finalize:
