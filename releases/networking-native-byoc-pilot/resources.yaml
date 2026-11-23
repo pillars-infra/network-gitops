@@ -24,19 +24,6 @@ spec:
     protocol: TCP
   type: ExternalName
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: re8ch-atlantic-default-kubernetes-re8ch-atlantic
-  namespace: byoc-pilot
-spec:
-  externalName: atlantic-kubernetes-import.among-clusters.svc.cluster.local
-  ports:
-  - name: kubernetes
-    port: 6443
-    protocol: TCP
-  type: ExternalName
----
 apiVersion: peering.re8ch.com/v1alpha1
 kind: AuthenticatedLink
 metadata:

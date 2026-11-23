@@ -97,3 +97,20 @@ def test_kube_api_objects_have_a_separate_existing_only_release():
     assert set(release['inventory'])==KUBE_API_RELEASE_OBJECTS
     assert release['namespace']=='kube-system'
     assert all(rule['verbs']==['get','patch'] for rule in release['rules'])
+
+
+def test_atlantic_import_bridge_is_preserved_not_reapplied_or_pruned():
+    from compile_native import CONTROLLER_OWNED_RUNTIME_RESULTS
+    name='re8ch-atlantic-default-kubernetes-re8ch-atlantic'
+    bridge={'apiVersion':'v1','kind':'Service','metadata':{'name':name,'namespace':'byoc-pilot'},
+            'spec':{'type':'ExternalName','externalName':next(iter(CONTROLLER_OWNED_RUNTIME_RESULTS.values()))}}
+    files,ledger=project([bridge,obj(namespace='byoc-pilot')])
+    assert ledger['omitted']==[{'identity':next(iter(CONTROLLER_OWNED_RUNTIME_RESULTS)), 'reason':'controller-owned-runtime-result'}]
+    release=ledger['releases'][0]
+    assert not any(name in value for value in release['inventory'])
+    contract=yaml.safe_load(files[release['contract']])
+    assert contract['spec']['lifecycle']['prune'] is False
+    assert contract['spec']['lifecycle']['deletionAllowlist']==[]
+    assert name not in contract['spec']['authorization']['objectNames']
+    changed=copy.deepcopy(bridge);changed['spec']['externalName']='other.example'
+    with pytest.raises(ValueError,match='bootstrap source'):project([changed])
