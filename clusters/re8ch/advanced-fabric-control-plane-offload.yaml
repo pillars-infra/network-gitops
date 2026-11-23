@@ -7,6 +7,8 @@ spec:
   values:
     advancedFabric:
       dns:
+        replicas: 4
+        pdbMinAvailable: 3
         kubernetesApiEndpoints:
           - https://10.250.0.128:6443
           - https://10.250.0.147:6443
@@ -17,7 +19,16 @@ spec:
                 - matchExpressions:
                     - key: kubernetes.io/hostname
                       operator: In
-                      values: [a1-wsl-zt, b1-wsl-zt, r640, amdwsl-zt]
+                      values: [b1-wsl-zt, r640]
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution: []
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: advanced-fabric-doh
+                  topologyKey: kubernetes.io/hostname
       controller:
         affinity:
           nodeAffinity:
