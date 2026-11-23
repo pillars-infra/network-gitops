@@ -45,8 +45,8 @@ fabric_daemonset = next((doc for doc in documents
 fabric_revision = (((fabric_daemonset or {}).get("spec", {}).get("template", {})
                     .get("metadata", {}).get("annotations", {}))
                    .get("networking.re8ch.com/config-revision"))
-if fabric_revision != "multipool-relay-v17":
-    errors.append("PodCIDR fabric rollout token does not load the Mubao Multi-Pool relay authority")
+if fabric_revision != "multipool-owned-prefix-v18":
+    errors.append("PodCIDR fabric rollout token does not load owned-prefix reconciliation and the Multi-Pool relay authority")
 if "mubao-wsl" not in (((fabric_daemonset or {}).get("spec", {}).get("template", {})
                           .get("spec", {}).get("affinity", {}).get("nodeAffinity", {})
                           .get("requiredDuringSchedulingIgnoredDuringExecution", {})
