@@ -154,7 +154,7 @@ jobs:
             echo "No accepted artifact for $RELEASE_ID; initial publication requires the protected publish workflow." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
+          python operations/releases/operation_materialize.py hydrate --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" \
               --contract "$CONTRACT" > "$RUNNER_TEMP/accepted-bundle.json"
           OCI_REFERENCE="$(jq -r .reference "$RUNNER_TEMP/accepted-bundle.json")"
@@ -169,7 +169,7 @@ jobs:
             receipt_status=0
             python operations/releases/receipt_reconcile.py > "$RUNNER_TEMP/result.json" || receipt_status=$?
             if [[ -s "$RUNNER_TEMP/executor-result.json" ]]; then
-              python operations/releases/operation_materialize.py state-patch --configmap "$RUNNER_TEMP/state-cm.json" \
+              python operations/releases/operation_materialize.py state-patch --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json" \
                 --state-dir "$root" --release-id "$RELEASE_ID" --result "$RUNNER_TEMP/executor-result.json" --output "$RUNNER_TEMP/state-patch.json"
               if [[ -s "$RUNNER_TEMP/state-patch.json" ]]; then
                 python operations/releases/refresh_kubeconfig.py
@@ -181,7 +181,7 @@ jobs:
           executor_status=0
           python operations/releases/ssa_executor.py --contract "$CONTRACT" --operation "$RUNNER_TEMP/operation.json" \
             --bundle "$RUNNER_TEMP/pulled/release.bundle" --state-dir "$root" --observe-only > "$RUNNER_TEMP/result.json" || executor_status=$?
-          python operations/releases/operation_materialize.py state-patch --configmap "$RUNNER_TEMP/state-cm.json" \
+          python operations/releases/operation_materialize.py state-patch --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json" \
             --state-dir "$root" --release-id "$RELEASE_ID" --result "$RUNNER_TEMP/result.json" --output "$RUNNER_TEMP/state-patch.json"
           if [[ -s "$RUNNER_TEMP/state-patch.json" ]]; then
             # Refresh the outer kubectl identity after potentially long health checks.

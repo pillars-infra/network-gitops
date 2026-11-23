@@ -1,0 +1,43 @@
+# Not executable: add the actual reviewed clusterBindingDigest and commit under contracts/ after late binding.
+apiVersion: delivery.re8ch.com/v1alpha1
+kind: ReleaseContract
+metadata:
+  name: networking-native-self-cloud-target-canary
+spec:
+  authorityDomain: networking
+  target:
+    cluster: re8ch
+    namespace: default
+  source:
+    renderer: kustomize
+    revision: github-main-reviewed
+    repository: pillars-infra/network-gitops
+    path: releases/networking-native-self-cloud-target-canary
+  provenance:
+    repository: pillars-infra/network-gitops
+    workflow: .github/workflows/static-release.yml
+    ref: refs/heads/main
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
+    signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
+    issuer: https://token.actions.githubusercontent.com
+  authorization:
+    requireExisting: false
+    fieldManager: re8ch-release/networking-native-self-cloud-target-canary
+    resources:
+    - core/ConfigMap
+    objectNames:
+    - re8ch-cloud-target-canary
+    forceConflictObjects: []
+  inventory:
+    digest: sha256:a309e6bd024b38ec3a52fe73f641e25eaed0cee0cf2dab1b814dd5179419ff83
+  lifecycle:
+    prune: false
+    healthTimeoutSeconds: 30
+    protectedKinds:
+    - Namespace
+    - CustomResourceDefinition
+    - PersistentVolume
+    - PersistentVolumeClaim
+    - StorageClass
+    deletionAllowlist: []

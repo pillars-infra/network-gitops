@@ -2413,6 +2413,36 @@
   ],
   "platformBootstrap": [
     {
+      "apiVersion": "v1",
+      "data": {},
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "delivery.re8ch.com/state-cluster": "re8ch"
+        },
+        "labels": {
+          "app.kubernetes.io/part-of": "networking-delivery"
+        },
+        "name": "ssa-state-networking-native-atlantic-cloud-target-canary",
+        "namespace": "default"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {},
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "delivery.re8ch.com/state-cluster": "re8ch"
+        },
+        "labels": {
+          "app.kubernetes.io/part-of": "networking-delivery"
+        },
+        "name": "ssa-state-networking-native-self-cloud-target-canary",
+        "namespace": "default"
+      }
+    },
+    {
       "apiVersion": "rbac.authorization.k8s.io/v1",
       "kind": "Role",
       "metadata": {
@@ -2519,6 +2549,49 @@
             "create",
             "patch",
             "update"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "networking-cloud-target-state-and-self-canary",
+        "namespace": "default"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "ssa-state-networking-native-self-cloud-target-canary",
+            "ssa-state-networking-native-atlantic-cloud-target-canary"
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "re8ch-cloud-target-canary"
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "get",
+            "patch",
+            "update",
+            "delete"
           ]
         }
       ]
@@ -2749,6 +2822,26 @@
       "apiVersion": "rbac.authorization.k8s.io/v1",
       "kind": "RoleBinding",
       "metadata": {
+        "name": "networking-cloud-target-state-and-self-canary",
+        "namespace": "default"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "networking-cloud-target-state-and-self-canary"
+      },
+      "subjects": [
+        {
+          "apiGroup": "rbac.authorization.k8s.io",
+          "kind": "Group",
+          "name": "re8ch:release-executor:networking"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
         "labels": {
           "app.kubernetes.io/part-of": "among-clusters"
         },
@@ -2923,6 +3016,14 @@
       "reason": "cluster-network-authority"
     },
     {
+      "identity": "core/ConfigMap/default/ssa-state-networking-native-atlantic-cloud-target-canary",
+      "reason": "platform-bootstrap-state"
+    },
+    {
+      "identity": "core/ConfigMap/default/ssa-state-networking-native-self-cloud-target-canary",
+      "reason": "platform-bootstrap-state"
+    },
+    {
       "identity": "core/Secret/advfab-system/cloudflare-advfab-dns-token",
       "reason": "restricted-sops"
     },
@@ -2983,6 +3084,10 @@
       "reason": "platform-bootstrap-rbac"
     },
     {
+      "identity": "rbac.authorization.k8s.io/Role/default/networking-cloud-target-state-and-self-canary",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
       "identity": "rbac.authorization.k8s.io/Role/default/re8ch-cloud-platform-self-api-metadata",
       "reason": "platform-bootstrap-rbac"
     },
@@ -3016,6 +3121,10 @@
     },
     {
       "identity": "rbac.authorization.k8s.io/RoleBinding/cert-manager/cert-manager-write-cloudflare-dns-token",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/default/networking-cloud-target-state-and-self-canary",
       "reason": "platform-bootstrap-rbac"
     },
     {

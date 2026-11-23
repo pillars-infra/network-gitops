@@ -53,12 +53,13 @@ jobs:
       release-id: ${{ steps.profile.outputs.release-id }}
       namespace: ${{ steps.profile.outputs.namespace }}
       cluster: ${{ steps.profile.outputs.cluster }}
+      control-cluster: ${{ steps.profile.outputs.control-cluster }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - run: python -m pip install --disable-pip-version-check 'PyYAML>=6.0.2' 'jsonschema>=4.23'
       - id: profile
         env: {CONTRACT: '${{ inputs.contract }}'}
-        run: python operations/releases/profile.py --contract "$CONTRACT" --github-output "$GITHUB_OUTPUT"
+        run: python operations/releases/profile.py --for-execution --contract "$CONTRACT" --github-output "$GITHUB_OUTPUT"
       - name: Preserve workflow failure evidence
         if: failure()
         run: |
@@ -222,7 +223,7 @@ jobs:
       - name: Acquire exact OIDC identity
         env:
           EXECUTOR_AUDIENCE: '${{ needs.validate.outputs.audience }}'
-          TARGET_CLUSTER: '${{ needs.validate.outputs.cluster }}'
+          TARGET_CLUSTER: '${{ needs.validate.outputs.control-cluster }}'
           KUBE_API_CA_PEM: '${{ secrets.KUBE_API_CA_PEM }}'
         run: |
           set -euo pipefail
@@ -267,7 +268,7 @@ jobs:
           cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com "${verify_args[@]}" "$immutable" >/dev/null
           flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
-          python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
+          python operations/releases/operation_materialize.py hydrate --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
             --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json")
           if [[ '${{ inputs.reset_blocked }}' == true && '${{ inputs.force_takeover }}' == true ]]; then
@@ -340,7 +341,7 @@ jobs:
       - name: Acquire exact OIDC identity
         env:
           EXECUTOR_AUDIENCE: '${{ needs.validate.outputs.audience }}'
-          TARGET_CLUSTER: '${{ needs.validate.outputs.cluster }}'
+          TARGET_CLUSTER: '${{ needs.validate.outputs.control-cluster }}'
           KUBE_API_CA_PEM: '${{ secrets.KUBE_API_CA_PEM }}'
         run: |
           set -euo pipefail
@@ -385,7 +386,7 @@ jobs:
           cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com "${verify_args[@]}" "$immutable" >/dev/null
           flux pull artifact "${OCI_REFERENCE}@${OCI_DIGEST}" --output "$RUNNER_TEMP/pulled"
-          python operations/releases/operation_materialize.py hydrate --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
+          python operations/releases/operation_materialize.py hydrate --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json" --state-dir "$root" --release-id "$RELEASE_ID"
           request_args=(request --contract "$CONTRACT" --metadata "$RUNNER_TEMP/pulled/bundle-metadata.json" \
             --state-dir "$root" --reference "$OCI_REFERENCE" --digest "$OCI_DIGEST" --output "$RUNNER_TEMP/operation.json")
           if [[ '${{ inputs.reset_blocked }}' == true && '${{ inputs.force_takeover }}' == true ]]; then
@@ -406,7 +407,7 @@ jobs:
           executor_status=0
           python operations/releases/ssa_executor.py --apply-only --contract "$CONTRACT" --operation "$RUNNER_TEMP/operation.json" \
             --bundle "$RUNNER_TEMP/pulled/release.bundle" --state-dir "$root" > "$RUNNER_TEMP/result.json" || executor_status=$?
-          python operations/releases/operation_materialize.py state-patch --configmap "$RUNNER_TEMP/state-cm.json" \
+          python operations/releases/operation_materialize.py state-patch --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json" \
             --state-dir "$root" --release-id "$RELEASE_ID" --result "$RUNNER_TEMP/result.json" --output "$RUNNER_TEMP/state-patch.json"
           if [[ -s "$RUNNER_TEMP/state-patch.json" ]]; then
             # Refresh the outer kubectl identity after potentially long health checks.

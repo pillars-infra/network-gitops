@@ -27,9 +27,16 @@ def observe(root, contract=None):
                         if isinstance(v := yaml.safe_load(p.read_text()), dict)
                         and v.get('metadata', {}).get('name') == operation['releaseId']
                         and digest(canonical(v)) == operation['contractDigest'])
+        target = contract['spec']['target']
+        observation['clusterRef']=target['cluster']
+        if target.get('clusterBindingDigest'):observation['clusterBindingDigest']=target['clusterBindingDigest']
+        if digest(canonical(contract)) != operation['contractDigest'] or operation['target'] != target['cluster']+'/'+target['namespace']:
+            raise ValueError('runtime observation target mismatch')
         if os.environ.get('ACTIONS_ID_TOKEN_REQUEST_URL'):
             os.environ.setdefault('EXECUTOR_AUDIENCE', operation['github']['audience'])
-        healthy, reason = Executor().wait_healthy(objects, 0, contract['spec']['lifecycle'].get('healthChecks'))
+        executor = Executor()
+        executor.bind_cluster_target(contract)
+        healthy, reason = executor.wait_healthy(objects, 0, contract['spec']['lifecycle'].get('healthChecks'))
         observation['health'] = {'status': 'healthy' if healthy else 'degraded', 'reason': reason}
     except Exception as error:
         # Never expose command input, decrypted values or raw API error bodies.

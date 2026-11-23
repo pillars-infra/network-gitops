@@ -1,0 +1,53 @@
+# State stays in main; these are create-once bootstrap seeds, never bundle data.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ssa-state-networking-native-self-cloud-target-canary
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: networking-delivery
+  annotations:
+    delivery.re8ch.com/state-cluster: re8ch
+data: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ssa-state-networking-native-atlantic-cloud-target-canary
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: networking-delivery
+  annotations:
+    delivery.re8ch.com/state-cluster: re8ch
+data: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: networking-cloud-target-state-and-self-canary
+  namespace: default
+rules:
+- apiGroups: ['']
+  resources: [configmaps]
+  resourceNames:
+  - ssa-state-networking-native-self-cloud-target-canary
+  - ssa-state-networking-native-atlantic-cloud-target-canary
+  verbs: [get, patch]
+- apiGroups: ['']
+  resources: [configmaps]
+  resourceNames: [re8ch-cloud-target-canary]
+  verbs: [get, patch, update, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: networking-cloud-target-state-and-self-canary
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: networking-cloud-target-state-and-self-canary
+subjects:
+- kind: Group
+  name: re8ch:release-executor:networking
+  apiGroup: rbac.authorization.k8s.io

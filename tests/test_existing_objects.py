@@ -11,9 +11,9 @@ class ExistingRunner(Runner):
         if argv[:2]==['cosign','verify'] and self.fault=='signature':
             self.calls.append((argv,kwargs.get('input')))
             return subprocess.CompletedProcess(argv,1,'','invalid signature')
-        if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+        if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.uid}{" "}{.metadata.resourceVersion}' in argv:
             self.calls.append((argv,kwargs.get('input')))
-            return subprocess.CompletedProcess(argv,1 if self.fault=='missing' else 0,'' if self.fault=='missing' else '17','not found' if self.fault=='missing' else '')
+            return subprocess.CompletedProcess(argv,1 if self.fault=='missing' else 0,'' if self.fault=='missing' else 'original-uid 17','not found' if self.fault=='missing' else '')
         if argv[:2]==['kubectl','apply']:
             self.calls.append((argv,kwargs.get('input')))
             item=json.loads(kwargs['input']);assert item['metadata']['resourceVersion']=='17'
@@ -61,10 +61,10 @@ def test_preflight_refreshes_version_before_server_dry_run(tmp_path):
         def __init__(self):
             super().__init__(); self.reads=0
         def __call__(self,argv,**kwargs):
-            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.uid}{" "}{.metadata.resourceVersion}' in argv:
                 self.reads+=1
                 self.calls.append((argv,kwargs.get('input')))
-                return subprocess.CompletedProcess(argv,0,str(16+self.reads),'')
+                return subprocess.CompletedProcess(argv,0,'original-uid '+str(16+self.reads),'')
             if argv[:2]==['kubectl','apply']:
                 self.calls.append((argv,kwargs.get('input')))
                 assert json.loads(kwargs['input'])['metadata']['resourceVersion']==str(16+self.reads)
@@ -79,10 +79,10 @@ def test_adoption_refreshes_version_after_dry_run(tmp_path):
         def __init__(self):
             super().__init__();self.reads=0
         def __call__(self,argv,**kwargs):
-            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.uid}{" "}{.metadata.resourceVersion}' in argv:
                 self.reads+=1
                 self.calls.append((argv,kwargs.get('input')))
-                return subprocess.CompletedProcess(argv,0,str(16+self.reads),'')
+                return subprocess.CompletedProcess(argv,0,'original-uid '+str(16+self.reads),'')
             if argv[:2]==['kubectl','apply']:
                 self.calls.append((argv,kwargs.get('input')))
                 item=json.loads(kwargs['input'])
@@ -119,14 +119,14 @@ def test_normal_release_without_adoption_flag_keeps_existing_behavior(tmp_path):
     value,op,path=prepare(tmp_path);runner=Runner()
     result=executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state',verify_signature=False)
     assert result['outcome']=='healthy'
-    assert not any('jsonpath={.metadata.resourceVersion}' in argv for argv,_ in runner.calls)
+    assert not any('jsonpath={.metadata.uid}{" "}{.metadata.resourceVersion}' in argv for argv,_ in runner.calls)
 
 
 def test_existing_object_get_retries_transient_transport_failure(tmp_path):
     class TransientRunner(ExistingRunner):
         def __init__(self):super().__init__();self.reads=0
         def __call__(self,argv,**kwargs):
-            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.uid}{" "}{.metadata.resourceVersion}' in argv:
                 self.reads+=1
                 if self.reads < 3:
                     self.calls.append((argv,kwargs.get('input')))
@@ -150,9 +150,9 @@ def test_rollback_refreshes_resource_version_after_dry_run(tmp_path):
     class RacingRollbackRunner(ExistingRunner):
         def __init__(self):super().__init__();self.version=17;self.applies=0
         def __call__(self,argv,**kwargs):
-            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.resourceVersion}' in argv:
+            if argv[:2]==['kubectl','get'] and 'jsonpath={.metadata.uid}{" "}{.metadata.resourceVersion}' in argv:
                 self.calls.append((argv,kwargs.get('input')))
-                return subprocess.CompletedProcess(argv,0,str(self.version),'')
+                return subprocess.CompletedProcess(argv,0,'original-uid '+str(self.version),'')
             if argv[:2]==['kubectl','apply']:
                 self.calls.append((argv,kwargs.get('input')))
                 current=json.loads(kwargs['input'])['metadata']['resourceVersion']
@@ -170,6 +170,22 @@ def test_rollback_refreshes_resource_version_after_dry_run(tmp_path):
               'bundleReference':op['bundle']['reference'],'inventory':manifest['inventory'],
               'objectRefs':[executor.object_ref(item) for item in objects]}
     runner=RacingRollbackRunner()
-    observed,_=executor.Executor(runner=runner,now=lambda:NOW,sleeper=lambda _:None).rollback(
+    instance=executor.Executor(runner=runner,now=lambda:NOW,sleeper=lambda _:None)
+    objects=instance.with_existing_versions(objects)
+    observed,_=instance.rollback(
         previous,manifest,objects,value,op,'re8ch-release/demo',store,'forward apply failure')
     assert observed==previous['appliedDigest'] and runner.applies==2
+
+
+def test_replacement_uid_after_initial_bind_is_never_adopted(tmp_path):
+    class Replaced(ExistingRunner):
+        reads=0
+        def __call__(self,argv,**kwargs):
+            if argv[:2]==['kubectl','get'] and any('metadata.uid' in a for a in argv):
+                self.reads+=1
+                return subprocess.CompletedProcess(argv,0,('original-uid' if self.reads==1 else 'replacement-uid')+' 17','')
+            return super().__call__(argv,**kwargs)
+    value,op,path=fixture(tmp_path);runner=Replaced()
+    with pytest.raises(executor.Rejected,match='replaced object'):
+        executor.Executor(runner=runner,now=lambda:NOW).reconcile(value,op,path,tmp_path/'state')
+    assert not runner.written

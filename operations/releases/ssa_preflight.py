@@ -9,6 +9,7 @@ from unified_bundle import object_identity
 from topology_parity import check, TopologyParityError
 
 def preflight(executor,contract,operation,bundle,state_dir):
+    executor.bind_cluster_target(contract)
     _,objects,_=executor.validate(contract,operation,bundle,Store(state_dir,operation['releaseId']))
     executor.verify_signature(operation)
     requested=set(operation.get('forceConflictObjects',[]))

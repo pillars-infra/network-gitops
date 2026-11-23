@@ -37,6 +37,8 @@ def test_observation_never_changes_ssa_outcome_or_state(tmp_path, monkeypatch, h
     shutil.copyfile(bundle, tmp_path/'pulled/release.bundle')
     (tmp_path/'result.json').write_text(json.dumps({'releaseId': operation['releaseId'], 'outcome': outcome, 'health': {'status': 'unknown', 'reason': 'execution evidence'}}))
     class Observer:
+        def bind_cluster_target(self, contract):
+            self.target=contract['spec']['target']
         def wait_healthy(self, *args):
             if health == 'unknown': raise RuntimeError('unavailable API; never expose raw payload')
             return health == 'healthy', 'observed runtime'
