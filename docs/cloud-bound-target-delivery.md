@@ -61,3 +61,11 @@ These are explicit manual conformance releases, excluded from scheduled replay.
 Record genuine Actions creation/readback and out-of-scope rejection, then audit
 cleanup separately and retain durable main evidence. A healthy stub, merged PR,
 import Ready or successful publisher is not actual two-target acceptance.
+
+## Current protocol boundary
+
+This adapter supports ordinary HTTP requests and streaming watch/log responses.
+It does not yet transparently forward Upgrade/SPDY/WebSocket sessions required
+by kubectl exec, attach or port-forward. No new CLI prohibition is introduced;
+those operations need a separately implemented and tested upgrade transport.
+The current conformance claim is limited to real read/write/SSA and AF APIs.
