@@ -21452,7 +21452,7 @@ spec:
   - name: kubernetes
     port: 6443
     protocol: TCP
-    targetPort: atlantic-k8s
+    targetPort: 33768
   selector:
     app.kubernetes.io/name: among-clusters-gateway
 ---
