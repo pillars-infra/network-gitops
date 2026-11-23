@@ -62,3 +62,21 @@ Rc17 supplies the same collector resource values through its public configuratio
 so its deployment removes the temporary post-render resource patches. Verify
 actual post-deployment cycle duration and execute controlled Service/address
 changes before claiming automatic convergence.
+
+## Configuration precedes processes
+
+The first rc17 delivery exposed a second runtime boundary: the default single
+stage sorted workload identities before ConfigMaps. Some DaemonSet templates
+received the new source checksum while their mounted runtime ConfigMap still
+contained rc16 code. Pod Ready and template checksum alone therefore did not
+prove new code execution; the actual process still emitted no preparationMs
+and retained a 163-second cycle.
+
+The AF contract now explicitly orders configuration, certificates and fabric
+intent before workloads. Automatic rollback follows the same declared ordering.
+The earlier failed configuration bundle is not used for forward deployment;
+this contract change requires a new signed configuration bundle, while the
+verified rc17 product artifact is reused. After complete application, confirm
+the actual mounted source hash. Existing Pods already carrying the new template
+checksum may still need one audited stateless rebuild after the correct source
+is present; verify new process output and measured cycle duration afterwards.
