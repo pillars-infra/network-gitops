@@ -17,6 +17,13 @@ resources:
   - among-clusters-cloud-broker-access.yaml
   - cloud-target-delivery-bootstrap.yaml
 patches:
+  - path: advanced-fabric-traffic-window.yaml
+    target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      namespace: flux-network-system
+      name: advanced-fabric
   - path: advanced-fabric-service-observation.yaml
     target:
       group: helm.toolkit.fluxcd.io

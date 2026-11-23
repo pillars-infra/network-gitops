@@ -1,0 +1,19 @@
+# Preserve the reviewed placement patch, while removing obsolete index-zero
+# resource/window overrides. Container zero is the Hubble collector, not the
+# host reconciliation agent. Collector settings now come from the pinned chart.
+- op: test
+  path: /spec/postRenderers/0/kustomize/patches/1/target/name
+  value: advanced-fabric-agent
+- op: replace
+  path: /spec/postRenderers/0/kustomize/patches/1/patch
+  value: |-
+    - op: add
+      path: /spec/template/spec/affinity
+      value:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: [muaya-lightweight]
