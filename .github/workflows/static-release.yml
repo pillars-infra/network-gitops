@@ -282,6 +282,7 @@ jobs:
             previous="$(python operations/releases/legacy_agent_state.py reference --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json")"
             cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
               --certificate-oidc-issuer https://token.actions.githubusercontent.com "${previous#oci://}" > "$RUNNER_TEMP/legacy-signatures.json"
+            install -d "$RUNNER_TEMP/legacy-accepted"
             flux pull artifact "$previous" --output "$RUNNER_TEMP/legacy-accepted"
             python operations/releases/legacy_agent_state.py adopt --contract "$CONTRACT" \
               --configmap "$RUNNER_TEMP/state-cm.json" --signatures "$RUNNER_TEMP/legacy-signatures.json" \
@@ -418,6 +419,7 @@ jobs:
             previous="$(python operations/releases/legacy_agent_state.py reference --contract "$CONTRACT" --configmap "$RUNNER_TEMP/state-cm.json")"
             cosign verify --certificate-identity '${{ needs.validate.outputs.signer }}' \
               --certificate-oidc-issuer https://token.actions.githubusercontent.com "${previous#oci://}" > "$RUNNER_TEMP/legacy-signatures.json"
+            install -d "$RUNNER_TEMP/legacy-accepted"
             flux pull artifact "$previous" --output "$RUNNER_TEMP/legacy-accepted"
             python operations/releases/legacy_agent_state.py adopt --contract "$CONTRACT" \
               --configmap "$RUNNER_TEMP/state-cm.json" --signatures "$RUNNER_TEMP/legacy-signatures.json" \
