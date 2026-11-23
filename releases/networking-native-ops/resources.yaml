@@ -12,7 +12,7 @@ spec:
     metadata:
       annotations:
         networking.re8ch.com/config-revision: outer-sni-v1
-        networking.re8ch.com/return-policy-code-sha256: 5232e9fd6854f9fc1232bcee943cd205d5f76600af7756600ae61aaf8d151255
+        networking.re8ch.com/return-policy-code-sha256: 11829925d743df135251f858261a14019c418ce026d54202c9464b66e37a986f
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:
@@ -251,29 +251,30 @@ data:
     \ RouterOS peer.\"\"\"\nimport ipaddress\nimport re\nfrom urllib.parse import\
     \ urlencode\n\nOWNER = 'RE8CH GITOPS R640 POD RETURN'\nCHAIN = 're8ch-v2-r640-in'\n\
     TABLE = 're8ch-service-fast'\nPEER = '192.168.88.251'\nASN = '4200000128'\nLOCAL\
-    \ = '192.168.88.1'\nNATIVE = ipaddress.ip_network('10.64.0.0/12')\n\n\ndef validate_policy(policy):\n\
-    \    if not policy:\n        return []\n    if (policy.get('peerAddress') != PEER\
-    \ or str(policy.get('peerASN')) != ASN or\n            policy.get('localAddress')\
-    \ != LOCAL or policy.get('filterChain') != CHAIN or\n            policy.get('routingTable')\
-    \ != TABLE or policy.get('commentPrefix') != OWNER):\n        raise ValueError('Pod-return\
-    \ authority differs')\n    refs = policy.get('poolRefs', [])\n    pools = policy.get('approvedPools',\
-    \ [])\n    if not refs or len(set(refs)) != len(refs) or not pools:\n        raise\
-    \ ValueError('reviewed pool projection is required')\n    networks, seen = [],\
-    \ set()\n    for pool in pools:\n        network = ipaddress.ip_network(pool['cidr'],\
-    \ strict=True)\n        if (pool.get('poolRef') not in refs or pool.get('maskSize')\
-    \ != 24 or\n                network.version != 4 or not network.subnet_of(NATIVE)\
-    \ or network.prefixlen > 24 or\n                any(network.overlaps(prior) for\
-    \ prior in networks)):\n            raise ValueError('Pod-return pool projection\
-    \ differs')\n        networks.append(network)\n        seen.add(pool['poolRef'])\n\
-    \    if seen != set(refs):\n        raise ValueError('incomplete pool projection')\n\
-    \    return sorted(str(network) for network in networks)\n\n\ndef identity(value):\n\
-    \    if not isinstance(value, str) or not re.fullmatch(r'\\*[0-9a-fA-F]+', value):\n\
-    \        raise ValueError('exact RouterOS object identity is required')\n    return\
-    \ value\n\n\ndef enabled(row):\n    return str(row.get('disabled', 'false')).lower()\
-    \ not in {'true', 'yes'}\n\n\ndef peer_matches(row):\n    return (str(row.get('remote.address',\
-    \ '')).split('/')[0] == PEER and\n            str(row.get('remote.as')) == ASN\
-    \ and row.get('local.address') == LOCAL)\n\n\ndef rows(router, path):\n    fields\
-    \ = {\n        '/routing/bgp/connection': ('.id','name','remote.address','remote.as','local.address','input.filter','routing-table','disabled'),\n\
+    \ = '192.168.88.1'\nNATIVE = ipaddress.ip_network('10.64.0.0/12')\n# Retain failed\
+    \ refreshes in-process; startup refresh covers interrupted writes.\n_refresh_pending\
+    \ = True\n\n\ndef validate_policy(policy):\n    if not policy:\n        return\
+    \ []\n    if (policy.get('peerAddress') != PEER or str(policy.get('peerASN'))\
+    \ != ASN or\n            policy.get('localAddress') != LOCAL or policy.get('filterChain')\
+    \ != CHAIN or\n            policy.get('routingTable') != TABLE or policy.get('commentPrefix')\
+    \ != OWNER):\n        raise ValueError('Pod-return authority differs')\n    refs\
+    \ = policy.get('poolRefs', [])\n    pools = policy.get('approvedPools', [])\n\
+    \    if not refs or len(set(refs)) != len(refs) or not pools:\n        raise ValueError('reviewed\
+    \ pool projection is required')\n    networks, seen = [], set()\n    for pool\
+    \ in pools:\n        network = ipaddress.ip_network(pool['cidr'], strict=True)\n\
+    \        if (pool.get('poolRef') not in refs or pool.get('maskSize') != 24 or\n\
+    \                network.version != 4 or not network.subnet_of(NATIVE) or network.prefixlen\
+    \ > 24 or\n                any(network.overlaps(prior) for prior in networks)):\n\
+    \            raise ValueError('Pod-return pool projection differs')\n        networks.append(network)\n\
+    \        seen.add(pool['poolRef'])\n    if seen != set(refs):\n        raise ValueError('incomplete\
+    \ pool projection')\n    return sorted(str(network) for network in networks)\n\
+    \n\ndef identity(value):\n    if not isinstance(value, str) or not re.fullmatch(r'\\\
+    *[0-9a-fA-F]+', value):\n        raise ValueError('exact RouterOS object identity\
+    \ is required')\n    return value\n\n\ndef enabled(row):\n    return str(row.get('disabled',\
+    \ 'false')).lower() not in {'true', 'yes'}\n\n\ndef peer_matches(row):\n    return\
+    \ (str(row.get('remote.address', '')).split('/')[0] == PEER and\n            str(row.get('remote.as'))\
+    \ == ASN and row.get('local.address') == LOCAL)\n\n\ndef rows(router, path):\n\
+    \    fields = {\n        '/routing/bgp/connection': ('.id','name','remote.address','remote.as','local.address','input.filter','routing-table','disabled'),\n\
     \        '/routing/table': ('.id','name','fib','disabled'),\n        '/routing/filter/rule':\
     \ ('.id','chain','rule','comment','disabled'),\n        '/routing/rule': ('.id','dst-address','src-address','interface','routing-mark','action','table','comment','disabled'),\n\
     \        '/routing/bgp/session': ('.id','name','remote.address','remote.as','local.address','established','remote.capabilities'),\n\
@@ -327,16 +328,17 @@ data:
     \        for row in observed:\n            if str(row.get('comment') or '').startswith(OWNER\
     \ + ' ' + mode + ' ') and row['comment'] not in desired:\n                actions.append(('delete',\
     \ path, identity(row['.id']), None, None))\n                import_changed |=\
-    \ mode == 'import'\n    refresh = None\n    if import_changed:\n        sessions\
-    \ = rows(router, '/routing/bgp/session')\n        selected = [row for row in sessions\
-    \ if peer_matches(row) and\n                    str(row.get('established', '')).lower()\
-    \ == 'true' and\n                    'rr' in str(row.get('remote.capabilities',\
+    \ mode == 'import'\n    refresh = None\n    if import_changed or _refresh_pending:\n\
+    \        sessions = rows(router, '/routing/bgp/session')\n        selected = [row\
+    \ for row in sessions if peer_matches(row) and\n                    str(row.get('established',\
+    \ '')).lower() == 'true' and\n                    'rr' in str(row.get('remote.capabilities',\
     \ '')).split(',')]\n        if len(selected) != 1 or not selected[0].get('.id'):\n\
     \            raise ValueError('fresh exact route-refresh session is unavailable')\n\
     \        refresh = identity(selected[0]['.id'])\n    return {'actions': actions,\
-    \ 'refresh': refresh}\n\n\ndef apply_pod_return(router, plan):\n    for action,\
-    \ path, row_id, body, anchor in plan['actions']:\n        if action == 'create':\n\
-    \            row = router.request(path, 'PUT', body)\n            if not isinstance(row,\
+    \ 'refresh': refresh}\n\n\ndef apply_pod_return(router, plan):\n    global _refresh_pending\n\
+    \    if plan['refresh']:\n        _refresh_pending = True\n    for action, path,\
+    \ row_id, body, anchor in plan['actions']:\n        if action == 'create':\n \
+    \           row = router.request(path, 'PUT', body)\n            if not isinstance(row,\
     \ dict) or not row.get('.id'):\n                raise ValueError('created policy\
     \ identity is unavailable')\n            router.request(path + '/move', 'POST',\
     \ {'numbers': identity(row['.id']), 'destination': identity(anchor)})\n      \
@@ -349,7 +351,7 @@ data:
     \ exact peer/session.\n        # No reset, disable, reconnect, all-peer operation\
     \ or business replay.\n        router.request('/routing/bgp/session/refresh',\
     \ 'POST', {'numbers': identity(plan['refresh']), 'address-family': 'ip'})\n  \
-    \  return len(plan['actions'])\n"
+    \      _refresh_pending = False\n    return len(plan['actions'])\n"
   reconcile.py: "#!/usr/bin/env python3\n\"\"\"Reconcile explicitly owned public RouterOS\
     \ forwards before the fallback rule.\"\"\"\nimport base64\nimport ipaddress\n\
     import json\nfrom pathlib import Path\nimport time\nimport urllib.request\nfrom\

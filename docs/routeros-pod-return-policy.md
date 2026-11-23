@@ -26,6 +26,9 @@ It replaces/removes only its own comments, preserves fallback and foreign rules,
 and requests an exact established session's IPv4 soft route refresh after import
 changes. Missing identity, ambiguous ownership or invalid pools fails before
 network writes. Converged policy performs no writes or refresh.
+An unsuccessful refresh remains pending until an exact fresh session accepts it;
+the next loop refreshes without replaying installed configuration. A new process
+performs one validated refresh to cover interruption after configuration writes.
 
 The existing five-object native contract installs configuration before runtime.
 A code hash on the existing Deployment forces its startup-loaded Python modules

@@ -203,6 +203,8 @@ data:
     ASN = '4200000128'
     LOCAL = '192.168.88.1'
     NATIVE = ipaddress.ip_network('10.64.0.0/12')
+    # Retain failed refreshes in-process; startup refresh covers interrupted writes.
+    _refresh_pending = True
 
 
     def validate_policy(policy):
@@ -320,7 +322,7 @@ data:
                     actions.append(('delete', path, identity(row['.id']), None, None))
                     import_changed |= mode == 'import'
         refresh = None
-        if import_changed:
+        if import_changed or _refresh_pending:
             sessions = rows(router, '/routing/bgp/session')
             selected = [row for row in sessions if peer_matches(row) and
                         str(row.get('established', '')).lower() == 'true' and
@@ -332,6 +334,9 @@ data:
 
 
     def apply_pod_return(router, plan):
+        global _refresh_pending
+        if plan['refresh']:
+            _refresh_pending = True
         for action, path, row_id, body, anchor in plan['actions']:
             if action == 'create':
                 row = router.request(path, 'PUT', body)
@@ -350,6 +355,7 @@ data:
             # Soft refresh is limited to the currently observed exact peer/session.
             # No reset, disable, reconnect, all-peer operation or business replay.
             router.request('/routing/bgp/session/refresh', 'POST', {'numbers': identity(plan['refresh']), 'address-family': 'ip'})
+            _refresh_pending = False
         return len(plan['actions'])
   reconcile.py: |
     #!/usr/bin/env python3
@@ -543,7 +549,7 @@ spec:
     metadata:
       annotations:
         networking.re8ch.com/config-revision: outer-sni-v1
-        networking.re8ch.com/return-policy-code-sha256: 5232e9fd6854f9fc1232bcee943cd205d5f76600af7756600ae61aaf8d151255
+        networking.re8ch.com/return-policy-code-sha256: 11829925d743df135251f858261a14019c418ce026d54202c9464b66e37a986f
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:

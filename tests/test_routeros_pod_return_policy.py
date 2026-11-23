@@ -178,3 +178,36 @@ def test_ops_delivery_has_configuration_before_startup_only_module():
     docs=documents();cm=next(d for d in docs if d and d['kind']=='ConfigMap');deploy=next(d for d in docs if d and d['kind']=='Deployment')
     want=hashlib.sha256((cm['data']['reconcile.py']+cm['data']['pod_return_policy.py']).encode()).hexdigest()
     assert deploy['spec']['template']['metadata']['annotations']['networking.re8ch.com/return-policy-code-sha256']==want
+
+
+def test_failed_refresh_remains_pending_without_replaying_configuration():
+    m,p=context();r=Router();request=r.request
+    def fail_refresh(path,method='GET',body=None):
+        if path.endswith('/refresh'):
+            raise TimeoutError('diagnostic fixture')
+        return request(path,method,body)
+    r.request=fail_refresh
+    with pytest.raises(TimeoutError):
+        m.apply_pod_return(r,m.plan_pod_return(r,p))
+    r.request=request;r.calls=[]
+    plan=m.plan_pod_return(r,p)
+    assert plan=={'actions':[],'refresh':'*2800001'}
+    m.apply_pod_return(r,plan)
+    assert len(r.writes)==1 and r.writes[0][0].endswith('/refresh')
+    r.calls=[];m.apply_pod_return(r,m.plan_pod_return(r,p))
+    assert r.writes==[]
+
+
+def test_restart_refreshes_existing_owned_policy_once_with_fresh_session_validation():
+    m,p=context();r=Router();m.apply_pod_return(r,m.plan_pod_return(r,p));r.calls=[]
+    restarted,_=context()
+    r.data['/routing/bgp/session'][0]['established']='false'
+    with pytest.raises(ValueError,match='fresh exact'):
+        restarted.plan_pod_return(r,p)
+    assert r.writes==[]
+    r.data['/routing/bgp/session'][0]['established']='true'
+    plan=restarted.plan_pod_return(r,p)
+    assert plan=={'actions':[],'refresh':'*2800001'}
+    restarted.apply_pod_return(r,plan);assert len(r.writes)==1
+    r.calls=[];restarted.apply_pod_return(r,restarted.plan_pod_return(r,p))
+    assert r.writes==[]
