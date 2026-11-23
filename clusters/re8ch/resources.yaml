@@ -27599,7 +27599,7 @@ spec:
   interval: 3m
   provider: generic
   ref:
-    digest: sha256:de8ea6ad5eddbfe8f9f59bcce1907ed316d9dab4cca994686825a5fba2c95774
+    digest: sha256:9a008530d581e1e4e60d752755b5bd5d31cfc8f6f91f0f26cc0a7e374c12ba08
   url: oci://ghcr.io/advanced-fabrics/charts/advanced-fabric
   verify:
     matchOIDCIdentity:
