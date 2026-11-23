@@ -13,6 +13,13 @@ spec:
     - ports:
       - port: '8080'
         protocol: TCP
+  - toEntities:
+    - host
+    - remote-node
+    toPorts:
+    - ports:
+      - port: '8080'
+        protocol: TCP
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: among-clusters-credential-broker
