@@ -62,7 +62,7 @@ spec:
           value: '6443'
         - name: KUBERNETES_SERVICE_PORT_HTTPS
           value: '6443'
-        image: ghcr.io/among-clusters/among-clusters@sha256:a80367067b256d0c2989485a0926a9a669affed89f224b6f0adb4cf18bf9be05
+        image: ghcr.io/among-clusters/among-clusters@sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
         name: agent
         resources:
           limits:
@@ -151,7 +151,7 @@ spec:
           value: '[]'
         - name: PEER_IDENTITIES_JSON
           value: '{"re8ch-artc":["spiffe://artc.byoc/cluster/artc"],"re8ch-atlantic":["spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic"],"re8ch-qwen":["spiffe://qwen.byoc/cluster/qwen"],"re8ch-sijie":["spiffe://sijie.byoc/cluster/sijie"]}'
-        image: ghcr.io/among-clusters/among-clusters@sha256:a80367067b256d0c2989485a0926a9a669affed89f224b6f0adb4cf18bf9be05
+        image: ghcr.io/among-clusters/among-clusters@sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
         name: gateway
         ports: []
         resources:
