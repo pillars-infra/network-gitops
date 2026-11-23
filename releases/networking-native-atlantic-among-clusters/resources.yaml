@@ -355,3 +355,13 @@ spec:
   - {name: main-egress, port: 17891, targetPort: main-egress, protocol: TCP}
   - {name: main-kube-api, port: 16443, targetPort: main-kube-api, protocol: TCP}
   - {name: public-edge, port: 16445, targetPort: public-edge, protocol: TCP}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: among-clusters-approval-re8ch-atlantic-networking-canary
+  namespace: among-clusters
+data:
+  approved: "true"
+  generation: "1"
+  grantRef: re8ch-atlantic-networking-canary

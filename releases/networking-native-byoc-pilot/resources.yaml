@@ -130,6 +130,35 @@ spec:
   scope: Cluster
 ---
 apiVersion: peering.re8ch.com/v1alpha1
+kind: ManagedAccessGrant
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-atlantic-networking-canary
+  namespace: byoc-pilot
+spec:
+  advertisementRef: re8ch-atlantic-default-kubernetes
+  approved: true
+  expiresAt: '2027-11-20T23:59:59Z'
+  namespaces:
+  - default
+  peerRef: re8ch-atlantic
+  revoked: false
+  rules:
+  - apiGroups:
+    - ''
+    resourceNames:
+    - re8ch-cloud-target-canary
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - patch
+    - update
+    - delete
+  scope: Namespaced
+---
+apiVersion: peering.re8ch.com/v1alpha1
 kind: Peer
 metadata:
   labels:

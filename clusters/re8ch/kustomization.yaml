@@ -15,6 +15,7 @@ resources:
   - mihomos-authority-resources.yaml
   - among-clusters-atlantic-peer.yaml
   - among-clusters-cloud-broker-access.yaml
+  - among-clusters-atlantic-release-canary.yaml
 patches:
   - path: advanced-fabric-conformance-resources.yaml
     target:
