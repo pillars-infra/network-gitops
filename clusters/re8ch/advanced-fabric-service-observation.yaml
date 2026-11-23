@@ -1,0 +1,14 @@
+- op: add
+  path: /spec/values/advancedFabric/networkQuality/tlsTargets
+  value:
+    - name: tools-cn-origin
+      targetService: tenant-infrastructure/tenant-api
+      endpoint: 223.159.210.222
+      port: 443
+      serverName: tools.service.re8ch.com
+      path: /.well-known/oauth-protected-resource/tenant-native/mcp
+      sourceNodes: [domain-ex, suxunji, r640]
+      paddingBytes: [0, 2048]
+      expectedStatuses: [200]
+      maximumTotalMs: 1000
+      required: false
