@@ -87,3 +87,60 @@ def test_validly_signed_bundle_for_main_never_adopts_as_atlantic(tmp_path):
     cm, contract, signatures, bundle, repo = fixture(tmp_path, 're8ch')
     with pytest.raises(ValueError, match='does not prove this cluster target'):
         recovery.adopt(cm, contract, signatures, bundle, repo)
+
+
+@pytest.mark.parametrize('blocked', [False, True])
+def test_whole_independent_preflight_after_verified_legacy_adoption(tmp_path, monkeypatch, blocked):
+    import profile
+    from test_existing_objects import ExistingRunner
+    from ssa_executor import Executor, Rejected
+    from ssa_preflight import preflight
+
+    cm, contract, signatures, bundle, repo = fixture(tmp_path)
+    state = json.loads(cm['data']['accepted-state.json'])
+    state['blocked'] = blocked
+    cm['data']['accepted-state.json'] = json.dumps(state)
+    recovery.adopt(cm, contract, signatures, bundle, repo)
+    cp = tmp_path / 'state-cm.json'; cp.write_text(json.dumps(cm))
+    contract_path = tmp_path / 'contract.yaml'; contract_path.write_text(yaml.safe_dump(contract))
+    state_dir = tmp_path / 'executor-state'
+    materialize.hydrate(cp, state_dir, state['releaseId'], contract_path)
+    manifest, _ = recovery.load_archive(bundle)
+    metadata = tmp_path / 'metadata.json'; metadata.write_text(json.dumps({**manifest, 'payloadDigest': digest(bundle.read_bytes())}))
+    for key, value in {'GITHUB_REPOSITORY':profile.REPOSITORY,'GITHUB_REF':'refs/heads/main',
+                       'GITHUB_SHA':signatures[0]['optional']['githubWorkflowSha'],'GITHUB_RUN_ID':'123'}.items():
+        monkeypatch.setenv(key, value)
+    for key in ['ACTIONS_ID_TOKEN_REQUEST_URL','ACTIONS_ID_TOKEN_REQUEST_TOKEN','EXECUTOR_AUDIENCE']:
+        monkeypatch.delenv(key, raising=False)
+    operation_path = tmp_path / 'operation.json'
+    materialize.request(contract_path, metadata, state_dir, state['bundleReference'],
+                        'sha256:'+'d'*64, operation_path)
+    monkeypatch.chdir(ROOT)
+    selected = profile.validate_contract(Path('contracts')/(state['releaseId']+'.yaml'), for_execution=True)
+    assert selected['control-cluster'] == 're8ch-atlantic'
+    runner = ExistingRunner(); executor = Executor(runner=runner)
+    operation = json.loads(operation_path.read_text())
+    if blocked:
+        with pytest.raises(Rejected, match='release is blocked'):
+            preflight(executor, contract, operation, bundle, state_dir)
+        assert not runner.calls
+    else:
+        result = preflight(executor, contract, operation, bundle, state_dir)
+        assert result['preflight'] == 'accepted'
+        applies = [argv for argv, _ in runner.calls if argv[:2] == ['kubectl','apply']]
+        assert len(applies) == len(manifest['inventory'])
+        assert all('--dry-run=server' in argv for argv in applies)
+    assert executor.cluster_target is None  # exact original kubeconfig, not main/Cloud fallback
+    assert not runner.written
+
+
+@pytest.mark.parametrize('field', ['environment','audience','repository','source'])
+def test_independent_executor_rejects_forged_bootstrap_identity(tmp_path, field):
+    import profile
+    from ssa_executor import Executor, Rejected
+    _, contract, _, _, _ = fixture(tmp_path)
+    if field == 'source': contract['spec']['source']['path'] = 'releases/other'
+    else: contract['spec']['provenance'][field] = {'environment':'release-executor-other', 'audience':'https://kube-api.re8ch.com/release-executor-other', 'repository':'other/repository'}[field]
+    assert not profile.independent_agent_bootstrap(contract)
+    with pytest.raises(Rejected, match='reviewed cluster binding'):
+        Executor().bind_cluster_target(contract)
