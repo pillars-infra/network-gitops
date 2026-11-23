@@ -17,6 +17,20 @@ resources:
   - among-clusters-cloud-broker-access.yaml
   - among-clusters-atlantic-release-canary.yaml
 patches:
+  - path: advanced-fabric-conformance-resources.yaml
+    target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      namespace: flux-network-system
+      name: advanced-fabric
+  - path: advanced-fabric-service-observation.yaml
+    target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      namespace: flux-network-system
+      name: advanced-fabric
   - path: public-edge-authority-rollout.yaml
     target:
       group: helm.toolkit.fluxcd.io
