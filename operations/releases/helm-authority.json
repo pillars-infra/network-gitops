@@ -257,12 +257,12 @@
       },
       "source": {
         "renderer": "kustomize",
-        "revision": "helm-oci@sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b",
+        "revision": "helm-oci@sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26",
         "repository": "pillars-infra/network-gitops",
         "path": "releases/networking-helm-among-clusters-hub-among-clusters",
-        "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b"
+        "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26"
       },
-      "renderedSHA256": "2caaff9fe78c16598829d98a023731a70cf741d03b556591c16b2b495f353bcb"
+      "renderedSHA256": "13d76295777d150970159da47286f9a58a918bf67cce44aafaa8a2396083fa9f"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-credential-broker",
@@ -378,10 +378,10 @@
       },
       "source": {
         "renderer": "kustomize",
-        "revision": "helm-oci@sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b",
+        "revision": "helm-oci@sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26",
         "repository": "pillars-infra/network-gitops",
         "path": "releases/networking-helm-among-clusters-hub-credential-broker",
-        "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b"
+        "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26"
       },
       "renderedSHA256": "f0f63552d2eaf1b434296ba3ecdb23d3fe7d4fd7e19cddfd58e48ee94891db86"
     },
@@ -435,10 +435,10 @@
       },
       "source": {
         "renderer": "kustomize",
-        "revision": "helm-oci@sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b",
+        "revision": "helm-oci@sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26",
         "repository": "pillars-infra/network-gitops",
         "path": "releases/networking-helm-among-clusters-hub-kube-system",
-        "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b"
+        "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26"
       },
       "renderedSHA256": "f3bff92d365843a4749e1dc8f79c8a294bcc1e21096e63ad5653f55131967e90"
     },
@@ -1077,7 +1077,7 @@
                           "type": "string"
                         },
                         "type": "array",
-                        "uniqueItems": true
+                        "x-kubernetes-list-type": "set"
                       },
                       "catalogServiceRefs": {
                         "items": {
@@ -1085,7 +1085,7 @@
                           "type": "string"
                         },
                         "type": "array",
-                        "uniqueItems": true
+                        "x-kubernetes-list-type": "set"
                       },
                       "kind": {
                         "enum": [
@@ -1320,6 +1320,13 @@
                           "properties": {
                             "apiGroups": {
                               "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "resourceNames": {
+                              "items": {
+                                "minLength": 1,
                                 "type": "string"
                               },
                               "type": "array"
@@ -1861,7 +1868,7 @@
                           "type": "string"
                         },
                         "type": "array",
-                        "uniqueItems": true
+                        "x-kubernetes-list-type": "set"
                       },
                       "catalogServiceRef": {
                         "pattern": "^[a-z0-9][a-z0-9._/-]{2,127}$",
@@ -4221,8 +4228,8 @@
     {
       "name": "among-clusters-hub",
       "chart": {
-        "oci": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:a9cea5fe8143eca8c325e9bb192f42c124756d93ab0246bb3c0d775d3997702b",
-        "sha256": "b05f6e1fd24530f5933a9526055b4f5c6f691b721d4c96d65579bd9dfaa6959e"
+        "oci": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26",
+        "sha256": "02f1f7fefc18fe1b132cb6296e6d2565f53af1649e0fa681f914b1131a1ea6be"
       },
       "objects": 28
     },
