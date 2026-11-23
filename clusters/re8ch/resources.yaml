@@ -82,6 +82,97 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: networking-native-egress-fabric-release-executor
+  namespace: egress-fabric
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  resourceNames:
+  - mihomos-cn-exit
+  - mihomos-global-exit
+  - mihomos-node-cn
+  - mihomos-node-global
+  - mihomos-status-agent
+  verbs: [get, patch]
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  resourceNames:
+  - identity-egress
+  - mihomo-node-labeler
+  verbs: [get, patch]
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  resourceNames:
+  - identity-egress-config
+  - mihomo-node-labeler-code-k4fm8c7g7t
+  - mihomos-cn-ip-rules
+  - mihomos-status-agent
+  - re8ch-geodb-snapshot
+  - route-path-controller-code
+  verbs: [get, patch]
+- apiGroups:
+  - ''
+  resources:
+  - serviceaccounts
+  resourceNames:
+  - mihomo-node-labeler
+  - path-controller
+  verbs: [get, patch]
+- apiGroups:
+  - ''
+  resources:
+  - services
+  resourceNames:
+  - identity-egress
+  - identity-egress-control-plane
+  - identity-egress-gitops
+  - mihomos-byoc-egress
+  - mihomos-cn-exit
+  - mihomos-global-exit
+  - mihomos-global-exit-overseas-flk
+  - mihomos-global-exit-overseas-la
+  - mihomos-global-exit-overseas-la-2
+  - path-controller
+  verbs: [get, patch]
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - httproutes
+  resourceNames:
+  - service-zone-agent-mobile-egress-mobile-egress-control
+  - service-zone-agent-network-policy-public
+  verbs: [get, patch]
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  resourceNames:
+  - identity-egress
+  verbs: [get, patch]
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  resourceNames:
+  - identity-egress
+  verbs: [get, patch]
+- apiGroups:
+  - ''
+  resources:
+  - configmaps
+  resourceNames:
+  - ssa-state-networking-native-egress-fabric
+  verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: among-clusters-legacy-agent-cleanup
   namespace: flux-system
 rules:
@@ -186,6 +277,20 @@ subjects:
 - kind: ServiceAccount
   name: path-controller
   namespace: egress-fabric
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: networking-native-egress-fabric-release-executor
+  namespace: egress-fabric
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: networking-native-egress-fabric-release-executor
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: re8ch:release-executor:networking
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
