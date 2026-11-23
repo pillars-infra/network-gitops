@@ -104,9 +104,9 @@ def project(documents, prefix="networking-native", source_context=None):
         inventory=sorted(object_identity(o) for o in objects)
         lifecycle={'prune':False,'healthTimeoutSeconds':300,'protectedKinds':['Namespace','CustomResourceDefinition','PersistentVolume','PersistentVolumeClaim','StorageClass'],'deletionAllowlist':[]}
         if name in OBSERVED_READINESS_RELEASES:lifecycle['readinessPolicy']='observe'
-        if name == 'networking-native-kube-system':
-            # Host reconcilers read projected scripts at process startup. A new
-            # workload checksum is not proof that its ConfigMap was installed.
+        if name in {'networking-native-kube-system', 'networking-helm-public-edge-manager-regional-routing'}:
+            # Projected scripts and envFrom are consumed at process startup. A
+            # workload checksum is not proof its ConfigMap was installed first.
             lifecycle['stages'] = [
                 {'name': 'configuration', 'kinds': ['ConfigMap']},
                 {'name': 'runtime', 'kinds': sorted({o['kind'] for o in objects} - {'ConfigMap'})},
