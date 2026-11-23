@@ -349,3 +349,54 @@ def test_rr_interconnect_unknown_snapshot_does_not_append_or_reassign_sources(tm
                               program="fabric_rr_transit_allowed_ips '192.0.2.2/32,10.68.9.0/24'\n")
     assert result.returncode == 0, result.stderr
     assert result.stdout == '192.0.2.2/32,10.68.9.0/24\n'
+
+
+def snapshot_hash(tmp_path, observed):
+    tmp_path.mkdir()
+    result, _, _ = run_helper(tmp_path, observed, program='fabric_allocation_snapshot_hash\n')
+    assert result.returncode == 0, result.stderr
+    value = result.stdout.strip()
+    assert len(value) == 64 and all(c in '0123456789abcdef' for c in value)
+    return value
+
+
+def test_refresh_hash_distinguishes_missing_allocations_from_authoritative_empty(tmp_path):
+    missing = node(missing=True)
+    empty = node(cidrs=[])
+    assert snapshot_hash(tmp_path/'unknown', [missing]) != snapshot_hash(tmp_path/'empty', [empty])
+
+
+def test_refresh_hash_tracks_cilium_uid_and_kubernetes_node_owner_uid_rollovers(tmp_path):
+    import copy
+    original = node(cidrs=['10.68.1.0/24'])
+    new_cilium = copy.deepcopy(original)
+    new_cilium['metadata']['uid'] = 'recreated-cilium-uid'
+    new_node = copy.deepcopy(original)
+    new_node['metadata']['ownerReferences'][0]['uid'] = 'different-kube-node-uid'
+    old = snapshot_hash(tmp_path/'old', [original])
+    assert old != snapshot_hash(tmp_path/'cilium', [new_cilium])
+    assert old != snapshot_hash(tmp_path/'node', [new_node])
+
+
+def test_refresh_hash_ignores_resource_version_status_and_allocation_order_heartbeats(tmp_path):
+    import copy
+    original = node(cidrs=['10.68.22.0/24', '10.68.9.0/24'])
+    original['spec']['ipam']['pools']['allocated'].append({'pool': 'second', 'cidrs': ['10.69.1.0/24']})
+    heartbeat = copy.deepcopy(original)
+    heartbeat['metadata']['resourceVersion'] = '9999'
+    heartbeat['status'] = {'heartbeat': 'updated'}
+    heartbeat['spec']['ipam']['pools']['allocated'][0]['cidrs'].reverse()
+    heartbeat['spec']['ipam']['pools']['allocated'].reverse()
+    assert snapshot_hash(tmp_path/'old', [original]) == snapshot_hash(tmp_path/'new', [heartbeat])
+
+
+def test_missing_pool_cidrs_remains_unknown_and_transition_to_empty_changes_refresh_hash(tmp_path):
+    import copy
+    partial = node(cidrs=[])
+    partial['spec']['ipam']['pools']['allocated'] = [{'pool': 'apps'}]
+    complete = copy.deepcopy(partial)
+    complete['spec']['ipam']['pools']['allocated'][0]['cidrs'] = []
+    result, state, _ = run_helper(tmp_path, [partial], ledger(['10.68.12.0/24']), desired='')
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == '' and state == ledger(['10.68.12.0/24'])
+    assert snapshot_hash(tmp_path/'partial', [partial]) != snapshot_hash(tmp_path/'complete', [complete])
