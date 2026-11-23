@@ -57,7 +57,8 @@ def test_existing_policy_names_and_exact_native_projection_are_retained():
 
 def test_platform_bootstrap_binds_only_existing_grant_to_actual_cloud_sa():
     objects = {o['kind']: o for o in yaml.safe_load_all((ROOT /
-        'clusters/re8ch/among-clusters-cloud-broker-access.yaml').read_text())}
+        'clusters/re8ch/among-clusters-cloud-broker-access.yaml').read_text())
+        if o['metadata']['namespace']=='byoc-pilot'}
     role, binding = objects['Role'], objects['RoleBinding']
     assert role['metadata']['namespace'] == binding['metadata']['namespace'] == 'byoc-pilot'
     assert role['rules'] == [{'apiGroups': ['peering.re8ch.com'],
@@ -68,7 +69,9 @@ def test_platform_bootstrap_binds_only_existing_grant_to_actual_cloud_sa():
         {'apiGroups': ['peering.re8ch.com'], 'resources': ['importedservices'],
          'resourceNames': ['re8ch-atlantic-default-kubernetes-re8ch-atlantic'], 'verbs': ['get']},
         {'apiGroups': ['peering.re8ch.com'], 'resources': ['peers'],
-         'resourceNames': ['re8ch-atlantic'], 'verbs': ['get']}]
+         'resourceNames': ['re8ch-atlantic'], 'verbs': ['get']},
+        {'apiGroups':['peering.re8ch.com'], 'resources':['clusteridentities'],
+         'resourceNames':['re8ch'], 'verbs':['get']}]
     assert binding['subjects'] == [{'kind': 'ServiceAccount',
         'name': 're8ch-cloud-platform', 'namespace': 'ai-operations'}]
     assert binding['roleRef'] == {'apiGroup': 'rbac.authorization.k8s.io',
@@ -78,3 +81,17 @@ def test_platform_bootstrap_binds_only_existing_grant_to_actual_cloud_sa():
     ledger = __import__('json').loads((ROOT / 'operations/releases/native-authority.json').read_text())
     bootstrap = ledger['platformBootstrap']
     assert role in bootstrap and binding in bootstrap
+
+
+def test_self_api_metadata_is_exact_namespace_and_name_only():
+    objects={o['kind']:o for o in yaml.safe_load_all((ROOT /
+        'clusters/re8ch/among-clusters-cloud-broker-access.yaml').read_text())
+        if o['metadata']['namespace']=='default'}
+    role,binding=objects['Role'],objects['RoleBinding']
+    assert role['rules']==[{'apiGroups':[''], 'resources':['services'],
+        'resourceNames':['kubernetes'], 'verbs':['get']}]
+    assert binding['subjects']==[{'kind':'ServiceAccount',
+        'namespace':'ai-operations','name':'re8ch-cloud-platform'}]
+    assert binding['roleRef']['name']==role['metadata']['name']
+    ledger=__import__('json').loads((ROOT/'operations/releases/native-authority.json').read_text())
+    assert role in ledger['platformBootstrap'] and binding in ledger['platformBootstrap']
