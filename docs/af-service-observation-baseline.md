@@ -20,8 +20,8 @@ the actual Service subject, target configuration digest, timestamps and failures
 Read the same observations through the managed BYOC tool paths; an empty list,
 stale evidence or unavailable source does not count as passing acceptance.
 
-The change reuses the verified rc16 artifact and existing signed SSA release.
-It changes only reviewed target configuration and does not rebuild AF.
+The initial target change reused the verified rc16 artifact and existing signed
+SSA release without rebuilding AF.
 
 ## Collector resources
 
@@ -40,3 +40,25 @@ TLS workers to initialize without a 100m quota. Only the host/pod conformance
 containers change; the verified rc16 artifact is reused. Confirm actual
 resources, fresh complete evidence and cgroup throttling after rollout rather
 than assuming the resource change alone passes acceptance.
+
+Actual post-rollout evidence at 2026-11-23 02:02 UTC covered all three sources,
+both planes and both sizes: twelve strict TLS/HTTP 200 transfers, 32–387 ms,
+all three Service assessments Ready under the unchanged 1000 ms budget. The
+new R640 collector had zero throttled periods in the sampled cgroup window.
+This is origin-path evidence, not yet authenticated BYOC consumption or address
+convergence acceptance.
+
+## Independent observation windows
+
+Actual generic snapshots also took 160.671 seconds with twenty two-second
+samples, followed by a 30-second interval. Serial current-path, alternative-path,
+DNS and DoH windows can therefore miss the fixed 180-second convergence budget.
+The verified rc17 chart runs these four independent windows concurrently and
+still refreshes the dynamic Service TLS plan afterwards. Samples, timeouts and
+the service latency/convergence thresholds stay unchanged. It also separates
+local TLS preparation from TCP connect timing while keeping both in totalMs.
+
+Rc17 supplies the same collector resource values through its public configuration,
+so its deployment removes the temporary post-render resource patches. Verify
+actual post-deployment cycle duration and execute controlled Service/address
+changes before claiming automatic convergence.

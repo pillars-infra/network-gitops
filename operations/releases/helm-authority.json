@@ -4103,8 +4103,8 @@
       "identity": "helm.toolkit.fluxcd.io/HelmRelease/flux-network-system/advanced-fabric",
       "reason": "protected-render-required",
       "chart": {
-        "oci": "oci://ghcr.io/advanced-fabrics/charts/advanced-fabric@sha256:de8ea6ad5eddbfe8f9f59bcce1907ed316d9dab4cca994686825a5fba2c95774",
-        "sha256": "3ec7f61c87cd840000b06fddbd9b657823b81da1a90939291b4a88b674edac1f"
+        "oci": "oci://ghcr.io/advanced-fabrics/charts/advanced-fabric@sha256:9a008530d581e1e4e60d752755b5bd5d31cfc8f6f91f0f26cc0a7e374c12ba08",
+        "sha256": "b9e5ade5e46f76d5cbe447f2893fd65c6a84972dee47165bebb660fb079073bc"
       }
     },
     {
