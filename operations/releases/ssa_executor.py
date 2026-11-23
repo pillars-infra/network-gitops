@@ -519,6 +519,12 @@ class Executor:
                 store.cache_bundle(fetched, rollback_digest)
         _, rollback_objects = load_archive(rollback_path)
         rollback_objects = self.with_audit(rollback_objects, operation, artifact_digest=rollback_digest)
+        configured_stages = contract["spec"]["lifecycle"].get("stages")
+        if configured_stages:
+            stage_order = {kind: index for index, stage in enumerate(configured_stages) for kind in stage["kinds"]}
+            if any(item["kind"] not in stage_order for item in rollback_objects):
+                raise Rejected("rollback object is not covered by current delivery stages")
+            rollback_objects.sort(key=lambda item: (stage_order[item["kind"]], object_identity(item)))
         if contract["spec"]["authorization"].get("requireExisting", False):
             expected={object_identity(item):item['metadata'].get('uid') for item in attempted_objects}
             for item in rollback_objects:
