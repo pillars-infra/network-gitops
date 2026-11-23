@@ -30,9 +30,10 @@ An unsuccessful refresh remains pending until an exact fresh session accepts it;
 the next loop refreshes without replaying installed configuration. A new process
 performs one validated refresh to cover interruption after configuration writes.
 The installed RouterOS rejects the newer `address-family` REST argument. Refresh
-therefore requires both observed session AFIs to be exactly `ip`, then sends only
-the exact session identity. Missing, mixed or non-IPv4 families fail closed; this
-is not a runtime fallback to an unscoped refresh.
+therefore requires both observed session AFIs to be exactly `ip`, then sends
+the exact session identity and required `afi: ip` (the current CLI-reference name). Missing, mixed or non-IPv4 families fail closed; this
+is not a runtime fallback to an unscoped refresh. The exact guarded REST request
+was accepted in runtime audit `op_ce2274df3248473fb2843e0c30a95ca6`.
 
 The existing five-object native contract installs configuration before runtime.
 A code hash on the existing Deployment forces its startup-loaded Python modules
@@ -45,6 +46,7 @@ insufficient. Preserve previous failures and distinguish Pod from host sources.
 
 RouterOS references: [REST API](https://help.mikrotik.com/docs/spaces/ROS/pages/47579162/REST+API),
 [BGP](https://help.mikrotik.com/docs/spaces/ROS/pages/331612228/routing+bgp),
+[refresh CLI parameters](https://manual.mikrotik.com/docs/cli-reference/routing/bgp/session/refresh/),
 [policy routing](https://help.mikrotik.com/docs/spaces/ROS/pages/59965508/Policy+Routing).
 An empty REST `fib` flag is also returned for `main`; it is not evidence that a
 table is disabled. This repair does not change table flags or use lookup-only.

@@ -12,7 +12,7 @@ spec:
     metadata:
       annotations:
         networking.re8ch.com/config-revision: outer-sni-v1
-        networking.re8ch.com/return-policy-code-sha256: 024bf4ef9ddc2bef6ec4d3158b06f99340474d98b63a673cda5bc42655740f59
+        networking.re8ch.com/return-policy-code-sha256: 3a11315d46f5b0b87a0f3fae0497df3bcab37d09cb3e65cc3324fe59ab9e1abc
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:
@@ -348,13 +348,13 @@ data:
     \ + '/move', 'POST', {'numbers': identity(row_id), 'destination': identity(anchor)})\n\
     \        elif action == 'delete':\n            router.request(path + '/' + identity(row_id),\
     \ 'DELETE')\n        else:\n            raise ValueError('unknown policy action')\n\
-    \    if plan['refresh']:\n        # This RouterOS accepts numbers-only refresh;\
+    \    if plan['refresh']:\n        # RouterOS requires the CLI-reference afi argument;\
     \ the plan requires both\n        # negotiated AFIs to be exactly IPv4, never\
     \ a broader-family fallback.\n        # Soft refresh is limited to the currently\
     \ observed exact peer/session.\n        # No reset, disable, reconnect, all-peer\
     \ operation or business replay.\n        router.request('/routing/bgp/session/refresh',\
-    \ 'POST', {'numbers': identity(plan['refresh'])})\n        _refresh_pending =\
-    \ False\n    return len(plan['actions'])\n"
+    \ 'POST', {'numbers': identity(plan['refresh']), 'afi': 'ip'})\n        _refresh_pending\
+    \ = False\n    return len(plan['actions'])\n"
   reconcile.py: "#!/usr/bin/env python3\n\"\"\"Reconcile explicitly owned public RouterOS\
     \ forwards before the fallback rule.\"\"\"\nimport base64\nimport ipaddress\n\
     import json\nfrom pathlib import Path\nimport time\nimport urllib.request\nfrom\
