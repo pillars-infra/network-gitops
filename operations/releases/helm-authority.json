@@ -383,7 +383,7 @@
         "path": "releases/networking-helm-among-clusters-hub-credential-broker",
         "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-hub@sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26"
       },
-      "renderedSHA256": "f0f63552d2eaf1b434296ba3ecdb23d3fe7d4fd7e19cddfd58e48ee94891db86"
+      "renderedSHA256": "1d8ac5e4fa147373511d4b08442667417f9b2472cf8ab7baa0c250f98307bf30"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-kube-system",
