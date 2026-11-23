@@ -30,6 +30,21 @@ CLOUD_CANARY_RELEASES={
     'networking-native-atlantic-cloud-target-canary':'re8ch-atlantic',
 }
 
+def independent_agent_bootstrap(contract):
+    spec = contract['spec']
+    identity = EXECUTION_PROFILES['re8ch-atlantic']
+    expected = dict(repository=REPOSITORY, workflow=WORKFLOW, ref='refs/heads/main',
+                    environment=identity['environment'], audience=identity['audience'],
+                    signer=SIGNER, issuer='https://token.actions.githubusercontent.com')
+    return (contract['metadata']['name'] == INDEPENDENT_AGENT_BOOTSTRAP
+            and spec['target'] == {'cluster': 're8ch-atlantic', 'namespace': 'among-clusters'}
+            and spec['authorityDomain'] == 'networking' and spec['provenance'] == expected
+            and spec['source'] == dict(renderer='kustomize', revision='github-main-reviewed',
+                                       repository=REPOSITORY, path='releases/' + INDEPENDENT_AGENT_BOOTSTRAP)
+            and spec['authorization'].get('requireExisting') is True
+            and spec['lifecycle'].get('prune') is False)
+
+
 def validate_contract(path, for_execution=False):
     resolved = path.resolve()
     if resolved.parent != ROOT / 'contracts':
@@ -46,10 +61,7 @@ def validate_contract(path, for_execution=False):
         raise ValueError('invalid cluster binding digest')
     if name in CLOUD_CANARY_RELEASES and (CLOUD_CANARY_RELEASES[name]!=cluster or not bound):
         raise ValueError('cloud canary requires its exact reviewed cluster binding')
-    bootstrap = (name == INDEPENDENT_AGENT_BOOTSTRAP and cluster == 're8ch-atlantic'
-                 and spec['target']['namespace'] == 'among-clusters'
-                 and spec['authorization'].get('requireExisting') is True
-                 and spec['lifecycle'].get('prune') is False)
+    bootstrap = independent_agent_bootstrap(contract)
     if for_execution and cluster != 're8ch' and not bound and not bootstrap:
         raise ValueError('legacy remote transport is unsupported; a reviewed binding is required')
     execution = EXECUTION_PROFILES['re8ch' if bound else cluster]

@@ -7,16 +7,13 @@ from pathlib import Path
 import yaml
 
 from operation_materialize import state_configmap_name
-from profile import INDEPENDENT_AGENT_BOOTSTRAP, ROOT
+from profile import INDEPENDENT_AGENT_BOOTSTRAP, ROOT, independent_agent_bootstrap
 from ssa_executor import load_archive
 from unified_bundle import canonical, digest, validate_schema
 
 
 def inputs(configmap, contract):
-    if (contract['metadata']['name'] != INDEPENDENT_AGENT_BOOTSTRAP
-            or contract['spec']['target'] != {'cluster': 're8ch-atlantic', 'namespace': 'among-clusters'}
-            or contract['spec']['authorization'].get('requireExisting') is not True
-            or contract['spec']['lifecycle'].get('prune') is not False):
+    if not independent_agent_bootstrap(contract):
         raise ValueError('not the independent Agent recovery contract')
     metadata = configmap['metadata']
     if metadata['name'] != state_configmap_name(INDEPENDENT_AGENT_BOOTSTRAP) or metadata['namespace'] != 'among-clusters':
