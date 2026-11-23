@@ -12,7 +12,7 @@ spec:
     metadata:
       annotations:
         networking.re8ch.com/config-revision: outer-sni-v1
-        networking.re8ch.com/return-policy-code-sha256: 11829925d743df135251f858261a14019c418ce026d54202c9464b66e37a986f
+        networking.re8ch.com/return-policy-code-sha256: 024bf4ef9ddc2bef6ec4d3158b06f99340474d98b63a673cda5bc42655740f59
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:
@@ -277,7 +277,7 @@ data:
     \    fields = {\n        '/routing/bgp/connection': ('.id','name','remote.address','remote.as','local.address','input.filter','routing-table','disabled'),\n\
     \        '/routing/table': ('.id','name','fib','disabled'),\n        '/routing/filter/rule':\
     \ ('.id','chain','rule','comment','disabled'),\n        '/routing/rule': ('.id','dst-address','src-address','interface','routing-mark','action','table','comment','disabled'),\n\
-    \        '/routing/bgp/session': ('.id','name','remote.address','remote.as','local.address','established','remote.capabilities'),\n\
+    \        '/routing/bgp/session': ('.id','name','remote.address','remote.as','local.address','established','remote.afi','local.afi','remote.capabilities'),\n\
     \    }[path]\n    result = router.request(path + '?' + urlencode({'.proplist':\
     \ ','.join(fields)}))\n    if not isinstance(result, list) or any(not isinstance(row,\
     \ dict) for row in result):\n        raise ValueError('unexpected RouterOS observation\
@@ -331,7 +331,8 @@ data:
     \ mode == 'import'\n    refresh = None\n    if import_changed or _refresh_pending:\n\
     \        sessions = rows(router, '/routing/bgp/session')\n        selected = [row\
     \ for row in sessions if peer_matches(row) and\n                    str(row.get('established',\
-    \ '')).lower() == 'true' and\n                    'rr' in str(row.get('remote.capabilities',\
+    \ '')).lower() == 'true' and\n                    row.get('remote.afi') == 'ip'\
+    \ and row.get('local.afi') == 'ip' and\n                    'rr' in str(row.get('remote.capabilities',\
     \ '')).split(',')]\n        if len(selected) != 1 or not selected[0].get('.id'):\n\
     \            raise ValueError('fresh exact route-refresh session is unavailable')\n\
     \        refresh = identity(selected[0]['.id'])\n    return {'actions': actions,\
@@ -347,11 +348,13 @@ data:
     \ + '/move', 'POST', {'numbers': identity(row_id), 'destination': identity(anchor)})\n\
     \        elif action == 'delete':\n            router.request(path + '/' + identity(row_id),\
     \ 'DELETE')\n        else:\n            raise ValueError('unknown policy action')\n\
-    \    if plan['refresh']:\n        # Soft refresh is limited to the currently observed\
-    \ exact peer/session.\n        # No reset, disable, reconnect, all-peer operation\
-    \ or business replay.\n        router.request('/routing/bgp/session/refresh',\
-    \ 'POST', {'numbers': identity(plan['refresh']), 'address-family': 'ip'})\n  \
-    \      _refresh_pending = False\n    return len(plan['actions'])\n"
+    \    if plan['refresh']:\n        # This RouterOS accepts numbers-only refresh;\
+    \ the plan requires both\n        # negotiated AFIs to be exactly IPv4, never\
+    \ a broader-family fallback.\n        # Soft refresh is limited to the currently\
+    \ observed exact peer/session.\n        # No reset, disable, reconnect, all-peer\
+    \ operation or business replay.\n        router.request('/routing/bgp/session/refresh',\
+    \ 'POST', {'numbers': identity(plan['refresh'])})\n        _refresh_pending =\
+    \ False\n    return len(plan['actions'])\n"
   reconcile.py: "#!/usr/bin/env python3\n\"\"\"Reconcile explicitly owned public RouterOS\
     \ forwards before the fallback rule.\"\"\"\nimport base64\nimport ipaddress\n\
     import json\nfrom pathlib import Path\nimport time\nimport urllib.request\nfrom\

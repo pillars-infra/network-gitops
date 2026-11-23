@@ -253,7 +253,7 @@ data:
             '/routing/table': ('.id','name','fib','disabled'),
             '/routing/filter/rule': ('.id','chain','rule','comment','disabled'),
             '/routing/rule': ('.id','dst-address','src-address','interface','routing-mark','action','table','comment','disabled'),
-            '/routing/bgp/session': ('.id','name','remote.address','remote.as','local.address','established','remote.capabilities'),
+            '/routing/bgp/session': ('.id','name','remote.address','remote.as','local.address','established','remote.afi','local.afi','remote.capabilities'),
         }[path]
         result = router.request(path + '?' + urlencode({'.proplist': ','.join(fields)}))
         if not isinstance(result, list) or any(not isinstance(row, dict) for row in result):
@@ -326,6 +326,7 @@ data:
             sessions = rows(router, '/routing/bgp/session')
             selected = [row for row in sessions if peer_matches(row) and
                         str(row.get('established', '')).lower() == 'true' and
+                        row.get('remote.afi') == 'ip' and row.get('local.afi') == 'ip' and
                         'rr' in str(row.get('remote.capabilities', '')).split(',')]
             if len(selected) != 1 or not selected[0].get('.id'):
                 raise ValueError('fresh exact route-refresh session is unavailable')
@@ -352,9 +353,11 @@ data:
             else:
                 raise ValueError('unknown policy action')
         if plan['refresh']:
+            # This RouterOS accepts numbers-only refresh; the plan requires both
+            # negotiated AFIs to be exactly IPv4, never a broader-family fallback.
             # Soft refresh is limited to the currently observed exact peer/session.
             # No reset, disable, reconnect, all-peer operation or business replay.
-            router.request('/routing/bgp/session/refresh', 'POST', {'numbers': identity(plan['refresh']), 'address-family': 'ip'})
+            router.request('/routing/bgp/session/refresh', 'POST', {'numbers': identity(plan['refresh'])})
             _refresh_pending = False
         return len(plan['actions'])
   reconcile.py: |
@@ -549,7 +552,7 @@ spec:
     metadata:
       annotations:
         networking.re8ch.com/config-revision: outer-sni-v1
-        networking.re8ch.com/return-policy-code-sha256: 11829925d743df135251f858261a14019c418ce026d54202c9464b66e37a986f
+        networking.re8ch.com/return-policy-code-sha256: 024bf4ef9ddc2bef6ec4d3158b06f99340474d98b63a673cda5bc42655740f59
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:

@@ -42,7 +42,7 @@ class Router:
                 {'.id':'*5','dst-address':'10.251.0.0/24','action':'lookup','table':'re8ch-service-fast','comment':'VIP'},
                 {'.id':'*6','action':'lookup','table':'main','comment':'catchall'},
             ],
-            '/routing/bgp/session': [{'.id':'*2800001','remote.address':'192.168.88.251','remote.as':'4200000128','local.address':'192.168.88.1','established':'true','remote.capabilities':'mp,rr,as4'}],
+            '/routing/bgp/session': [{'.id':'*2800001','remote.address':'192.168.88.251','remote.as':'4200000128','local.address':'192.168.88.1','established':'true','remote.afi':'ip','local.afi':'ip','remote.capabilities':'mp,rr,as4'}],
         }
 
     def request(self, raw, method='GET', body=None):
@@ -52,7 +52,7 @@ class Router:
             assert '.proplist=' in raw
             return copy.deepcopy(self.data[path])
         if path == '/routing/bgp/session/refresh':
-            assert method == 'POST' and body == {'numbers':'*2800001','address-family':'ip'}
+            assert method == 'POST' and body == {'numbers':'*2800001'}
             return {}
         if path.endswith('/move'):
             assert method == 'POST'
@@ -166,6 +166,14 @@ def test_static_root_has_the_same_derived_pools_as_native_projection():
 def test_exact_session_identifier_cannot_expand_refresh_to_other_peers():
     m,p=context();r=Router();r.data['/routing/bgp/session'][0]['.id']='*1,*2'
     with pytest.raises(ValueError,match='exact RouterOS object identity'):
+        m.plan_pod_return(r,p)
+    assert r.writes==[]
+
+
+@pytest.mark.parametrize('field,value', [('remote.afi','ipv6'), ('remote.afi','ip,ipv6'), ('local.afi',''), ('local.afi',None)])
+def test_numbers_only_refresh_rejects_non_ipv4_or_unknown_negotiated_family(field,value):
+    m,p=context();r=Router();r.data['/routing/bgp/session'][0][field]=value
+    with pytest.raises(ValueError,match='fresh exact'):
         m.plan_pod_return(r,p)
     assert r.writes==[]
 
