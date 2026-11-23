@@ -29,6 +29,10 @@ network writes. Converged policy performs no writes or refresh.
 An unsuccessful refresh remains pending until an exact fresh session accepts it;
 the next loop refreshes without replaying installed configuration. A new process
 performs one validated refresh to cover interruption after configuration writes.
+The installed RouterOS rejects the newer `address-family` REST argument. Refresh
+therefore requires both observed session AFIs to be exactly `ip`, then sends only
+the exact session identity. Missing, mixed or non-IPv4 families fail closed; this
+is not a runtime fallback to an unscoped refresh.
 
 The existing five-object native contract installs configuration before runtime.
 A code hash on the existing Deployment forces its startup-loaded Python modules
