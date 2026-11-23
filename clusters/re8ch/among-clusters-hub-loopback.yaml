@@ -25,4 +25,4 @@ spec:
 
               - op: replace
                 path: /spec/template/spec/containers/0/image
-                value: ghcr.io/among-clusters/among-clusters@sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
+                value: ghcr.io/among-clusters/among-clusters@sha256:e4318df4f9f6cc47c391c20f178c4b8000627c69c09cc48364630c4a68853d45

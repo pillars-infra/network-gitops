@@ -17,6 +17,10 @@ spec:
       - command:
         - /hub
         env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         - name: ADMIN_TOKEN
           valueFrom:
             secretKeyRef:
@@ -26,7 +30,13 @@ spec:
           value: 'true'
         - name: RECONCILE_INTERVAL
           value: 60s
-        image: ghcr.io/among-clusters/among-clusters@sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
+        - name: SENTRY_DSN
+          value: https://2b6b17d602c68bbb6789de55c05afa1a@o4509349085577216.ingest.us.sentry.io/4509349088985088
+        - name: SENTRY_RELEASE
+          value: among-clusters@9f57051793c9f5218d1cd0827fa705d54d0bccfd
+        - name: SENTRY_ENVIRONMENT
+          value: production
+        image: ghcr.io/among-clusters/among-clusters@sha256:e4318df4f9f6cc47c391c20f178c4b8000627c69c09cc48364630c4a68853d45
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -37,6 +47,8 @@ spec:
         - containerPort: 8080
           hostPort: 8080
           name: http
+        - containerPort: 9090
+          name: metrics
         readinessProbe:
           httpGet:
             path: /healthz
@@ -90,10 +102,21 @@ spec:
     - ports:
       - port: '8080'
         protocol: TCP
+  - fromEndpoints:
+    - matchLabels:
+        k8s:app.kubernetes.io/instance: re8ch
+        k8s:app.kubernetes.io/name: vmagent
+        k8s:io.kubernetes.pod.namespace: observability-system
+    toPorts:
+    - ports:
+      - port: '9090'
+        protocol: TCP
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  labels:
+    app.kubernetes.io/name: among-clusters-hub
   name: among-clusters-hub
   namespace: among-clusters
 spec:
@@ -101,6 +124,9 @@ spec:
   - name: http
     port: 80
     targetPort: http
+  - name: metrics
+    port: 9090
+    targetPort: metrics
   selector:
     app.kubernetes.io/name: among-clusters-hub
 ---
@@ -200,6 +226,14 @@ spec:
     - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: kube-system
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: ::/0
   ingress:
   - from:
     - namespaceSelector:
@@ -210,6 +244,17 @@ spec:
           kubernetes.io/metadata.name: credential-broker
     ports:
     - port: 8080
+      protocol: TCP
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: observability-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: re8ch
+          app.kubernetes.io/name: vmagent
+    ports:
+    - port: 9090
       protocol: TCP
   podSelector:
     matchLabels:

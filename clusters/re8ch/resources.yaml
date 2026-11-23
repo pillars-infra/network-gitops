@@ -26065,7 +26065,7 @@ spec:
       enabled: true
     hostname: among-clusters.re8ch.com
     image:
-      digest: sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
+      digest: sha256:e4318df4f9f6cc47c391c20f178c4b8000627c69c09cc48364630c4a68853d45
       repository: ghcr.io/among-clusters/among-clusters
     managedAccess:
       broker:
@@ -26078,9 +26078,9 @@ spec:
       kubernetes.io/os: linux
       scheduling.re8ch.com/service-plane: core
     onboarding:
-      chartVersion: 0.3.30
+      chartVersion: 0.3.36
       enabled: true
-      imageDigest: sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
+      imageDigest: sha256:e4318df4f9f6cc47c391c20f178c4b8000627c69c09cc48364630c4a68853d45
       providerBundleDigest: sha256:1c033ad2260b1064dd46705361dce35d1c47e8332864a88d239a90b5ffa557e8
       providerBundleSecret: among-clusters-agent-identity
       providerQUICEndpoint: quic://223.159.210.222:8443
@@ -26091,6 +26091,11 @@ spec:
       bootstrapTarget: 223.159.210.222
       selectedEdge: loudi-r640
     replicaCount: 1
+    sentry:
+      enabled: true
+      dsn: https://2b6b17d602c68bbb6789de55c05afa1a@o4509349085577216.ingest.us.sentry.io/4509349088985088
+      release: among-clusters@9f57051793c9f5218d1cd0827fa705d54d0bccfd
+      environment: production
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -27996,7 +28001,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:e84543b77175300991faef7cc2baa32e0a56aec87ed0494d4ef70354b6560e26
+    digest: sha256:079bb56d6b3d0bdc14d9f28e195ae3a645b1192afbf2e436a6bf8450c270118c
   url: oci://ghcr.io/among-clusters/charts/among-clusters-hub
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
