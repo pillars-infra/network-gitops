@@ -5,6 +5,8 @@ This compiler never decrypts or reads Kubernetes. Public artifacts only contain
 reviewed plaintext native objects. Every omitted object remains explicit.
 """
 import argparse
+import copy
+import ipaddress
 from collections import defaultdict
 import json
 from pathlib import Path
@@ -76,7 +78,45 @@ def classify(document):
     except ValueError:return 'image-digest-required'
     return None
 
+def resolve_routeros_pool_policy(documents):
+    """Resolve reviewed pool references in the existing native projection.
+
+    Kustomize cannot project another object's fields into a JSON-valued
+    ConfigMap entry. Reuse this compiler; do not duplicate allocation state.
+    """
+    documents = copy.deepcopy(documents)
+    pools = {d['metadata']['name']: d for d in documents if d and d.get('kind') == 'CiliumPodIPPool'}
+    for d in documents:
+        if not d or object_identity(d) != 'core/ConfigMap/ops/routeros-public-forward-controller':
+            continue
+        desired = json.loads(d['data']['desired.json'])
+        policy = desired.get('podReturnPolicy')
+        if not policy:
+            continue
+        refs = policy.get('poolRefs', [])
+        if not refs or len(set(refs)) != len(refs):
+            raise ValueError('unique RouterOS pool references are required')
+        approved, networks = [], []
+        for ref in sorted(refs):
+            pool = pools.get(ref)
+            if not pool or pool.get('apiVersion') != 'cilium.io/v2alpha1':
+                raise ValueError('referenced CiliumPodIPPool is unavailable')
+            ipv4 = pool.get('spec', {}).get('ipv4', {})
+            if ipv4.get('maskSize') != 24 or not ipv4.get('cidrs'):
+                raise ValueError('reviewed IPv4 /24 allocation pool is required')
+            for cidr in sorted(ipv4['cidrs']):
+                network = ipaddress.ip_network(cidr, strict=True)
+                if network.version != 4 or not network.subnet_of(ipaddress.ip_network('10.64.0.0/12')) or network.prefixlen > 24 or any(network.overlaps(prior) for prior in networks):
+                    raise ValueError('invalid or overlapping native Pod pool')
+                networks.append(network)
+                approved.append({'poolRef': ref, 'cidr': str(network), 'maskSize': 24})
+        policy['approvedPools'] = approved
+        d['data']['desired.json'] = json.dumps(desired, indent=2) + '\n'
+    return documents
+
+
 def project(documents, prefix="networking-native", source_context=None):
+    documents = resolve_routeros_pool_policy(documents)
     groups=defaultdict(list); omitted=[]; bootstrap=[]
     for d in documents:
         if not d:continue
@@ -104,7 +144,7 @@ def project(documents, prefix="networking-native", source_context=None):
         inventory=sorted(object_identity(o) for o in objects)
         lifecycle={'prune':False,'healthTimeoutSeconds':300,'protectedKinds':['Namespace','CustomResourceDefinition','PersistentVolume','PersistentVolumeClaim','StorageClass'],'deletionAllowlist':[]}
         if name in OBSERVED_READINESS_RELEASES:lifecycle['readinessPolicy']='observe'
-        if name in {'networking-native-kube-system', 'networking-helm-public-edge-manager-regional-routing'}:
+        if name in {'networking-native-kube-system', 'networking-native-ops', 'networking-helm-public-edge-manager-regional-routing'}:
             # Projected scripts and envFrom are consumed at process startup. A
             # workload checksum is not proof its ConfigMap was installed first.
             lifecycle['stages'] = [
@@ -147,6 +187,19 @@ def main():
         if d and 'sops' in d and d.get('kind')=='ConfigMap':
             documents[index]=bind_source(d, originals[object_identity(d)])
     files,ledger=project(documents)
+    # Keep the static Kustomize view coherent as well as the native release.
+    # The generated array is a projection of poolRefs, never another IPAM source.
+    resolved = resolve_routeros_pool_policy(documents)
+    source_path = ROOT/'clusters/re8ch/routeros-public-forward-controller.yaml'
+    source_text = source_path.read_text()
+    source_cm = next(d for d in yaml.safe_load_all(source_text) if d and d.get('kind') == 'ConfigMap')
+    resolved_cm = next((d for d in resolved if d and object_identity(d) == 'core/ConfigMap/ops/routeros-public-forward-controller'), None)
+    if resolved_cm and source_cm['data']['desired.json'] != resolved_cm['data']['desired.json']:
+        old = ''.join('    '+line+'\n' for line in source_cm['data']['desired.json'].splitlines())
+        new = ''.join('    '+line+'\n' for line in resolved_cm['data']['desired.json'].splitlines())
+        if source_text.count(old) != 1:
+            raise ValueError('RouterOS static pool projection anchor differs')
+        files['clusters/re8ch/routeros-public-forward-controller.yaml'] = source_text.replace(old, new)
     stale=[]
     for name,content in files.items():
         path=ROOT/name

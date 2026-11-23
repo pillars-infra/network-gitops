@@ -50,3 +50,11 @@ spec:
     - PersistentVolumeClaim
     - StorageClass
     deletionAllowlist: []
+    stages:
+    - name: configuration
+      kinds:
+      - ConfigMap
+    - name: runtime
+      kinds:
+      - Deployment
+      - HTTPRoute
