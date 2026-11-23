@@ -60,6 +60,7 @@ spec:
     - apps/DaemonSet/egress-fabric/mihomos-node-cn
     - apps/DaemonSet/egress-fabric/mihomos-node-global
     - apps/DaemonSet/egress-fabric/mihomos-status-agent
+    - apps/Deployment/egress-fabric/identity-egress
     - apps/Deployment/egress-fabric/mihomo-node-labeler
     - core/ConfigMap/egress-fabric/identity-egress-config
     - core/ConfigMap/egress-fabric/mihomo-node-labeler-code-k4fm8c7g7t
@@ -84,7 +85,7 @@ spec:
     - networking.k8s.io/NetworkPolicy/egress-fabric/identity-egress
     - policy/PodDisruptionBudget/egress-fabric/identity-egress
   inventory:
-    digest: sha256:9abd6c2d71e3a9b9cc0d562fe036c95c01bcf6b3f6dfee3e7a85a4223b0f51c3
+    digest: sha256:914f13de51cbf7acb0e1e1aa72304020380d16ef719d03c88e5b5af0b4033818
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300
