@@ -353,11 +353,11 @@ data:
             else:
                 raise ValueError('unknown policy action')
         if plan['refresh']:
-            # This RouterOS accepts numbers-only refresh; the plan requires both
+            # RouterOS requires the CLI-reference afi argument; the plan requires both
             # negotiated AFIs to be exactly IPv4, never a broader-family fallback.
             # Soft refresh is limited to the currently observed exact peer/session.
             # No reset, disable, reconnect, all-peer operation or business replay.
-            router.request('/routing/bgp/session/refresh', 'POST', {'numbers': identity(plan['refresh'])})
+            router.request('/routing/bgp/session/refresh', 'POST', {'numbers': identity(plan['refresh']), 'afi': 'ip'})
             _refresh_pending = False
         return len(plan['actions'])
   reconcile.py: |
@@ -552,7 +552,7 @@ spec:
     metadata:
       annotations:
         networking.re8ch.com/config-revision: outer-sni-v1
-        networking.re8ch.com/return-policy-code-sha256: 024bf4ef9ddc2bef6ec4d3158b06f99340474d98b63a673cda5bc42655740f59
+        networking.re8ch.com/return-policy-code-sha256: 3a11315d46f5b0b87a0f3fae0497df3bcab37d09cb3e65cc3324fe59ab9e1abc
       labels:
         app.kubernetes.io/name: routeros-public-forward-controller
     spec:

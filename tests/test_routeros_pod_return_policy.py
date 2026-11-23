@@ -52,7 +52,7 @@ class Router:
             assert '.proplist=' in raw
             return copy.deepcopy(self.data[path])
         if path == '/routing/bgp/session/refresh':
-            assert method == 'POST' and body == {'numbers':'*2800001'}
+            assert method == 'POST' and body == {'numbers':'*2800001','afi':'ip'}
             return {}
         if path.endswith('/move'):
             assert method == 'POST'
@@ -171,7 +171,7 @@ def test_exact_session_identifier_cannot_expand_refresh_to_other_peers():
 
 
 @pytest.mark.parametrize('field,value', [('remote.afi','ipv6'), ('remote.afi','ip,ipv6'), ('local.afi',''), ('local.afi',None)])
-def test_numbers_only_refresh_rejects_non_ipv4_or_unknown_negotiated_family(field,value):
+def test_exact_afi_refresh_rejects_non_ipv4_or_unknown_negotiated_family(field,value):
     m,p=context();r=Router();r.data['/routing/bgp/session'][0][field]=value
     with pytest.raises(ValueError,match='fresh exact'):
         m.plan_pod_return(r,p)
