@@ -2482,6 +2482,20 @@
           "verbs": [
             "get"
           ]
+        },
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resourceNames": [
+            "re8ch"
+          ],
+          "resources": [
+            "clusteridentities"
+          ],
+          "verbs": [
+            "get"
+          ]
         }
       ]
     },
@@ -2505,6 +2519,33 @@
             "create",
             "patch",
             "update"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "labels": {
+          "app.kubernetes.io/part-of": "among-clusters"
+        },
+        "name": "re8ch-cloud-platform-self-api-metadata",
+        "namespace": "default"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resourceNames": [
+            "kubernetes"
+          ],
+          "resources": [
+            "services"
+          ],
+          "verbs": [
+            "get"
           ]
         }
       ]
@@ -2701,6 +2742,29 @@
           "kind": "ServiceAccount",
           "name": "cert-manager-cloudflare-bootstrap",
           "namespace": "cert-manager"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "labels": {
+          "app.kubernetes.io/part-of": "among-clusters"
+        },
+        "name": "re8ch-cloud-platform-self-api-metadata",
+        "namespace": "default"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "re8ch-cloud-platform-self-api-metadata"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "re8ch-cloud-platform",
+          "namespace": "ai-operations"
         }
       ]
     },
@@ -2919,6 +2983,10 @@
       "reason": "platform-bootstrap-rbac"
     },
     {
+      "identity": "rbac.authorization.k8s.io/Role/default/re8ch-cloud-platform-self-api-metadata",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
       "identity": "rbac.authorization.k8s.io/Role/egress-fabric/path-controller",
       "reason": "platform-bootstrap-rbac"
     },
@@ -2948,6 +3016,10 @@
     },
     {
       "identity": "rbac.authorization.k8s.io/RoleBinding/cert-manager/cert-manager-write-cloudflare-dns-token",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/default/re8ch-cloud-platform-self-api-metadata",
       "reason": "platform-bootstrap-rbac"
     },
     {

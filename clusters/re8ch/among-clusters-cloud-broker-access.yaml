@@ -66,6 +66,10 @@ rules:
   resources: [peers]
   resourceNames: [re8ch-atlantic]
   verbs: [get]
+- apiGroups: [peering.re8ch.com]
+  resources: [clusteridentities]
+  resourceNames: [re8ch]
+  verbs: [get]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -78,6 +82,35 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: re8ch-cloud-platform-atlantic-broker
+subjects:
+- kind: ServiceAccount
+  name: re8ch-cloud-platform
+  namespace: ai-operations
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: re8ch-cloud-platform-self-api-metadata
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+rules:
+- apiGroups: ['']
+  resources: [services]
+  resourceNames: [kubernetes]
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: re8ch-cloud-platform-self-api-metadata
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: re8ch-cloud-platform-self-api-metadata
 subjects:
 - kind: ServiceAccount
   name: re8ch-cloud-platform
