@@ -30,11 +30,11 @@ def ledger(prefixes, uid='node-uid'):
 
 
 def run_helper(tmp_path, nodes, previous=None, desired='10.42.1.0/24\n10.68.1.0/24',
-               static=None, bgp=None, program=None, members=None, configured=None):
+               static=None, bgp=None, program=None, members=None, configured=None, node_name="local"):
     helper = tmp_path/'helper.sh'
     helper.write_text(source()['data']['owned-prefixes.sh'])
     inventory = tmp_path/'inventory.json'
-    inventory.write_text(json.dumps({'nodes': [{'name': n} for n in (members or ['local', 'other'])], 'routeServers': []}))
+    inventory.write_text(json.dumps({'nodes': [{'name': n} for n in (members or [node_name, 'other'])], 'routeServers': []}))
     helper.write_text(helper.read_text().replace('/config/inventory.json', str(inventory)))
     snapshot = tmp_path/'snapshot.json'
     snapshot.write_text(json.dumps({'items': nodes}))
@@ -67,7 +67,7 @@ retired_prefix_routes
 retired_prefix_networks
 commit_owned_prefix_reconciliation
 '''
-    env = {**os.environ, 'HELPER': str(helper), 'NODE_NAME': 'local', 'cilium_nodes': str(snapshot),
+    env = {**os.environ, 'HELPER': str(helper), 'NODE_NAME': node_name, 'cilium_nodes': str(snapshot),
            'owned_prefix_ledger': str(state), 'owned_pod_cidrs': desired,
            'STATIC': str(tmp_path/'static.json'), 'TEST_FRR_CONFIG': str(tmp_path/'frr-config.txt'), 'asn': '4200010001', 'BGP': str(tmp_path/'bgp.json'), 'CALLS': str(calls)}
     result = subprocess.run(['sh', '-c', script], env=env, text=True, capture_output=True)
