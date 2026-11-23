@@ -51,3 +51,23 @@ match this recovery contract. Only a missing clusterRef can be populated in
 the local hydration copy. An explicit conflicting cluster or binding remains
 rejected. Blocked flags, sequence, history and all digests are preserved; there
 is no reset. Normal successful SSA persistence records the proven target.
+
+## Advertisement renewal cadence
+
+A real Admin version read at 2026-11-23T07:52:35Z crossed the old advertisement
+expiry and correctly failed closed. The next snapshot arrived at 07:52:36Z.
+The Kubernetes API advertisement TTL is 300 seconds, exactly equal to the
+configured five-minute Agent interval, leaving no margin for publication or
+metadata resolution. The 0.3.34 Agent is now configured with its standard
+one-minute cadence. The source Service advertisement TTL is increased from 300 to 3600 seconds,
+as explicitly requested for operational margin. All consumer freshness checks
+and explicit withdrawal remain in force. Credential/grant lifetime is unchanged.
+
+The flat Atlantic Agent release and the separate default/kubernetes Service
+metadata release are the existing desired-state authorities. Update the
+producer Service annotation, not a downstream Advertisement status or a
+consumer fallback. Keep the safe observer comparison aligned with the reviewed interval.
+After actual updated/Ready rollout, verify fresh publishedAt/expiresAt and
+ImportedService generation/advertisement binding, successful real version
+reads across the previous five-minute boundary, another natural grant renewal,
+and the same Admin read/SSA revision 1 to 2/read-back/cleanup in both targets.

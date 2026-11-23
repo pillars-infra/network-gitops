@@ -62,7 +62,7 @@ spec:
         - {name: TRUST_DOMAIN, value: atlantic.re8ch.com}
         - {name: HUB_ENDPOINT, value: 'https://among-clusters.service.re8ch.com'}
         - {name: BROKER_ENDPOINT, value: 'https://among-clusters.service.re8ch.com/broker'}
-        - {name: SYNC_INTERVAL, value: 5m}
+        - {name: SYNC_INTERVAL, value: 1m}
         - {name: IDENTITY_SECRET, value: among-clusters-agent-identity}
         - name: POD_NAMESPACE
           valueFrom: {fieldRef: {fieldPath: metadata.namespace}}

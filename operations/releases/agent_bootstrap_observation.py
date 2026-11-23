@@ -24,7 +24,7 @@ def project(deployment):
             'clusterIdentityMatches': env.get('CLUSTER_ID') == 're8ch-atlantic',
             'brokerConfigured': bool(env.get('BROKER_ENDPOINT')),
             'brokerEndpointMatches': env.get('BROKER_ENDPOINT') == 'https://among-clusters.service.re8ch.com/broker',
-            'syncIntervalMatches': env.get('SYNC_INTERVAL') == '5m'}
+            'syncIntervalMatches': env.get('SYNC_INTERVAL') == '1m'}
 
 
 def classify_logs(value):
