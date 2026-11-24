@@ -108,6 +108,10 @@ rules:
     resources: [statefulsets]
     resourceNames: [stalwart-flk, stalwart-idp-flk]
     verbs: [get, patch]
+  - apiGroups: [cert-manager.io]
+    resources: [certificates]
+    resourceNames: [stalwart-mail-re8ch]
+    verbs: [get, patch]
   - apiGroups: ['']
     resources: [configmaps]
     resourceNames:

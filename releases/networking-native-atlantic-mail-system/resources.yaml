@@ -1,3 +1,23 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: stalwart-mail-re8ch
+  namespace: mail-system
+spec:
+  secretName: stalwart-mail-re8ch-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: re8ch-cloudflare-dns01
+  dnsNames:
+    - mail.re8ch.com
+    - id.re8ch.com
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Never
+---
 apiVersion: v1
 data:
   config.json: '{"@type":"RocksDb","path":"/var/lib/stalwart/database"}'
@@ -589,9 +609,9 @@ spec:
             - name: OAUTH_ENABLED
               value: "true"
             - name: OAUTH_CLIENT_ID
-              value: stalwart-webui
+              value: 705c1168-43d8-4ec3-980a-0327a59c7fc6
             - name: OAUTH_ISSUER_URL
-              value: https://auth.re8ch.com
+              value: https://db-rw.re8ch.com/auth/v1
             - name: APP_NAME
               value: RE8CH Mail
             - name: APP_SHORT_NAME

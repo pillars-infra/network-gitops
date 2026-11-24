@@ -16,12 +16,13 @@ spec:
   authorization:
     requireExisting: true
     fieldManager: re8ch-release/networking-native-atlantic-mail-system
-    resources: [apps/Deployment, apps/StatefulSet, core/ConfigMap, core/Service]
-    objectNames: [stalwart, stalwart-config, stalwart-direct-mail, stalwart-flk, stalwart-headless, stalwart-idp, stalwart-idp-config, stalwart-idp-flk, stalwart-webmail]
+    resources: [apps/Deployment, apps/StatefulSet, cert-manager.io/Certificate, core/ConfigMap, core/Service]
+    objectNames: [stalwart, stalwart-config, stalwart-direct-mail, stalwart-flk, stalwart-headless, stalwart-idp, stalwart-idp-config, stalwart-idp-flk, stalwart-mail-re8ch, stalwart-webmail]
     forceConflictObjects:
       - apps/Deployment/mail-system/stalwart-webmail
       - apps/StatefulSet/mail-system/stalwart-flk
       - apps/StatefulSet/mail-system/stalwart-idp-flk
+      - cert-manager.io/Certificate/mail-system/stalwart-mail-re8ch
       - core/ConfigMap/mail-system/stalwart-config
       - core/ConfigMap/mail-system/stalwart-idp-config
       - core/Service/mail-system/stalwart
@@ -29,7 +30,7 @@ spec:
       - core/Service/mail-system/stalwart-headless
       - core/Service/mail-system/stalwart-idp
       - core/Service/mail-system/stalwart-webmail
-  inventory: {digest: sha256:3305b9b2e98c2039142cee0590589d5ce36e61d38142b3a6f57a93aa8b23fa23}
+  inventory: {digest: sha256:899e2194809f150e14e701ced45093264ca2e1d5c410836a745d90908d3e1168}
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

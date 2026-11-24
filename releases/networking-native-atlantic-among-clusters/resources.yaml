@@ -114,11 +114,14 @@ data:
       tcp-request inspect-delay 5s
       tcp-request content accept if { req.ssl_hello_type 1 }
       use_backend main_kube_api if { req.ssl_sni -i kube-api.re8ch.com kube-api.service.re8ch.com }
+      use_backend local_stalwart if { req.ssl_sni -i id.re8ch.com }
       default_backend main_public_edge
     backend main_kube_api
       server gateway among-clusters-gateway.among-clusters.svc.cluster.local:16443 check inter 2s fall 2 rise 2
     backend main_public_edge
       server gateway among-clusters-gateway.among-clusters.svc.cluster.local:16445 check inter 2s fall 2 rise 2
+    backend local_stalwart
+      server stalwart stalwart.mail-system.svc.cluster.local:443 check inter 2s fall 2 rise 2
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -213,7 +216,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/haproxy-config-sha256: 7b3e57de0f77800f2e635f617724ed3c68444480806e829a83eb88e118bc7085
+        networking.re8ch.com/haproxy-config-sha256: 3ada71ed7f9157262dee3eb9bea44a8e185b20a528483a7b2c6d03451ff0b19e
       labels:
         app.kubernetes.io/name: among-clusters-gateway
     spec:
@@ -277,7 +280,7 @@ spec:
   template:
     metadata:
       annotations:
-        networking.re8ch.com/haproxy-config-sha256: 7b3e57de0f77800f2e635f617724ed3c68444480806e829a83eb88e118bc7085
+        networking.re8ch.com/haproxy-config-sha256: 3ada71ed7f9157262dee3eb9bea44a8e185b20a528483a7b2c6d03451ff0b19e
       labels:
         app.kubernetes.io/name: among-clusters-edge
     spec:
@@ -337,6 +340,12 @@ spec:
     ports:
     - {protocol: TCP, port: 16443}
     - {protocol: TCP, port: 16445}
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: mail-system
+    ports:
+    - {protocol: TCP, port: 443}
   - to:
     - namespaceSelector:
         matchLabels:
