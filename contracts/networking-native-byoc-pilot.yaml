@@ -40,6 +40,7 @@ spec:
     - re8ch-atlantic
     - re8ch-atlantic-headlamp-admin
     - re8ch-atlantic-kubernetes-api
+    - re8ch-atlantic-networking-mail-system
     - re8ch-mihomos-egress
     - re8ch-qwen
     - re8ch-sijie
@@ -52,6 +53,7 @@ spec:
     - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/artc-headlamp-admin
     - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/qwen-headlamp-admin
     - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/re8ch-atlantic-headlamp-admin
+    - peering.re8ch.com/ManagedAccessGrant/byoc-pilot/re8ch-atlantic-networking-mail-system
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-artc
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-atlantic
     - peering.re8ch.com/Peer/byoc-pilot/re8ch-qwen
@@ -61,7 +63,7 @@ spec:
     - peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-atlantic-kubernetes-api
     - peering.re8ch.com/PeerPolicy/byoc-pilot/re8ch-mihomos-egress
   inventory:
-    digest: sha256:64f2203f08c387b80c79e7a26babc184625aea4b2a246dd60228535da9f42c1f
+    digest: sha256:2014b7539fb3b9dcf25981f426c7bb28063d64f4f6aeacd3dc39e6261fce7c1d
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300
