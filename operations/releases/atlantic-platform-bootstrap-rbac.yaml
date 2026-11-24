@@ -16,6 +16,7 @@ rules:
     resources: [configmaps]
     resourceNames:
       - among-clusters-approval-re8ch-atlantic-headlamp-admin
+      - among-clusters-approval-re8ch-atlantic-networking-mail-system
       - among-clusters-edge-sni
       - ssa-state-networking-native-atlantic-among-clusters
     verbs: [get, patch]
