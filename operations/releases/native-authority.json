@@ -1486,10 +1486,30 @@
       "contract": "contracts/networking-native-mail-system.yaml",
       "namespace": "mail-system",
       "inventory": [
+        "discovery.k8s.io/EndpointSlice/mail-system/stalwart-atlantic-management",
+        "discovery.k8s.io/EndpointSlice/mail-system/stalwart-idp-atlantic",
+        "discovery.k8s.io/EndpointSlice/mail-system/stalwart-webmail-atlantic",
         "gateway.networking.k8s.io/HTTPRoute/mail-system/service-zone-mail-stalwart-webmail-public",
         "gateway.networking.k8s.io/HTTPRoute/mail-system/service-zone-mail-stalwart-webmail-redirect"
       ],
       "rules": [
+        {
+          "apiGroups": [
+            "discovery.k8s.io"
+          ],
+          "resources": [
+            "endpointslices"
+          ],
+          "resourceNames": [
+            "stalwart-atlantic-management",
+            "stalwart-idp-atlantic",
+            "stalwart-webmail-atlantic"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
         {
           "apiGroups": [
             "gateway.networking.k8s.io"
