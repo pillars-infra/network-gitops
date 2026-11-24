@@ -574,7 +574,7 @@ spec:
       containers:
         - env:
             - name: OAUTH_ONLY
-              value: "false"
+              value: "true"
             - name: SESSION_SECRET
               valueFrom:
                 secretKeyRef:
@@ -589,9 +589,9 @@ spec:
             - name: OAUTH_ENABLED
               value: "true"
             - name: OAUTH_CLIENT_ID
-              value: 705c1168-43d8-4ec3-980a-0327a59c7fc6
+              value: stalwart-webui
             - name: OAUTH_ISSUER_URL
-              value: https://db-rw.re8ch.com/auth/v1
+              value: https://auth.re8ch.com
             - name: APP_NAME
               value: RE8CH Mail
             - name: APP_SHORT_NAME
