@@ -26338,7 +26338,7 @@ spec:
       capacityWeight: 10
       failoverGraceSeconds: 300
       globalpingQualityMaxAgeSeconds: 2700
-      globalpingQualityMode: Shadow
+      globalpingQualityMode: Required
       latencyDivisorMs: 20
       latencyPenaltyCap: 50
       localAreaBonus: 100000
@@ -26873,6 +26873,9 @@ spec:
           ip: 198.20.153.89
           region: my-kul
         EU-CENTRAL:
+        - id: r640
+          ip: 223.159.210.222
+          region: cn-hunan
         - id: atlantic-flk
           ip: 2.28.106.230
           region: de-fsn
@@ -26882,30 +26885,30 @@ spec:
         - id: atlantic-la-1
           ip: 179.255.126.104
           region: us-la-1
+        EU-NORTH:
         - id: r640
           ip: 223.159.210.222
           region: cn-hunan
-        EU-NORTH:
         - id: atlantic-hel1
           ip: 2.29.219.31
           region: fi-hel1
         - id: atlantic-flk
           ip: 2.28.106.230
           region: de-fsn
+        SEA:
         - id: r640
           ip: 223.159.210.222
           region: cn-hunan
-        SEA:
         - id: atlantic-kl
           ip: 198.20.153.89
           region: my-kul
         - id: atlantic-la-1
           ip: 179.255.126.104
           region: us-la-1
+        US-WEST:
         - id: r640
           ip: 223.159.210.222
           region: cn-hunan
-        US-WEST:
         - id: atlantic-la-1
           ip: 179.255.126.104
           region: us-la-1
@@ -26915,9 +26918,6 @@ spec:
         - id: atlantic-flk
           ip: 2.28.106.230
           region: de-fsn
-        - id: r640
-          ip: 223.159.210.222
-          region: cn-hunan
         default:
         - id: r640
           ip: 223.159.210.222
