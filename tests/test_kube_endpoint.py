@@ -35,7 +35,7 @@ def test_atlantic_stalwart_public_edge_is_local_and_uses_db_rw_sso():
     root = Path(__file__).resolve().parents[1]
     among_objects = list(yaml.safe_load_all((root / "releases/networking-native-atlantic-among-clusters/resources.yaml").read_text()))
     routes = next(obj for obj in among_objects if obj and obj.get("kind") == "ConfigMap" and obj["metadata"]["name"] == "among-clusters-edge-sni")
-    assert "use_backend local_stalwart if { req.ssl_sni -i id.re8ch.com }" in routes["data"]["haproxy.cfg"]
+    assert "use_backend local_stalwart if { req.ssl_sni -i id.re8ch.com mail.re8ch.com }" in routes["data"]["haproxy.cfg"]
     assert "stalwart.mail-system.svc.cluster.local:443" in routes["data"]["haproxy.cfg"]
 
     mail_objects = list(yaml.safe_load_all((root / "releases/networking-native-atlantic-mail-system/resources.yaml").read_text()))
