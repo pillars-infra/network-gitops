@@ -130,6 +130,86 @@ spec:
   scope: Cluster
 ---
 apiVersion: peering.re8ch.com/v1alpha1
+kind: ManagedAccessGrant
+metadata:
+  labels:
+    app.kubernetes.io/part-of: among-clusters
+  name: re8ch-atlantic-networking-mail-system
+  namespace: byoc-pilot
+spec:
+  advertisementRef: re8ch-atlantic-default-kubernetes
+  approved: true
+  expiresAt: '2027-11-24T23:59:59Z'
+  namespaces:
+  - mail-system
+  peerRef: re8ch-atlantic
+  revoked: false
+  rules:
+  - apiGroups:
+    - ''
+    resourceNames:
+    - ssa-state-networking-native-atlantic-mail-system
+    - stalwart-config
+    - stalwart-idp-config
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - patch
+    - update
+    - delete
+  - apiGroups:
+    - ''
+    resourceNames:
+    - stalwart
+    - stalwart-direct-mail
+    - stalwart-headless
+    - stalwart-idp
+    - stalwart-webmail
+    resources:
+    - services
+    verbs:
+    - get
+    - patch
+    - update
+    - delete
+  - apiGroups:
+    - apps
+    resourceNames:
+    - stalwart-webmail
+    resources:
+    - deployments
+    verbs:
+    - get
+    - patch
+    - update
+    - delete
+  - apiGroups:
+    - apps
+    resourceNames:
+    - stalwart-flk
+    - stalwart-idp-flk
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - patch
+    - update
+    - delete
+  - apiGroups:
+    - cert-manager.io
+    resourceNames:
+    - stalwart-mail-re8ch
+    resources:
+    - certificates
+    verbs:
+    - get
+    - patch
+    - update
+    - delete
+  scope: Namespaced
+---
+apiVersion: peering.re8ch.com/v1alpha1
 kind: Peer
 metadata:
   labels:
