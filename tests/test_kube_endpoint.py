@@ -39,6 +39,9 @@ def test_atlantic_stalwart_public_edge_is_local_and_uses_db_rw_sso():
     assert "use_backend local_webmail if { req.ssl_sni -i mail.re8ch.com }" in routes["data"]["haproxy.cfg"]
     assert "stalwart-webmail.mail-system.svc.cluster.local:443" in routes["data"]["haproxy.cfg"]
     assert "stalwart.mail-system.svc.cluster.local:443" in routes["data"]["haproxy.cfg"]
+    policy = next(obj for obj in among_objects if obj and obj.get("kind") == "NetworkPolicy" and obj["metadata"]["name"] == "among-clusters-edge")
+    mail_egress = next(rule for rule in policy["spec"]["egress"] if rule.get("to", [{}])[0].get("namespaceSelector", {}).get("matchLabels", {}).get("kubernetes.io/metadata.name") == "mail-system")
+    assert {port["port"] for port in mail_egress["ports"]} == {443, 8443}
 
     mail_objects = list(yaml.safe_load_all((root / "releases/networking-native-atlantic-mail-system/resources.yaml").read_text()))
     certificate = next(obj for obj in mail_objects if obj and obj.get("kind") == "Certificate")

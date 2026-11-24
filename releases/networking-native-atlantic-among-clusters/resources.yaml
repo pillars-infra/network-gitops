@@ -359,6 +359,7 @@ spec:
           kubernetes.io/metadata.name: mail-system
     ports:
     - {protocol: TCP, port: 443}
+    - {protocol: TCP, port: 8443}
   - to:
     - namespaceSelector:
         matchLabels:
