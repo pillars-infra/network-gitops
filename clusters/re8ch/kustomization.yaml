@@ -16,6 +16,7 @@ resources:
   - among-clusters-atlantic-peer.yaml
   - among-clusters-cloud-broker-access.yaml
   - cloud-target-delivery-bootstrap.yaml
+  - among-clusters-atlantic-mail-endpoints.yaml
 patches:
   - path: advanced-fabric-traffic-window.yaml
     target:

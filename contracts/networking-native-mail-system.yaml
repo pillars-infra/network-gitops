@@ -24,15 +24,22 @@ spec:
     requireExisting: true
     fieldManager: re8ch-release/networking-native-mail-system
     resources:
+    - discovery.k8s.io/EndpointSlice
     - gateway.networking.k8s.io/HTTPRoute
     objectNames:
     - service-zone-mail-stalwart-webmail-public
     - service-zone-mail-stalwart-webmail-redirect
+    - stalwart-atlantic-management
+    - stalwart-idp-atlantic
+    - stalwart-webmail-atlantic
     forceConflictObjects:
+    - discovery.k8s.io/EndpointSlice/mail-system/stalwart-atlantic-management
+    - discovery.k8s.io/EndpointSlice/mail-system/stalwart-idp-atlantic
+    - discovery.k8s.io/EndpointSlice/mail-system/stalwart-webmail-atlantic
     - gateway.networking.k8s.io/HTTPRoute/mail-system/service-zone-mail-stalwart-webmail-public
     - gateway.networking.k8s.io/HTTPRoute/mail-system/service-zone-mail-stalwart-webmail-redirect
   inventory:
-    digest: sha256:be04772dd901153df5d3ea8da215a5aa171f8fca91319122bfce74e298db610a
+    digest: sha256:9e69ff4ced31c6e5a3615d74e3c6c5cd329715686b11a737bf4aabfde49e0d48
   lifecycle:
     prune: false
     healthTimeoutSeconds: 300

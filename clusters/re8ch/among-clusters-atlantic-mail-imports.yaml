@@ -41,6 +41,12 @@
             - namespaceSelector:
                 matchLabels:
                   kubernetes.io/metadata.name: mail-system
+            # Cilium's Gateway API Envoy originates backend connections from
+            # kube-system. Permit only the three reviewed Atlantic mail import
+            # listeners; the gateway still authenticates the remote SPIFFE ID.
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: kube-system
           ports:
             - {protocol: TCP, port: 18080}
             - {protocol: TCP, port: 18081}

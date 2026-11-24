@@ -367,6 +367,9 @@ spec:
     - namespaceSelector:
         matchLabels:
           kubernetes.io/metadata.name: mail-system
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
     ports:
     - port: 18080
       protocol: TCP

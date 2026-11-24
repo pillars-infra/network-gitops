@@ -1,0 +1,53 @@
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: stalwart-atlantic-management
+  namespace: mail-system
+  labels:
+    kubernetes.io/service-name: stalwart
+    endpointslice.kubernetes.io/managed-by: network-gitops.re8ch.com
+addressType: IPv4
+ports:
+  - name: management
+    protocol: TCP
+    port: 18082
+endpoints:
+  - addresses: [10.250.0.128]
+    conditions: {ready: true, serving: true, terminating: false}
+    nodeName: r640
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: stalwart-idp-atlantic
+  namespace: mail-system
+  labels:
+    kubernetes.io/service-name: stalwart-idp
+    endpointslice.kubernetes.io/managed-by: network-gitops.re8ch.com
+addressType: IPv4
+ports:
+  - name: management
+    protocol: TCP
+    port: 18081
+endpoints:
+  - addresses: [10.250.0.128]
+    conditions: {ready: true, serving: true, terminating: false}
+    nodeName: r640
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: stalwart-webmail-atlantic
+  namespace: mail-system
+  labels:
+    kubernetes.io/service-name: stalwart-webmail
+    endpointslice.kubernetes.io/managed-by: network-gitops.re8ch.com
+addressType: IPv4
+ports:
+  - name: http
+    protocol: TCP
+    port: 18080
+endpoints:
+  - addresses: [10.250.0.128]
+    conditions: {ready: true, serving: true, terminating: false}
+    nodeName: r640
