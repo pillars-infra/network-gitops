@@ -60,8 +60,10 @@ def test_all_atlantic_ingress_points_are_reviewed_api_candidates():
     assert values["discovery"]["externalAuthorityEvidenceMaxAgeSeconds"] == 2700
     assert values["workload"]["nodeNames"] == ["suxunji", "domain-ex"]
     assert values["routingPolicy"]["defaultRegion"] == "US-WEST"
-    assert values["routingPolicy"]["regions"]["CN"][0]["ip"] == "223.159.210.222"
-    assert values["routingPolicy"]["regions"]["US-WEST"][0]["ip"] == "179.255.126.104"
+    assert values["candidateSelection"]["globalpingQualityMode"] == "Required"
+    assert all(candidates[0] == {
+        "id": "r640", "ip": "223.159.210.222", "region": "cn-hunan"
+    } for candidates in values["routingPolicy"]["regions"].values())
 
 
 def test_public_edge_has_stable_aliases_for_external_cdns_and_access_portal():
