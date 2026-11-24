@@ -31,6 +31,22 @@ def test_atlantic_mux_waits_for_fragmented_client_hello():
     assert gateway["spec"]["template"]["metadata"]["annotations"]["networking.re8ch.com/haproxy-config-sha256"] == checksum
 
 
+def test_atlantic_stalwart_public_edge_is_local_and_uses_db_rw_sso():
+    root = Path(__file__).resolve().parents[1]
+    among_objects = list(yaml.safe_load_all((root / "releases/networking-native-atlantic-among-clusters/resources.yaml").read_text()))
+    routes = next(obj for obj in among_objects if obj and obj.get("kind") == "ConfigMap" and obj["metadata"]["name"] == "among-clusters-edge-sni")
+    assert "use_backend local_stalwart if { req.ssl_sni -i id.re8ch.com }" in routes["data"]["haproxy.cfg"]
+    assert "stalwart.mail-system.svc.cluster.local:443" in routes["data"]["haproxy.cfg"]
+
+    mail_objects = list(yaml.safe_load_all((root / "releases/networking-native-atlantic-mail-system/resources.yaml").read_text()))
+    certificate = next(obj for obj in mail_objects if obj and obj.get("kind") == "Certificate")
+    assert certificate["spec"]["dnsNames"] == ["mail.re8ch.com", "id.re8ch.com"]
+    deployment = next(obj for obj in mail_objects if obj and obj.get("kind") == "Deployment" and obj["metadata"]["name"] == "stalwart-webmail")
+    env = {item["name"]: item.get("value") for item in deployment["spec"]["template"]["spec"]["containers"][0]["env"]}
+    assert env["OAUTH_CLIENT_ID"] == "705c1168-43d8-4ec3-980a-0327a59c7fc6"
+    assert env["OAUTH_ISSUER_URL"] == "https://db-rw.re8ch.com/auth/v1"
+
+
 def test_select_fails_over_and_persists_selected_endpoint(tmp_path, monkeypatch):
     attempts = []
 
