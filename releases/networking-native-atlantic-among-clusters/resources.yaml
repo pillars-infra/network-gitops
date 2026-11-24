@@ -171,6 +171,8 @@ spec:
     - {protocol: TCP, port: 80}
     - {protocol: TCP, port: 443}
     - {protocol: TCP, port: 8080}
+    # NetworkPolicy evaluates the post-DNAT webmail container port.
+    - {protocol: TCP, port: 3000}
   - to:
     - namespaceSelector:
         matchLabels:
