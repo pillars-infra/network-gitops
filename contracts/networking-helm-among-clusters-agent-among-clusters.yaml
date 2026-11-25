@@ -9,10 +9,10 @@ spec:
     namespace: among-clusters
   source:
     renderer: kustomize
-    revision: helm-oci@sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8
+    revision: helm-oci@sha256:d96aae1a3147c5c9f09f9f6294198bc23c2db37b01cc36e2191b72b30da1c118
     repository: pillars-infra/network-gitops
     path: releases/networking-helm-among-clusters-agent-among-clusters
-    chartOCI: oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8
+    chartOCI: oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:d96aae1a3147c5c9f09f9f6294198bc23c2db37b01cc36e2191b72b30da1c118
   provenance:
     repository: pillars-infra/network-gitops
     workflow: .github/workflows/static-release.yml

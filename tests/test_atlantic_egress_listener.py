@@ -38,3 +38,21 @@ def test_atlantic_socks_bridge_cannot_reenter_colocated_cn_exit():
     source = objects('clusters/re8ch/resources.yaml')
     agent = next(o for o in source if o['kind'] == 'HelmRelease' and o['metadata']['name'] == 'among-clusters-agent')
     assert listener_port not in agent['spec']['values']['gateway']['publicAuthority']['requiredForwardPorts']
+
+
+def test_atlantic_quic_prefers_reviewed_la_ingress_with_r640_fallback():
+    provider = objects('releases/networking-helm-among-clusters-agent-among-clusters/resources.yaml')
+    service = next(o for o in provider if o['kind'] == 'Service' and o['metadata']['name'] == 'among-clusters-gateway')
+    gateway_port = next(p for p in service['spec']['ports'] if p['name'] == 'gateway')
+    assert service['spec']['type'] == 'NodePort'
+    assert gateway_port == {'name': 'gateway', 'nodePort': 30443, 'port': 8443,
+                            'protocol': 'UDP', 'targetPort': 8443}
+
+    atlantic = objects('releases/networking-native-atlantic-among-clusters/resources.yaml')
+    gateway = next(o for o in atlantic if o['kind'] == 'Deployment' and o['metadata']['name'] == 'among-clusters-gateway')
+    env = {item['name']: item.get('value') for item in gateway['spec']['template']['spec']['containers'][0]['env']}
+    sessions = json.loads(env['PEER_SESSIONS_JSON'])
+    assert sessions == [{
+        'endpoints': ['179.255.126.104:30443', '179.253.231.159:30443', '223.159.210.222:8443'],
+        'expectedSPIFFEID': 'spiffe://re8ch.internal/cluster/re8ch',
+    }]

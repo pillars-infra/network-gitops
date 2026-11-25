@@ -104,12 +104,12 @@
       },
       "source": {
         "renderer": "kustomize",
-        "revision": "helm-oci@sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8",
+        "revision": "helm-oci@sha256:d96aae1a3147c5c9f09f9f6294198bc23c2db37b01cc36e2191b72b30da1c118",
         "repository": "pillars-infra/network-gitops",
         "path": "releases/networking-helm-among-clusters-agent-among-clusters",
-        "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8"
+        "chartOCI": "oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:d96aae1a3147c5c9f09f9f6294198bc23c2db37b01cc36e2191b72b30da1c118"
       },
-      "renderedSHA256": "3445f6d9205c449c99795442e4adf6f686343f11f683d7a3efbdcf4d7cb2c9a7"
+      "renderedSHA256": "a83e64f0214f95b1d148a404d7ead790ce6351cfc48e88f4bc3d422e6dc2e72c"
     },
     {
       "releaseId": "networking-helm-among-clusters-hub-among-clusters",
@@ -4220,8 +4220,8 @@
     {
       "name": "among-clusters-agent",
       "chart": {
-        "oci": "oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8",
-        "sha256": "24c591dde1872ac0b7fa43cf3012c5396ad1a70d75ca510104479140f28552da"
+        "oci": "oci://ghcr.io/among-clusters/charts/among-clusters-agent@sha256:d96aae1a3147c5c9f09f9f6294198bc23c2db37b01cc36e2191b72b30da1c118",
+        "sha256": "f72f26fa8da5f303e4bd5b3ba2dd596c5a3e06d1394afc6cd5627ede4672c784"
       },
       "objects": 10
     },

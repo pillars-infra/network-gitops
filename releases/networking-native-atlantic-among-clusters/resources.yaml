@@ -172,6 +172,11 @@ spec:
     - {protocol: TCP, port: 16445}
   egress:
   - to:
+    - ipBlock: {cidr: 179.255.126.104/32}
+    - ipBlock: {cidr: 179.253.231.159/32}
+    ports:
+    - {protocol: UDP, port: 30443}
+  - to:
     - ipBlock: {cidr: 223.159.210.222/32}
     ports:
     - {protocol: UDP, port: 8443}
@@ -247,7 +252,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
       - name: gateway
-        image: ghcr.io/among-clusters/among-clusters@sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
+        image: ghcr.io/among-clusters/among-clusters@sha256:010c7b80eab77f9bd0f3f78a85d7d2247b80ccd45738803674c6c6dfdc23a915
         command: [/gateway]
         env:
         - {name: LISTEN_ADDRESS, value: ':8443'}
@@ -258,7 +263,7 @@ spec:
         - name: IMPORTS_JSON
           value: '[{"listen":":17891","serviceIdentity":"spiffe://re8ch.internal/ns/egress-fabric/service/mihomos-byoc-egress","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true},{"listen":":16443","serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true},{"listen":":16445","serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true}]'
         - name: PEER_SESSIONS_JSON
-          value: '[{"endpoint":"223.159.210.222:8443","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch"}]'
+          value: '[{"endpoints":["179.255.126.104:30443","179.253.231.159:30443","223.159.210.222:8443"],"expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch"}]'
         - name: PEER_IDENTITIES_JSON
           value: '{"re8ch-atlantic":["spiffe://re8ch.internal/cluster/re8ch"],"re8ch-main":["spiffe://re8ch.internal/cluster/re8ch"]}'
         ports:
