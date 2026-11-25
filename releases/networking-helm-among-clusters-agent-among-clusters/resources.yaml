@@ -62,7 +62,7 @@ spec:
           value: '6443'
         - name: KUBERNETES_SERVICE_PORT_HTTPS
           value: '6443'
-        image: ghcr.io/among-clusters/among-clusters@sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
+        image: ghcr.io/among-clusters/among-clusters@sha256:010c7b80eab77f9bd0f3f78a85d7d2247b80ccd45738803674c6c6dfdc23a915
         name: agent
         resources:
           limits:
@@ -151,7 +151,7 @@ spec:
           value: '[]'
         - name: PEER_IDENTITIES_JSON
           value: '{"re8ch-artc":["spiffe://artc.byoc/cluster/artc"],"re8ch-atlantic":["spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic"],"re8ch-qwen":["spiffe://qwen.byoc/cluster/qwen"],"re8ch-sijie":["spiffe://sijie.byoc/cluster/sijie"]}'
-        image: ghcr.io/among-clusters/among-clusters@sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
+        image: ghcr.io/among-clusters/among-clusters@sha256:010c7b80eab77f9bd0f3f78a85d7d2247b80ccd45738803674c6c6dfdc23a915
         name: gateway
         ports:
         - containerPort: 31080
@@ -209,6 +209,7 @@ metadata:
 spec:
   ports:
   - name: gateway
+    nodePort: 30443
     port: 8443
     protocol: UDP
     targetPort: 8443
@@ -242,7 +243,7 @@ spec:
     targetPort: 18083
   selector:
     app.kubernetes.io/name: among-clusters-gateway
-  type: ClusterIP
+  type: NodePort
 ---
 apiVersion: v1
 kind: ServiceAccount

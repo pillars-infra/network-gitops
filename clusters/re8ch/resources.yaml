@@ -26115,13 +26115,16 @@ spec:
         - 4190
         routingAuthority: AdvancedFabric
         sourceRef: operations/network/manifests/network/public-mesh/inventory.json#r640.publicAuthority
+      service:
+        nodePort: 30443
+        type: NodePort
     hostAliases:
     - hostnames:
       - among-clusters.service.re8ch.com
       ip: 10.251.0.4
     hubEndpoint: https://among-clusters.service.re8ch.com
     image:
-      digest: sha256:27288e43138c052e9804600c512f296832b2037ea9a016e04a08adb4bb024629
+      digest: sha256:010c7b80eab77f9bd0f3f78a85d7d2247b80ccd45738803674c6c6dfdc23a915
       repository: ghcr.io/among-clusters/among-clusters
     linkObservations: []
     managedAccess:
@@ -28102,7 +28105,7 @@ spec:
   interval: 1m
   provider: generic
   ref:
-    digest: sha256:b3983690c957de1d856c111587d52edca1fbb0759b21c716ec79dbc847c388c8
+    digest: sha256:d96aae1a3147c5c9f09f9f6294198bc23c2db37b01cc36e2191b72b30da1c118
   url: oci://ghcr.io/among-clusters/charts/among-clusters-agent
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
