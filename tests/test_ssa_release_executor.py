@@ -477,6 +477,12 @@ def test_replay_resolves_only_target_bound_healthy_acceptance(tmp_path, fault):
     if fault:
         with pytest.raises(ValueError):
             materialize.accepted_bundle(cm_path, contract_path)
+        if fault == "blocked":
+            assert materialize.accepted_bundle(cm_path, contract_path, allow_blocked=True) == {
+                "reference": state["bundleReference"], "digest": state["appliedDigest"]}
+        elif fault == "suspended":
+            with pytest.raises(ValueError):
+                materialize.accepted_bundle(cm_path, contract_path, allow_blocked=True)
     else:
         assert materialize.accepted_bundle(cm_path, contract_path) == {
             "reference": state["bundleReference"], "digest": state["appliedDigest"]}

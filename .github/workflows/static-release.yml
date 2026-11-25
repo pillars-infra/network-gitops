@@ -263,7 +263,9 @@ jobs:
           kubectl get configmap "$state_name" -n "$TARGET_NAMESPACE" -o json > "$RUNNER_TEMP/state-cm.json"
           verify_args=()
           if [[ '${{ inputs.mode }}' == reconcile ]]; then
-            python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT" > "$RUNNER_TEMP/accepted.json"
+            accepted_args=(accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT")
+            [[ '${{ inputs.reset_blocked }}' == true ]] && accepted_args+=(--allow-blocked)
+            python operations/releases/operation_materialize.py "${accepted_args[@]}" > "$RUNNER_TEMP/accepted.json"
             OCI_REFERENCE="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["reference"])' "$RUNNER_TEMP/accepted.json")"
             OCI_DIGEST="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["digest"])' "$RUNNER_TEMP/accepted.json")"
           elif [[ '${{ inputs.mode }}' == reuse ]]; then
@@ -400,7 +402,9 @@ jobs:
           kubectl get configmap "$state_name" -n "$TARGET_NAMESPACE" -o json > "$RUNNER_TEMP/state-cm.json"
           verify_args=()
           if [[ '${{ inputs.mode }}' == reconcile ]]; then
-            python operations/releases/operation_materialize.py accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT" > "$RUNNER_TEMP/accepted.json"
+            accepted_args=(accepted-bundle --configmap "$RUNNER_TEMP/state-cm.json" --contract "$CONTRACT")
+            [[ '${{ inputs.reset_blocked }}' == true ]] && accepted_args+=(--allow-blocked)
+            python operations/releases/operation_materialize.py "${accepted_args[@]}" > "$RUNNER_TEMP/accepted.json"
             OCI_REFERENCE="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["reference"])' "$RUNNER_TEMP/accepted.json")"
             OCI_DIGEST="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["digest"])' "$RUNNER_TEMP/accepted.json")"
           elif [[ '${{ inputs.mode }}' == reuse ]]; then
