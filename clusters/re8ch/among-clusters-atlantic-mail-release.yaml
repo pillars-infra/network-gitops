@@ -15,7 +15,11 @@ spec:
   rules:
   - apiGroups: ['']
     resources: [configmaps]
-    resourceNames: [ssa-state-networking-native-atlantic-mail-system, stalwart-config, stalwart-idp-config]
+    resourceNames: [ssa-state-agent-runtime-exact-atlantic-stalwart-token-trust, ssa-state-networking-native-atlantic-mail-system, stalwart-config, stalwart-idp-config]
+    verbs: [get, patch, update, delete]
+  - apiGroups: [batch]
+    resources: [cronjobs]
+    resourceNames: [stalwart-tls-reloader]
     verbs: [get, patch, update, delete]
   - apiGroups: ['']
     resources: [services]
@@ -49,6 +53,22 @@ metadata: {name: networking-atlantic-mail-grant-use, namespace: byoc-pilot}
 roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: networking-atlantic-mail-grant-use}
 subjects:
 - {kind: Group, name: 're8ch:release-executor:networking', apiGroup: rbac.authorization.k8s.io}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: agent-runtime-atlantic-mail-grant-use, namespace: byoc-pilot}
+rules:
+- apiGroups: [peering.re8ch.com]
+  resources: [managedaccessgrants]
+  resourceNames: [re8ch-atlantic-networking-mail-system]
+  verbs: [get, use]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: agent-runtime-atlantic-mail-grant-use, namespace: byoc-pilot}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: agent-runtime-atlantic-mail-grant-use}
+subjects:
+- {kind: Group, name: 're8ch:release-executor:agent-runtime', apiGroup: rbac.authorization.k8s.io}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

@@ -148,11 +148,23 @@ spec:
   - apiGroups:
     - ''
     resourceNames:
+    - ssa-state-agent-runtime-exact-atlantic-stalwart-token-trust
     - ssa-state-networking-native-atlantic-mail-system
     - stalwart-config
     - stalwart-idp-config
     resources:
     - configmaps
+    verbs:
+    - get
+    - patch
+    - update
+    - delete
+  - apiGroups:
+    - batch
+    resourceNames:
+    - stalwart-tls-reloader
+    resources:
+    - cronjobs
     verbs:
     - get
     - patch
