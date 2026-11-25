@@ -334,6 +334,26 @@ spec:
           capabilities: {drop: [ALL]}
         volumeMounts:
         - {name: edge-sni, mountPath: /usr/local/etc/haproxy, readOnly: true}
+      # Bind the reviewed LA node addresses directly and preserve one UDP
+      # flow in each direction. This avoids a Helsinki hairpin while the
+      # authenticated QUIC endpoint remains owned by the main gateway.
+      - name: main-quic-relay
+        image: docker.io/alpine/socat@sha256:beb4a68d9e4fe6b0f21ea774a0fde6c31f580dde6368939ed70100c5385b015e
+        args:
+        - UDP4-RECVFROM:30443,fork,reuseaddr
+        - UDP4-SENDTO:223.159.210.222:8443
+        ports:
+        - {name: main-quic, containerPort: 30443, hostPort: 30443, protocol: UDP}
+        resources:
+          requests: {cpu: 5m, memory: 8Mi}
+          limits: {cpu: 50m, memory: 32Mi}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65532
+          runAsGroup: 65532
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
       volumes:
       - name: edge-sni
         configMap: {name: among-clusters-edge-sni}
@@ -353,11 +373,13 @@ spec:
     - ipBlock: {cidr: 0.0.0.0/0}
     ports:
     - {protocol: TCP, port: 8444}
+    - {protocol: UDP, port: 30443}
   egress:
   - to:
     - ipBlock: {cidr: 223.159.210.222/32}
     ports:
     - {protocol: TCP, port: 443}
+    - {protocol: UDP, port: 8443}
   - to:
     - podSelector:
         matchLabels:

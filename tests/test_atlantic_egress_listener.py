@@ -56,3 +56,19 @@ def test_atlantic_quic_prefers_reviewed_la_ingress_with_r640_fallback():
         'endpoints': ['179.255.126.104:30443', '179.253.231.159:30443', '223.159.210.222:8443'],
         'expectedSPIFFEID': 'spiffe://re8ch.internal/cluster/re8ch',
     }]
+
+    edge = next(o for o in atlantic if o['kind'] == 'DaemonSet' and o['metadata']['name'] == 'among-clusters-edge')
+    relay = next(c for c in edge['spec']['template']['spec']['containers'] if c['name'] == 'main-quic-relay')
+    assert relay['image'] == ('docker.io/alpine/socat@'
+                              'sha256:beb4a68d9e4fe6b0f21ea774a0fde6c31f580dde6368939ed70100c5385b015e')
+    assert relay['args'] == ['UDP4-RECVFROM:30443,fork,reuseaddr',
+                             'UDP4-SENDTO:223.159.210.222:8443']
+    assert relay['ports'] == [{'name': 'main-quic', 'containerPort': 30443,
+                               'hostPort': 30443, 'protocol': 'UDP'}]
+
+    policy = next(o for o in atlantic if o['kind'] == 'NetworkPolicy' and o['metadata']['name'] == 'among-clusters-edge')
+    assert any({'protocol': 'UDP', 'port': 30443} in rule.get('ports', [])
+               for rule in policy['spec']['ingress'])
+    assert any({'ipBlock': {'cidr': '223.159.210.222/32'}} in rule.get('to', [])
+               and {'protocol': 'UDP', 'port': 8443} in rule.get('ports', [])
+               for rule in policy['spec']['egress'])
