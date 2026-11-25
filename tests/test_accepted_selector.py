@@ -96,7 +96,7 @@ def test_initialize_creates_private_fixed_config_without_output_or_overwrite(tmp
     refresh_kubeconfig.initialize();value=yaml.safe_load(path.read_text())
     assert path.stat().st_mode&0o777==0o600
     cluster=value['clusters'][0]['cluster']
-    assert cluster['server']=='https://179.255.126.104:443'
+    assert cluster['server']=='https://kube-api.service.re8ch.com:443'
     assert cluster['tls-server-name']=='kube-api.service.re8ch.com'
     assert base64.b64decode(value['clusters'][0]['cluster']['certificate-authority-data']).decode()=='fixture-ca'
     assert value['users'][0]['user']['token']=='fixture-token'

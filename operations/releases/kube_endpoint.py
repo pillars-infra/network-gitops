@@ -13,11 +13,13 @@ from ssa_executor import Rejected
 
 ENDPOINTS = {
     "re8ch": [
+        "https://kube-api.service.re8ch.com:443",
         "https://179.255.126.104:443",
         "https://179.253.231.159:443",
         "https://223.159.210.222:6443",
     ],
     "re8ch-main": [
+        "https://kube-api.service.re8ch.com:443",
         "https://179.255.126.104:443",
         "https://179.253.231.159:443",
         "https://223.159.210.222:6443",
