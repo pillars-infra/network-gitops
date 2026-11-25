@@ -571,6 +571,29 @@ def test_failed_rollback_remains_blocked_on_next_cloud_worker(tmp_path, monkeypa
     assert runner.calls == []
 
 
+def test_reset_accepts_previous_bundle_after_reviewed_contract_change(tmp_path):
+    value, operation, bundle_path = prepare(tmp_path)
+    root = tmp_path / "state"
+    instance = executor.Executor(runner=Runner(), now=lambda: NOW, sleeper=lambda _: None)
+    instance.reconcile(value, operation, bundle_path, root, verify_signature=False)
+    state = executor.Store(root, "demo").state()
+    state.update({"blocked": True, "blockedReason": "transient API failure"})
+    executor.Store(root, "demo").accept(state)
+
+    changed = json.loads(json.dumps(value))
+    changed["spec"]["lifecycle"]["healthTimeoutSeconds"] += 1
+    _, reset, _ = prepare(tmp_path, sequence=2, previous=state["appliedDigest"])
+    reset.update({
+        "operationId": str(uuid.uuid4()),
+        "action": "reset",
+        "contractDigest": executor.digest(executor.canonical(changed)),
+    })
+
+    result = instance.reconcile(changed, reset, bundle_path, root, verify_signature=False)
+    assert result["outcome"] == "healthy"
+    assert executor.Store(root, "demo").state()["blocked"] is False
+
+
 @pytest.mark.parametrize('updated, expected', [(0, False), (1, False), (2, True)])
 def test_daemonset_old_available_pods_do_not_prove_rollout(updated, expected):
     runner = Runner(live={'metadata': {'generation': 207}, 'spec': {}, 'status': {

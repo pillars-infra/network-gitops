@@ -336,7 +336,7 @@ class Executor:
         manifest, objects = load_archive(bundle_path)
         if manifest["releaseId"] != operation["releaseId"]:
             raise Rejected("bundle is bound to another release")
-        if operation["action"] != "rollback" and manifest["contractDigest"] != contract_digest:
+        if operation["action"] not in {"rollback", "reset"} and manifest["contractDigest"] != contract_digest:
             raise Rejected("bundle is bound to another contract")
         if manifest["inventoryDigest"] != operation["inventoryDigest"]:
             raise Rejected("operation inventory differs from bundle")
