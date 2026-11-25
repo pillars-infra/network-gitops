@@ -65,6 +65,14 @@ def test_atlantic_quic_prefers_reviewed_la_ingress_with_r640_fallback():
                              'UDP4-SENDTO:223.159.210.222:8443']
     assert relay['ports'] == [{'name': 'main-quic', 'containerPort': 30443,
                                'hostPort': 30443, 'protocol': 'UDP'}]
+    assert relay['securityContext'] == {
+        'runAsNonRoot': True,
+        'runAsUser': 65532,
+        'runAsGroup': 65532,
+        'allowPrivilegeEscalation': False,
+        'readOnlyRootFilesystem': True,
+        'capabilities': {'drop': ['ALL']},
+    }
 
     policy = next(o for o in atlantic if o['kind'] == 'NetworkPolicy' and o['metadata']['name'] == 'among-clusters-edge')
     assert any({'protocol': 'UDP', 'port': 30443} in rule.get('ports', [])
