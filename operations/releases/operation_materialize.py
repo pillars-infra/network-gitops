@@ -40,7 +40,7 @@ def assert_state_target(state, contract):
         raise ValueError("accepted state belongs to another cluster binding")
 
 
-def accepted_bundle(configmap: Path, contract_path: Path) -> dict[str, str]:
+def accepted_bundle(configmap: Path, contract_path: Path, allow_blocked: bool = False) -> dict[str, str]:
     """Resolve a replay from durable acceptance, never from an arbitrary caller URL."""
     contract = yaml.safe_load(contract_path.read_text())
     validate_schema(contract, "release-contract.schema.json")
@@ -54,7 +54,7 @@ def accepted_bundle(configmap: Path, contract_path: Path) -> dict[str, str]:
     assert_state_target(state, contract)
     if state["releaseId"] != release_id:
         raise ValueError("accepted state belongs to another release")
-    if state["blocked"] or state.get("suspended"):
+    if (state["blocked"] and not allow_blocked) or state.get("suspended"):
         raise ValueError("release is blocked or suspended")
     accepted = state.get("acceptedDigest", state.get("acceptedDigest", state.get("healthyDigest")))
     if accepted != state["appliedDigest"]:
@@ -216,6 +216,7 @@ def main() -> int:
     accepted = sub.add_parser("accepted-bundle")
     accepted.add_argument("--configmap", type=Path, required=True)
     accepted.add_argument("--contract", type=Path, required=True)
+    accepted.add_argument("--allow-blocked", action="store_true")
     patch = sub.add_parser("state-patch")
     patch.add_argument("--configmap", type=Path, required=True)
     patch.add_argument("--state-dir", type=Path, required=True)
@@ -227,7 +228,7 @@ def main() -> int:
     if args.command == "hydrate": hydrate(args.configmap, args.state_dir, args.release_id, args.contract)
     elif args.command == "request": request(args.contract, args.metadata, args.state_dir, args.reference, args.digest, args.output, args.action, args.force_object, args.replay_only)
     elif args.command == "persist": persist(args.state_dir, args.release_id, args.namespace, args.result, args.output, args.contract)
-    elif args.command == "accepted-bundle": print(compact(accepted_bundle(args.configmap, args.contract)))
+    elif args.command == "accepted-bundle": print(compact(accepted_bundle(args.configmap, args.contract, args.allow_blocked)))
     elif args.command == "state-patch": state_patch(args.configmap, args.state_dir, args.release_id, args.result, args.output, args.contract)
     else: print(state_configmap_name(args.release_id))
     return 0
