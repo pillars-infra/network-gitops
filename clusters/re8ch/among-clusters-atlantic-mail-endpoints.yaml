@@ -10,7 +10,7 @@ addressType: IPv4
 ports:
   - name: management
     protocol: TCP
-    port: 18082
+    port: 18083
 endpoints:
   - addresses: [10.250.0.128]
     conditions: {ready: true, serving: true, terminating: false}

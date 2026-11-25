@@ -94,7 +94,7 @@ spec:
                 value: 18081
               - op: replace
                 path: /spec/ports/7/targetPort
-                value: 18082
+                value: 18083
           - target:
               group: networking.k8s.io
               version: v1
