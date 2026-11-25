@@ -172,8 +172,8 @@ spec:
     - {protocol: TCP, port: 16445}
   egress:
   - to:
-    - ipBlock: {cidr: 179.255.126.104/32}
-    - ipBlock: {cidr: 179.253.231.159/32}
+    - ipBlock: {cidr: 10.250.0.104/32}
+    - ipBlock: {cidr: 10.250.0.220/32}
     ports:
     - {protocol: UDP, port: 30443}
   - to:
@@ -263,7 +263,7 @@ spec:
         - name: IMPORTS_JSON
           value: '[{"listen":":17891","serviceIdentity":"spiffe://re8ch.internal/ns/egress-fabric/service/mihomos-byoc-egress","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true},{"listen":":16443","serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/kubernetes-api","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true},{"listen":":16445","serviceIdentity":"spiffe://re8ch.internal/ns/kube-system/service/public-edge-tls","expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch","sessionOnly":true}]'
         - name: PEER_SESSIONS_JSON
-          value: '[{"endpoints":["179.255.126.104:30443","179.253.231.159:30443","223.159.210.222:8443"],"expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch"}]'
+          value: '[{"endpoints":["10.250.0.104:30443","10.250.0.220:30443","223.159.210.222:8443"],"expectedSPIFFEID":"spiffe://re8ch.internal/cluster/re8ch"}]'
         - name: PEER_IDENTITIES_JSON
           value: '{"re8ch-atlantic":["spiffe://re8ch.internal/cluster/re8ch"],"re8ch-main":["spiffe://re8ch.internal/cluster/re8ch"]}'
         ports:
