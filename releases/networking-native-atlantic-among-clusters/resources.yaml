@@ -44,6 +44,8 @@ spec:
       app.kubernetes.io/name: among-clusters-agent
   template:
     metadata:
+      annotations:
+        operations.re8ch.com/restarted-at: '2026-11-25T08:20:00Z'
       labels:
         app.kubernetes.io/name: among-clusters-agent
     spec:
@@ -230,6 +232,7 @@ spec:
     metadata:
       annotations:
         networking.re8ch.com/haproxy-config-sha256: b739d5132c7c912b6c0ecc084cb376d1e7756d93e74699872c7a77ce3b2d565b
+        operations.re8ch.com/restarted-at: '2026-11-25T08:20:00Z'
       labels:
         app.kubernetes.io/name: among-clusters-gateway
     spec:
