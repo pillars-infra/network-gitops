@@ -2498,6 +2498,31 @@
       "apiVersion": "rbac.authorization.k8s.io/v1",
       "kind": "Role",
       "metadata": {
+        "name": "agent-runtime-atlantic-mail-grant-use",
+        "namespace": "byoc-pilot"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "peering.re8ch.com"
+          ],
+          "resourceNames": [
+            "re8ch-atlantic-networking-mail-system"
+          ],
+          "resources": [
+            "managedaccessgrants"
+          ],
+          "verbs": [
+            "get",
+            "use"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
         "name": "networking-atlantic-mail-grant-use",
         "namespace": "byoc-pilot"
       },
@@ -3066,6 +3091,26 @@
       "apiVersion": "rbac.authorization.k8s.io/v1",
       "kind": "RoleBinding",
       "metadata": {
+        "name": "agent-runtime-atlantic-mail-grant-use",
+        "namespace": "byoc-pilot"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "agent-runtime-atlantic-mail-grant-use"
+      },
+      "subjects": [
+        {
+          "apiGroup": "rbac.authorization.k8s.io",
+          "kind": "Group",
+          "name": "re8ch:release-executor:agent-runtime"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
         "name": "networking-atlantic-mail-grant-use",
         "namespace": "byoc-pilot"
       },
@@ -3423,6 +3468,10 @@
       "reason": "platform-bootstrap-rbac"
     },
     {
+      "identity": "rbac.authorization.k8s.io/Role/byoc-pilot/agent-runtime-atlantic-mail-grant-use",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
       "identity": "rbac.authorization.k8s.io/Role/byoc-pilot/networking-atlantic-mail-grant-use",
       "reason": "platform-bootstrap-rbac"
     },
@@ -3476,6 +3525,10 @@
     },
     {
       "identity": "rbac.authorization.k8s.io/RoleBinding/ai-operations/networking-cloud-platform-exact-proxy",
+      "reason": "platform-bootstrap-rbac"
+    },
+    {
+      "identity": "rbac.authorization.k8s.io/RoleBinding/byoc-pilot/agent-runtime-atlantic-mail-grant-use",
       "reason": "platform-bootstrap-rbac"
     },
     {
