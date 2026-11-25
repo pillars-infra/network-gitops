@@ -149,6 +149,7 @@ spec:
     - ''
     resourceNames:
     - ssa-state-agent-runtime-exact-atlantic-stalwart-token-trust
+    - ssa-state-agent-runtime-stalwart-token-trust-run
     - ssa-state-networking-native-atlantic-mail-system
     - stalwart-config
     - stalwart-idp-config
@@ -167,6 +168,18 @@ spec:
     - cronjobs
     verbs:
     - get
+    - patch
+    - update
+    - delete
+  - apiGroups:
+    - batch
+    resourceNames:
+    - stalwart-token-trust-apply-v1
+    resources:
+    - jobs
+    verbs:
+    - get
+    - create
     - patch
     - update
     - delete
