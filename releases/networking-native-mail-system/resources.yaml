@@ -17,7 +17,7 @@ metadata:
   namespace: mail-system
 ports:
 - name: management
-  port: 18082
+  port: 18083
   protocol: TCP
 ---
 addressType: IPv4

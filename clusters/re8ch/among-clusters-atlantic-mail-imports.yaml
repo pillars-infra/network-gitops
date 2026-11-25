@@ -20,9 +20,9 @@
   path: /spec/values/gateway/imports/-
   value:
     expectedSPIFFEID: spiffe://atlantic.re8ch.com/cluster/re8ch-atlantic
-    listen: :18082
+    listen: :18083
     name: atl-mail-admin
-    port: 18082
+    port: 18083
     serviceIdentity: spiffe://atlantic.re8ch.com/ns/mail-system/service/stalwart-management
     sessionOnly: true
 - op: add
@@ -50,4 +50,4 @@
           ports:
             - {protocol: TCP, port: 18080}
             - {protocol: TCP, port: 18081}
-            - {protocol: TCP, port: 18082}
+            - {protocol: TCP, port: 18083}
