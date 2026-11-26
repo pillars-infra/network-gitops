@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Runtime observation or investigation
+    url: https://github.com/pillars-infra/network-gitops/discussions
+    about: Put changing observations and investigation narratives in Discussions.
+  - name: Default requirement Project
+    url: https://github.com/orgs/pillars-infra/projects/1
+    about: Every actionable Issue must belong to this Project or a narrower approved requirement Project.
