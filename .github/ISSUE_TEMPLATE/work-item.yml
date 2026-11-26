@@ -1,0 +1,47 @@
+name: Governed work item
+description: Create one reviewable desired-state or repository-governance concern.
+title: ""
+projects: ["pillars-infra/1"]
+body:
+  - type: dropdown
+    id: work-type
+    attributes:
+      label: Work type
+      options: [Feature, Bug, Task, Governance, Dependency, Documentation, Migration]
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: State the observable result, not implementation activity.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      value: |
+        - Parent Issue: none
+        - Project: https://github.com/orgs/pillars-infra/projects/1
+        - Milestone: none
+        - Branch/worktree: pending
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      value: |
+        - [ ] Static contract or code verification
+        - [ ] Runtime verification where applicable
+        - [ ] Immutable evidence linked below
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Checks, immutable artifacts, deployment readback, observability or Wiki links.
+    validations:
+      required: true
