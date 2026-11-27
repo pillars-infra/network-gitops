@@ -36,9 +36,11 @@ def test_replay_requires_exact_healthy_acceptance(tmp_path,monkeypatch,fault):
 def test_matrix_and_workflow_have_no_publishing_inputs(monkeypatch):
     monkeypatch.chdir(ROOT)
     matrix=replay_matrix()
-    assert len(matrix)==35
+    assert len(matrix)==36
+    assert any(item['release-id'] == 'networking-native-atlantic-mail-system' for item in matrix)
     assert all(p['audience']==REPLAY_AUDIENCE for p in matrix)
-    assert all(p['cluster']=='re8ch' for p in matrix)
+    assert all(p['control-cluster']=='re8ch' for p in matrix)
+    assert {p['cluster'] for p in matrix} == {'re8ch', 're8ch-atlantic'}
     text=(ROOT/'.github/workflows/networking-reconcile.yml').read_text()
     workflow=yaml.safe_load(text)
     triggers=workflow.get('on',workflow.get(True))
