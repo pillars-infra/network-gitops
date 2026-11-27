@@ -42,6 +42,10 @@ def assert_schedulable_pod_network_ha(deployment):
             },
         ],
     }
+    readiness_path = pod["containers"][0]["readinessProbe"]["httpGet"]["path"]
+    assert readiness_path == (
+        "/proxies/DIRECT/delay?url=https%3A%2F%2Fapi.github.com&timeout=5000"
+    )
 
 
 def test_identity_egress_source_and_native_projection_own_the_live_ha_repair():
