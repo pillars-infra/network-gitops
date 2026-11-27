@@ -110,6 +110,15 @@ def test_bound_profile_controls_main_without_new_oidc_and_rejects_unbound_remote
     with pytest.raises(ValueError,match='legacy remote'):profile.validate_contract(p,for_execution=True)
 
 
+def test_atlantic_mail_contract_uses_the_reviewed_cloud_binding():
+    path = ROOT / 'contracts/networking-native-atlantic-mail-system.yaml'
+    result = profile.validate_contract(path.relative_to(ROOT), for_execution=True)
+    contract = yaml.safe_load(path.read_text())
+    assert contract['spec']['target']['clusterBindingDigest'] == 'd8e075fa56d42b69204bf71b7a68c850fefc430e663ccf1703c190ecbb7795b6'
+    assert result['cluster'] == 're8ch-atlantic'
+    assert result['control-cluster'] == 're8ch'
+
+
 def test_state_seeds_never_enter_runtime_inventory_and_have_only_exact_main_rbac():
     import compile_native
     docs=list(yaml.safe_load_all((ROOT/'clusters/re8ch/cloud-target-delivery-bootstrap.yaml').read_text()));files,ledger=compile_native.project(docs)

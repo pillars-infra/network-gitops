@@ -3,14 +3,17 @@ kind: ReleaseContract
 metadata: {name: networking-native-atlantic-mail-system}
 spec:
   authorityDomain: networking
-  target: {cluster: re8ch-atlantic, namespace: mail-system}
+  target:
+    cluster: re8ch-atlantic
+    clusterBindingDigest: d8e075fa56d42b69204bf71b7a68c850fefc430e663ccf1703c190ecbb7795b6
+    namespace: mail-system
   source: {renderer: kustomize, revision: github-main-reviewed, repository: pillars-infra/network-gitops, path: releases/networking-native-atlantic-mail-system}
   provenance:
     repository: pillars-infra/network-gitops
     workflow: .github/workflows/static-release.yml
     ref: refs/heads/main
-    environment: release-executor-networking-atlantic
-    audience: https://kube-api.re8ch.com/release-executor-networking-atlantic
+    environment: release-executor-networking
+    audience: https://kube-api.re8ch.com/release-executor-networking
     signer: https://github.com/pillars-infra/network-gitops/.github/workflows/static-release.yml@refs/heads/main
     issuer: https://token.actions.githubusercontent.com
   authorization:
