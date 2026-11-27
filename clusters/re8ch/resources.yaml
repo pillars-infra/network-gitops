@@ -21905,7 +21905,7 @@ spec:
         readinessProbe:
           failureThreshold: 2
           httpGet:
-            path: /proxies/DIRECT/delay?url=https%3A%2F%2Faccounts.google.com%2F.well-known%2Fopenid-configuration&timeout=5000
+            path: /proxies/DIRECT/delay?url=https%3A%2F%2Fapi.github.com&timeout=5000
             port: controller
           periodSeconds: 10
           timeoutSeconds: 7
