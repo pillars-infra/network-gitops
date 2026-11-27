@@ -53,6 +53,18 @@ def test_atlantic_stalwart_public_edge_is_local_and_uses_db_rw_sso():
     assert env["OAUTH_ISSUER_URL"] == "https://db-rw.re8ch.com/auth/v1"
 
 
+def test_atlantic_stalwart_mail_ports_bypass_the_broken_service_dataplane():
+    root = Path(__file__).resolve().parents[1]
+    objects = list(yaml.safe_load_all((root / "releases/networking-native-atlantic-mail-system/resources.yaml").read_text()))
+    statefulset = next(obj for obj in objects if obj and obj.get("kind") == "StatefulSet" and obj["metadata"]["name"] == "stalwart-flk")
+    pod = statefulset["spec"]["template"]["spec"]
+    assert pod["nodeSelector"] == {"kubernetes.io/hostname": "overseas-flk"}
+    ports = {port["name"]: port for port in pod["containers"][0]["ports"]}
+    for name, number in {"smtp": 25, "smtps": 465, "submission": 587, "imaps": 993, "sieve": 4190}.items():
+        assert ports[name]["containerPort"] == number
+        assert ports[name]["hostPort"] == number
+
+
 def test_select_fails_over_and_persists_selected_endpoint(tmp_path, monkeypatch):
     attempts = []
 
